@@ -112,6 +112,7 @@ export default function Terminal({
       });
 
       // 5. clear xterm 並 replay buffer
+      console.error(`[SWITCH] 切換到 agent: ${agent.id}`);
       sharedXterm.clear();
       sharedXterm.reset();
 

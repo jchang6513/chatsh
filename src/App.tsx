@@ -30,7 +30,9 @@ export default function App() {
   const [showShellPane, setShowShellPane] = useState(false);
   const [spawnTriggers, setSpawnTriggers] = useState<Record<string, number>>({});
 
-  const activeAgent = agents.find((a) => a.id === activeAgentId)!;
+  const activeAgent = agents.find((a) => a.id === activeAgentId)!
+
+;
 
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
     setAgents((prev) =>

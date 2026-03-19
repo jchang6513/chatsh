@@ -57,6 +57,11 @@ fn is_agent_alive(agent_id: String, state: State<'_, AppState>) -> Result<bool, 
     Ok(manager.is_alive(&agent_id))
 }
 
+#[tauri::command]
+fn log_test(msg: String) {
+    eprintln!("[CHATSH_TEST] {}", msg);
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -69,6 +74,7 @@ pub fn run() {
             kill_agent,
             write_to_agent,
             resize_pty,
+            log_test,
             get_buffer,
             is_agent_alive,
         ])
