@@ -29,7 +29,14 @@ export default function App() {
   const [activeAgentId, setActiveAgentId] = useState<string>("claude");
   const [showShellPane, setShowShellPane] = useState(false);
 
-  const activeAgent = agents.find((a) => a.id === activeAgentId)!;
+  const activeAgent = agents.find((a) => a.id === activeAgentId)!
+
+  // 切換測試
+  useEffect(() => {
+    const t1 = setTimeout(() => setActiveAgentId("shell"), 5000)
+    const t2 = setTimeout(() => setActiveAgentId("claude"), 9000)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+  }, []);
 
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
     setAgents((prev) =>

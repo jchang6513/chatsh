@@ -24,16 +24,26 @@ export default function Terminal({ agent, onStatusChange, showShellPane, onToggl
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
-    // 隱藏所有其他 agent 的 xterm div
+    // 切換 agent：用 opacity/pointer-events，不用 display:none（避免 canvas 失效）
     xtermDivs.forEach((div, id) => {
-      div.style.display = id === agent.id ? "flex" : "none";
+      if (id === agent.id) {
+        div.style.opacity = "1";
+        div.style.pointerEvents = "auto";
+        div.style.position = "relative";
+      } else {
+        div.style.opacity = "0";
+        div.style.pointerEvents = "none";
+        div.style.position = "absolute";
+      }
     });
 
-    // 如果這個 agent 的 xterm 已存在，只需顯示並 focus
+    // 如果這個 agent 的 xterm 已存在，只需 focus
     if (xtermDivs.has(agent.id)) {
       const inst = xtermInstances.get(agent.id)!;
-      inst.fitAddon.fit();
-      inst.xterm.focus();
+      requestAnimationFrame(() => {
+        inst.fitAddon.fit();
+        inst.xterm.focus();
+      });
 
       // 如果 PTY 沒在跑，重新 spawn
       invoke<boolean>("is_agent_alive", { agentId: agent.id }).then((alive) => {
@@ -52,7 +62,7 @@ export default function Terminal({ agent, onStatusChange, showShellPane, onToggl
 
     // 第一次：建立 xterm div，append 到 wrapper
     const div = document.createElement("div");
-    div.style.cssText = "display:flex; flex:1; min-height:0; width:100%; height:100%;";
+    div.style.cssText = "position:absolute; inset:0; width:100%; height:100%;";
     wrapper.appendChild(div);
     xtermDivs.set(agent.id, div);
 
@@ -146,8 +156,8 @@ export default function Terminal({ agent, onStatusChange, showShellPane, onToggl
           </button>
         </div>
       </div>
-      {/* xterm wrapper：所有 agent 的 xterm div 都 append 在這裡 */}
-      <div ref={wrapperRef} className="flex-1 min-h-0 relative" />
+      {/* xterm wrapper：所有 agent 的 xterm div 都 append 在這裡，疊在一起用 opacity 切換 */}
+      <div ref={wrapperRef} className="flex-1 min-h-0 relative overflow-hidden" />
     </div>
   );
 }
