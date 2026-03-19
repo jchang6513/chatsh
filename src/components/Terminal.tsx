@@ -82,7 +82,13 @@ export default function Terminal({
     // 監聽 PTY 輸出
     let unlisten: (() => void) | null = null;
     listen<string>(`pty-output-${agent.id}`, (event) => {
-      xterm.write(event.payload);
+      // base64 decode PTY 輸出
+      const binary = atob(event.payload);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      xterm.write(bytes);
     }).then((fn) => {
       unlisten = fn;
       unlistenRef.current = fn;

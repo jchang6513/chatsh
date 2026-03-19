@@ -1,3 +1,4 @@
+use base64::Engine;
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -24,12 +25,16 @@ impl PtyManager {
     pub fn spawn(
         &self,
         agent_id: &str,
-        command: &str,
+        command: &[String],
         working_dir: &str,
         cols: u16,
         rows: u16,
         app_handle: AppHandle,
     ) -> Result<(), String> {
+        if command.is_empty() {
+            return Err("command 不能為空".to_string());
+        }
+
         // 若已存在，先清除
         self.kill(agent_id)?;
 
@@ -52,7 +57,10 @@ impl PtyManager {
             working_dir.to_string()
         };
 
-        let mut cmd = CommandBuilder::new(command);
+        let mut cmd = CommandBuilder::new(&command[0]);
+        if command.len() > 1 {
+            cmd.args(&command[1..]);
+        }
         cmd.cwd(&expanded_dir);
 
         // 繼承環境變數
@@ -98,7 +106,7 @@ impl PtyManager {
                 match reader.read(&mut buf) {
                     Ok(0) => break,
                     Ok(n) => {
-                        let data = String::from_utf8_lossy(&buf[..n]).to_string();
+                        let data = base64::engine::general_purpose::STANDARD.encode(&buf[..n]);
                         let _ = app_handle.emit(&event_name, data);
                     }
                     Err(_) => break,

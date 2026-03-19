@@ -11,7 +11,7 @@ struct AppState {
 #[tauri::command]
 fn spawn_agent(
     agent_id: String,
-    command: String,
+    command: Vec<String>,
     working_dir: String,
     cols: u16,
     rows: u16,
