@@ -4,9 +4,10 @@ interface Props {
   agents: Agent[];
   activeAgentId: string;
   onSelect: (id: string) => void;
+  onAdd: () => void;
 }
 
-export default function Sidebar({ agents, activeAgentId, onSelect }: Props) {
+export default function Sidebar({ agents, activeAgentId, onSelect, onAdd }: Props) {
   return (
     <div className="w-[260px] min-w-[260px] bg-[#1e1e1e] flex flex-col border-r border-[#333]">
       <div className="px-4 py-3 text-lg font-bold tracking-wide border-b border-[#333]">
@@ -41,7 +42,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect }: Props) {
       </div>
 
       <button
-        onClick={() => console.log("新增角色")}
+        onClick={onAdd}
         className="m-3 py-2 rounded bg-[#2d3a4a] hover:bg-[#3d4a5a] transition-colors text-sm"
       >
         + 新增角色

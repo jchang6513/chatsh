@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
 import ShellPane from "./components/ShellPane";
+import AddAgentModal from "./components/AddAgentModal";
 import type { Agent } from "./types";
 
 const DEFAULT_AGENTS: Agent[] = [
@@ -28,6 +29,7 @@ export default function App() {
   const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
   const [activeAgentId, setActiveAgentId] = useState<string>("claude");
   const [showShellPane, setShowShellPane] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
     setAgents((prev) =>
@@ -45,6 +47,7 @@ export default function App() {
         agents={agents}
         activeAgentId={activeAgentId}
         onSelect={handleSelectAgent}
+        onAdd={() => setShowAddModal(true)}
       />
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {/* 每個 agent 有自己的 Terminal，用 visibility 切換 */}
@@ -72,6 +75,16 @@ export default function App() {
         ))}
         {showShellPane && <ShellPane />}
       </div>
+      {showAddModal && (
+        <AddAgentModal
+          onAdd={(agent) => {
+            setAgents((prev) => [...prev, agent]);
+            setActiveAgentId(agent.id);
+            setShowAddModal(false);
+          }}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
     </div>
   );
 }
