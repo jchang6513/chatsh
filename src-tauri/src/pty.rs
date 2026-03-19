@@ -142,7 +142,8 @@ impl PtyManager {
                     Err(_) => break,
                 }
             }
-            // 程序結束，從 sessions 中移除（buffer 保留）
+            // 程序結束，emit exit 事件並從 sessions 中移除（buffer 保留）
+            app_handle.emit(&format!("pty-exit-{}", aid), ()).ok();
             if let Ok(mut map) = sessions.lock() {
                 map.remove(&aid);
             }

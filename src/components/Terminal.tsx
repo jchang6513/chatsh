@@ -76,13 +76,6 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
 
     // 鍵盤輸入
     xterm.onData((data) => {
-      if (data === "\x03") {
-        invoke("kill_agent", { agentId: agent.id }).then(() => {
-          onStatusChange("offline");
-          xterm.writeln("\r\n[程序已終止，點選重啟繼續]");
-        });
-        return;
-      }
       invoke("write_to_agent", { agentId: agent.id, data });
     });
 
@@ -92,6 +85,12 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
       const bytes = Uint8Array.from(atob(event.payload), (c) => c.charCodeAt(0));
       xterm.write(bytes);
     }).then((fn) => { unlisten = fn; });
+
+    // listen PTY exit
+    let unlistenExit: (() => void) | null = null;
+    listen<void>(`pty-exit-${agent.id}`, () => {
+      onStatusChange("offline");
+    }).then((fn) => { unlistenExit = fn; });
 
     // spawn PTY
     setTimeout(async () => {
@@ -114,6 +113,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
     return () => {
       resizeObs.disconnect();
       if (unlisten) unlisten();
+      if (unlistenExit) unlistenExit();
       xterm.dispose();
     };
   }, []); // 空 deps，只跑一次
