@@ -5,20 +5,26 @@ use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, Emitter};
 
+const MAX_BUFFER: usize = 50 * 1024; // 50KB
+
 struct PtySession {
     master: Box<dyn MasterPty + Send>,
     writer: Box<dyn Write + Send>,
     child: Box<dyn portable_pty::Child + Send>,
+    buffer: Arc<Mutex<Vec<u8>>>,
 }
 
 pub struct PtyManager {
     sessions: Arc<Mutex<HashMap<String, PtySession>>>,
+    // buffer 獨立存放，讓 session 結束後仍可讀取
+    buffers: Arc<Mutex<HashMap<String, Arc<Mutex<Vec<u8>>>>>>,
 }
 
 impl PtyManager {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
+            buffers: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -84,10 +90,24 @@ impl PtyManager {
             .try_clone_reader()
             .map_err(|e| format!("無法取得 reader: {e}"))?;
 
+        // 建立或重用 buffer
+        let buffer = {
+            let mut bufs = self.buffers.lock().map_err(|e| e.to_string())?;
+            let buf = bufs
+                .entry(agent_id.to_string())
+                .or_insert_with(|| Arc::new(Mutex::new(Vec::new())));
+            // 清空舊內容（重新 spawn 時）
+            if let Ok(mut b) = buf.lock() {
+                b.clear();
+            }
+            Arc::clone(buf)
+        };
+
         let session = PtySession {
             master: pair.master,
             writer,
             child,
+            buffer: Arc::clone(&buffer),
         };
 
         self.sessions
@@ -95,7 +115,7 @@ impl PtyManager {
             .map_err(|e| e.to_string())?
             .insert(agent_id.to_string(), session);
 
-        // 啟動讀取執行緒，將 PTY 輸出推送到前端
+        // 啟動讀取執行緒，將 PTY 輸出推送到前端，同時寫入 buffer
         let event_name = format!("pty-output-{agent_id}");
         let sessions = self.sessions.clone();
         let aid = agent_id.to_string();
@@ -106,13 +126,23 @@ impl PtyManager {
                 match reader.read(&mut buf) {
                     Ok(0) => break,
                     Ok(n) => {
-                        let data = base64::engine::general_purpose::STANDARD.encode(&buf[..n]);
+                        // 寫入 ring buffer
+                        if let Ok(mut buf_lock) = buffer.lock() {
+                            buf_lock.extend_from_slice(&buf[..n]);
+                            if buf_lock.len() > MAX_BUFFER {
+                                let excess = buf_lock.len() - MAX_BUFFER;
+                                buf_lock.drain(..excess);
+                            }
+                        }
+
+                        let data =
+                            base64::engine::general_purpose::STANDARD.encode(&buf[..n]);
                         let _ = app_handle.emit(&event_name, data);
                     }
                     Err(_) => break,
                 }
             }
-            // 程序結束，從 sessions 中移除
+            // 程序結束，從 sessions 中移除（buffer 保留）
             if let Ok(mut map) = sessions.lock() {
                 map.remove(&aid);
             }
@@ -155,5 +185,23 @@ impl PtyManager {
                 .map_err(|e| format!("resize 失敗: {e}"))?;
         }
         Ok(())
+    }
+
+    pub fn get_buffer(&self, agent_id: &str) -> Result<String, String> {
+        let bufs = self.buffers.lock().map_err(|e| e.to_string())?;
+        if let Some(buffer) = bufs.get(agent_id) {
+            let data = buffer.lock().map_err(|e| e.to_string())?;
+            if data.is_empty() {
+                return Ok(String::new());
+            }
+            Ok(base64::engine::general_purpose::STANDARD.encode(&*data))
+        } else {
+            Ok(String::new())
+        }
+    }
+
+    pub fn is_alive(&self, agent_id: &str) -> bool {
+        let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        sessions.contains_key(agent_id)
     }
 }
