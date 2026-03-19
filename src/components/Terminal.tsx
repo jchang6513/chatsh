@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { invoke } from "@tauri-apps/api/core";
@@ -11,23 +11,6 @@ interface Props {
   onStatusChange: (status: Agent["status"]) => void;
   showShellPane: boolean;
   onToggleShell: () => void;
-  spawnTrigger: number;
-}
-
-// 單一共享 xterm instance（tmux 風格）
-let sharedXterm: XTerm | null = null;
-let sharedFitAddon: FitAddon | null = null;
-let currentUnlisten: (() => void) | null = null;
-let currentAgentId: string | null = null;
-let currentOnData: { dispose: () => void } | null = null;
-
-function decodeBase64(b64: string): Uint8Array {
-  const binary = atob(b64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
 }
 
 export default function Terminal({
@@ -35,183 +18,133 @@ export default function Terminal({
   onStatusChange,
   showShellPane,
   onToggleShell,
-  spawnTrigger,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const onStatusChangeRef = useRef(onStatusChange);
-  onStatusChangeRef.current = onStatusChange;
+  const unlistenRef = useRef<(() => void) | null>(null);
+  const xtermRef = useRef<XTerm | null>(null);
 
-  // 記錄每個 agent 是否已 spawn
-  const spawnedRef = useRef<Set<string>>(new Set());
-
-  const spawnAgent = useCallback(async (ag: Agent) => {
-    if (!sharedXterm || !sharedFitAddon) return;
-    try {
-      sharedFitAddon.fit();
-      await invoke("spawn_agent", {
-        agentId: ag.id,
-        command: ag.command,
-        workingDir: ag.workingDir,
-        cols: sharedXterm.cols,
-        rows: sharedXterm.rows,
-      });
-      spawnedRef.current.add(ag.id);
-      onStatusChangeRef.current("online");
-    } catch (e) {
-      console.error(`[Terminal] spawn_agent 失敗: ${ag.id}`, e);
-      sharedXterm.writeln(`\r\n[錯誤] 無法啟動 PTY: ${e}`);
-    }
-  }, []);
-
-  // 主要 effect：切換 agent 時執行 tmux 風格切換
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    container.innerHTML = "";
+
+    // 每次切換都新建 xterm
+    const xterm = new XTerm({
+      cursorBlink: true,
+      fontSize: 14,
+      fontFamily: "Menlo, Monaco, 'Courier New', monospace",
+      theme: {
+        background: "#0d0d0d",
+        foreground: "#d4d4d4",
+        cursor: "#d4d4d4",
+        selectionBackground: "#2d3a4a",
+      },
+      allowProposedApi: true,
+    });
+    const fitAddon = new FitAddon();
+    xterm.loadAddon(fitAddon);
+    xterm.open(container);
+    xtermRef.current = xterm;
+
+    requestAnimationFrame(() => {
+      fitAddon.fit();
+      xterm.focus();
+    });
+
+    // 鍵盤輸入
+    const disposable = xterm.onData((data) => {
+      if (data === "\x03") {
+        invoke("kill_agent", { agentId: agent.id }).then(() => {
+          onStatusChange("offline");
+          xterm.writeln("\r\n[程序已終止]");
+        });
+        return;
+      }
+      invoke("write_to_agent", { agentId: agent.id, data });
+    });
+
+    // resize
+    const resizeObs = new ResizeObserver(() => {
+      fitAddon.fit();
+      invoke("resize_pty", {
+        agentId: agent.id,
+        cols: xterm.cols,
+        rows: xterm.rows,
+      }).catch(() => {});
+    });
+    resizeObs.observe(container);
 
     let disposed = false;
 
-    const switchTo = async () => {
-      // 1. unlisten 舊的 event
-      if (currentUnlisten) {
-        currentUnlisten();
-        currentUnlisten = null;
-      }
-
-      // 2. 確保 xterm 存在
-      if (!sharedXterm) {
-        sharedXterm = new XTerm({
-          cursorBlink: true,
-          fontSize: 14,
-          fontFamily: "Menlo, Monaco, 'Courier New', monospace",
-          theme: {
-            background: "#0d0d0d",
-            foreground: "#d4d4d4",
-            cursor: "#d4d4d4",
-            selectionBackground: "#2d3a4a",
-          },
-          allowProposedApi: true,
-        });
-        sharedFitAddon = new FitAddon();
-        sharedXterm.loadAddon(sharedFitAddon);
-      }
-
-      // 3. 如果 xterm 尚未 open 或 container 換了，重新 open
-      if (!sharedXterm.element || sharedXterm.element.parentElement !== container) {
-        // 清空 container
-        container.innerHTML = "";
-        const xtermDiv = document.createElement("div");
-        xtermDiv.style.width = "100%";
-        xtermDiv.style.height = "100%";
-        container.appendChild(xtermDiv);
-        sharedXterm.open(xtermDiv);
-      }
-
-      // 4. fit
-      requestAnimationFrame(() => {
-        sharedFitAddon!.fit();
-      });
-
-      // 5. clear xterm 並 replay buffer
-      console.error(`[SWITCH] 切換到 agent: ${agent.id}`);
-      sharedXterm.clear();
-      sharedXterm.reset();
-
-      try {
-        const buf = await invoke<string>("get_buffer", { agentId: agent.id });
-        if (buf && !disposed) {
-          sharedXterm!.write(decodeBase64(buf));
-        }
-      } catch (e) {
-        console.error(`[Terminal] get_buffer 失敗:`, e);
-      }
-
-      if (disposed) return;
-
-      // 6. listen 新 agent 的輸出
-      currentUnlisten = await listen<string>(`pty-output-${agent.id}`, (event) => {
-        sharedXterm!.write(decodeBase64(event.payload));
+    const setup = async () => {
+      // listen PTY output
+      const unlisten = await listen<string>(`pty-output-${agent.id}`, (event) => {
+        const bytes = Uint8Array.from(atob(event.payload), (c) => c.charCodeAt(0));
+        xterm.write(bytes);
       });
 
       if (disposed) {
-        currentUnlisten();
-        currentUnlisten = null;
+        unlisten();
         return;
       }
+      unlistenRef.current = unlisten;
 
-      currentAgentId = agent.id;
-
-      // 7. 如果 agent 尚未 spawn，自動啟動
+      // 確認 PTY 是否在跑
       const alive = await invoke<boolean>("is_agent_alive", { agentId: agent.id });
       if (!alive && !disposed) {
-        await spawnAgent(agent);
+        fitAddon.fit();
+        try {
+          await invoke("spawn_agent", {
+            agentId: agent.id,
+            command: agent.command,
+            workingDir: agent.workingDir,
+            cols: xterm.cols,
+            rows: xterm.rows,
+          });
+          onStatusChange("online");
+        } catch (e) {
+          xterm.writeln(`\r\n[錯誤] 無法啟動: ${e}`);
+        }
       } else if (alive) {
-        spawnedRef.current.add(agent.id);
-        onStatusChangeRef.current("online");
-      }
-
-      // 8. focus
-      if (!disposed) {
-        sharedXterm!.focus();
+        onStatusChange("online");
       }
     };
-
-    switchTo();
-
-    // onData：送鍵盤輸入到當前 agent
-    if (currentOnData) {
-      currentOnData.dispose();
-      currentOnData = null;
-    }
-    currentOnData = sharedXterm?.onData((data) => {
-      if (!currentAgentId) return;
-      if (data === "\x03") {
-        invoke("kill_agent", { agentId: currentAgentId }).then(() => {
-          spawnedRef.current.delete(currentAgentId!);
-          onStatusChangeRef.current("offline");
-          sharedXterm?.writeln("\r\n[程序已終止]");
-        });
-        return;
-      }
-      invoke("write_to_agent", { agentId: currentAgentId, data });
-    }) ?? null;
-
-    // resize 監聽
-    const resizeObserver = new ResizeObserver(() => {
-      if (!sharedFitAddon || !currentAgentId) return;
-      sharedFitAddon.fit();
-      invoke("resize_pty", {
-        agentId: currentAgentId,
-        cols: sharedXterm!.cols,
-        rows: sharedXterm!.rows,
-      }).catch(() => {});
-    });
-    resizeObserver.observe(container);
+    setup();
 
     return () => {
       disposed = true;
-      resizeObserver.disconnect();
-      // 注意：不 unlisten，讓切換時的 switchTo 處理
+      if (unlistenRef.current) {
+        unlistenRef.current();
+        unlistenRef.current = null;
+      }
+      disposable.dispose();
+      resizeObs.disconnect();
+      xterm.dispose();
+      xtermRef.current = null;
     };
-  }, [agent.id, spawnAgent]);
-
-  // 點選已停止的角色時觸發重新 spawn
-  useEffect(() => {
-    if (spawnTrigger === 0) return;
-    if (!spawnedRef.current.has(agent.id)) {
-      spawnAgent(agent);
-    }
-  }, [spawnTrigger, agent.id, agent, spawnAgent]);
+  }, [agent.id]);
 
   const handleRestart = async () => {
-    if (!sharedXterm || !sharedFitAddon) return;
+    const xterm = xtermRef.current;
+    if (!xterm) return;
     try {
       await invoke("kill_agent", { agentId: agent.id });
     } catch {}
-    spawnedRef.current.delete(agent.id);
-    sharedXterm.clear();
-    sharedXterm.reset();
-    sharedXterm.writeln("[重新啟動中...]");
-    await spawnAgent(agent);
+    xterm.clear();
+    xterm.reset();
+    xterm.writeln("[重新啟動中...]");
+    try {
+      await invoke("spawn_agent", {
+        agentId: agent.id,
+        command: agent.command,
+        workingDir: agent.workingDir,
+        cols: xterm.cols,
+        rows: xterm.rows,
+      });
+      onStatusChange("online");
+    } catch (e) {
+      xterm.writeln(`\r\n[錯誤] 無法啟動: ${e}`);
+    }
   };
 
   return (
@@ -246,7 +179,7 @@ export default function Terminal({
       <div
         ref={containerRef}
         className="flex-1 min-h-0 p-1"
-        onClick={() => sharedXterm?.focus()}
+        onClick={() => xtermRef.current?.focus()}
       />
     </div>
   );
