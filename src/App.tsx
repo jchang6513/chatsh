@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
 import ShellPane from "./components/ShellPane";
@@ -28,6 +28,7 @@ export default function App() {
   const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
   const [activeAgentId, setActiveAgentId] = useState<string>("claude");
   const [showShellPane, setShowShellPane] = useState(false);
+  const [spawnTrigger, setSpawnTrigger] = useState(0);
 
   const activeAgent = agents.find((a) => a.id === activeAgentId)!;
 
@@ -37,12 +38,25 @@ export default function App() {
     );
   };
 
+  // 選擇角色時，若已停止則觸發重新 spawn
+  const handleSelectAgent = useCallback(
+    (id: string) => {
+      setActiveAgentId(id);
+      const agent = agents.find((a) => a.id === id);
+      if (agent && agent.status === "offline") {
+        console.log(`[App] 選擇已停止的角色 ${id}，觸發 spawn`);
+        setSpawnTrigger((t) => t + 1);
+      }
+    },
+    [agents]
+  );
+
   return (
     <div className="flex h-screen w-screen bg-[#0d0d0d]">
       <Sidebar
         agents={agents}
         activeAgentId={activeAgentId}
-        onSelect={setActiveAgentId}
+        onSelect={handleSelectAgent}
       />
       <div className="flex flex-col flex-1 min-w-0">
         <Terminal
@@ -50,6 +64,7 @@ export default function App() {
           onStatusChange={(status) => updateAgentStatus(activeAgentId, status)}
           showShellPane={showShellPane}
           onToggleShell={() => setShowShellPane((v) => !v)}
+          spawnTrigger={spawnTrigger}
         />
         {showShellPane && <ShellPane />}
       </div>

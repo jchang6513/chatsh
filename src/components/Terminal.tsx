@@ -11,6 +11,7 @@ interface Props {
   onStatusChange: (status: Agent["status"]) => void;
   showShellPane: boolean;
   onToggleShell: () => void;
+  spawnTrigger: number;
 }
 
 // 每個 agent 對應的 terminal 實例快取
@@ -24,6 +25,7 @@ export default function Terminal({
   onStatusChange,
   showShellPane,
   onToggleShell,
+  spawnTrigger,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const unlistenRef = useRef<(() => void) | null>(null);
@@ -31,6 +33,12 @@ export default function Terminal({
   const spawnAgent = useCallback(async (ag: Agent, xterm: XTerm, fitAddon: FitAddon) => {
     try {
       fitAddon.fit();
+      console.log(`[Terminal] spawn_agent 呼叫中: ${ag.id}`, {
+        command: ag.command,
+        workingDir: ag.workingDir,
+        cols: xterm.cols,
+        rows: xterm.rows,
+      });
       await invoke("spawn_agent", {
         agentId: ag.id,
         command: ag.command,
@@ -38,12 +46,15 @@ export default function Terminal({
         cols: xterm.cols,
         rows: xterm.rows,
       });
+      console.log(`[Terminal] spawn_agent 成功: ${ag.id}`);
       onStatusChange("online");
     } catch (e) {
+      console.error(`[Terminal] spawn_agent 失敗: ${ag.id}`, e);
       xterm.writeln(`\r\n[錯誤] 無法啟動 PTY: ${e}`);
     }
   }, [onStatusChange]);
 
+  // 主要 effect：初始化 terminal、設定 listener、首次 spawn
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -79,30 +90,44 @@ export default function Terminal({
       fitAddon.fit();
     });
 
-    // 監聽 PTY 輸出
+    // 先設定 event listener，再 spawn PTY（修復 race condition）
+    let disposed = false;
     let unlisten: (() => void) | null = null;
-    listen<string>(`pty-output-${agent.id}`, (event) => {
-      // base64 decode PTY 輸出
-      const binary = atob(event.payload);
-      const bytes = new Uint8Array(binary.length);
-      for (let i = 0; i < binary.length; i++) {
-        bytes[i] = binary.charCodeAt(i);
+
+    const setup = async () => {
+      console.log(`[Terminal] 設定 event listener: pty-output-${agent.id}`);
+      const fn = await listen<string>(`pty-output-${agent.id}`, (event) => {
+        console.log(`[Terminal] 收到 pty-output-${agent.id}, length: ${event.payload.length}`);
+        // base64 decode PTY 輸出
+        const binary = atob(event.payload);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+        xterm.write(bytes);
+      });
+
+      if (disposed) {
+        fn();
+        return;
       }
-      xterm.write(bytes);
-    }).then((fn) => {
+
       unlisten = fn;
       unlistenRef.current = fn;
-    });
+      console.log(`[Terminal] event listener 已設定: pty-output-${agent.id}`);
 
-    // 首次啟動 PTY
-    if (!cached.spawned) {
-      cached.spawned = true;
-      spawnAgent(agent, xterm, fitAddon);
-    }
+      // listener 就緒後才 spawn
+      if (!cached!.spawned) {
+        cached!.spawned = true;
+        console.log(`[Terminal] 首次啟動 PTY: ${agent.id}`);
+        await spawnAgent(agent, xterm, fitAddon);
+      }
+    };
+    setup();
 
     // 鍵盤輸入送到 PTY
     const disposable = xterm.onData((data) => {
-      // Ctrl+C 攔截：關閉 terminal，角色變 🔴
+      // Ctrl+C 攔截：關閉 terminal，角色變 offline
       if (data === "\x03") {
         invoke("kill_agent", { agentId: agent.id }).then(() => {
           onStatusChange("offline");
@@ -126,11 +151,23 @@ export default function Terminal({
     resizeObserver.observe(container);
 
     return () => {
+      disposed = true;
       disposable.dispose();
       unlisten?.();
       resizeObserver.disconnect();
     };
   }, [agent.id]);
+
+  // 點選已停止的角色時觸發重新 spawn
+  useEffect(() => {
+    if (spawnTrigger === 0) return;
+    const cached = terminalCache.get(agent.id);
+    if (cached && !cached.spawned) {
+      console.log(`[Terminal] spawnTrigger 觸發，重新啟動: ${agent.id}`);
+      cached.spawned = true;
+      spawnAgent(agent, cached.xterm, cached.fitAddon);
+    }
+  }, [spawnTrigger, agent.id, agent, spawnAgent]);
 
   const handleRestart = async () => {
     const cached = terminalCache.get(agent.id);
