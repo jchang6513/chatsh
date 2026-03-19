@@ -9,7 +9,6 @@
     "beforeBuildCommand": "npm run build"
   },
   "app": {
-    "title": "chat.sh",
     "windows": [
       {
         "title": "chat.sh",
