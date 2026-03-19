@@ -20,6 +20,12 @@ const terminalCache = new Map<
   { xterm: XTerm; fitAddon: FitAddon; spawned: boolean }
 >();
 
+// 每個 agent 的 xterm DOM element（detached 時暫存）
+const terminalDomCache = new Map<string, HTMLElement>();
+
+// detached 容器，不在可見 DOM 中，用來暫存非 active 的 xterm div
+const detachedHolder = document.createElement("div");
+
 export default function Terminal({
   agent,
   onStatusChange,
@@ -54,16 +60,37 @@ export default function Terminal({
     }
   }, [onStatusChange]);
 
+  const prevAgentIdRef = useRef<string | null>(null);
+
   // 主要 effect：初始化 terminal、設定 listener、首次 spawn
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // 清空容器
-    container.innerHTML = "";
+    const prevAgentId = prevAgentIdRef.current;
+    prevAgentIdRef.current = agent.id;
+
+    // 1. 把舊 agent 的 xterm div 移到 detached cache
+    if (prevAgentId && prevAgentId !== agent.id) {
+      const prevDom = terminalDomCache.get(prevAgentId);
+      if (prevDom && prevDom.parentElement === container) {
+        detachedHolder.appendChild(prevDom);
+      }
+    }
 
     let cached = terminalCache.get(agent.id);
-    if (!cached) {
+    const existingDom = terminalDomCache.get(agent.id);
+
+    if (cached && existingDom) {
+      // 2. 已有 cached DOM，直接掛回 container
+      container.appendChild(existingDom);
+      requestAnimationFrame(() => {
+        cached!.fitAddon.fit();
+        cached!.xterm.refresh(0, cached!.xterm.rows - 1);
+        cached!.xterm.focus();
+      });
+    } else {
+      // 3. 第一次建立 xterm
       const xterm = new XTerm({
         cursorBlink: true,
         fontSize: 14,
@@ -80,17 +107,24 @@ export default function Terminal({
       xterm.loadAddon(fitAddon);
       cached = { xterm, fitAddon, spawned: false };
       terminalCache.set(agent.id, cached);
+
+      // 建立 xterm 的 root div 並快取
+      const xtermDiv = document.createElement("div");
+      xtermDiv.style.width = "100%";
+      xtermDiv.style.height = "100%";
+      container.appendChild(xtermDiv);
+      xterm.open(xtermDiv);
+      terminalDomCache.set(agent.id, xtermDiv);
+
+      // 延遲 fit 確保容器有尺寸
+      requestAnimationFrame(() => {
+        fitAddon.fit();
+        xterm.refresh(0, xterm.rows - 1);
+        xterm.focus();
+      });
     }
 
-    const { xterm, fitAddon } = cached;
-    xterm.open(container);
-
-    // 延遲 fit 確保容器有尺寸
-    requestAnimationFrame(() => {
-      fitAddon.fit();
-      xterm.refresh(0, xterm.rows - 1);
-      xterm.focus();
-    });
+    const { xterm, fitAddon } = cached!;
 
     // 先設定 event listener，再 spawn PTY（修復 race condition）
     let disposed = false;
@@ -159,6 +193,11 @@ export default function Terminal({
       disposable.dispose();
       unlisten?.();
       resizeObserver.disconnect();
+      // 切換時把當前 xterm div 移到 detached cache
+      const dom = terminalDomCache.get(agent.id);
+      if (dom && dom.parentElement === container) {
+        detachedHolder.appendChild(dom);
+      }
     };
   }, [agent.id]);
 

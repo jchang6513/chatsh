@@ -57,22 +57,14 @@ export default function App() {
         onSelect={handleSelectAgent}
       />
       <div className="flex flex-col flex-1 min-w-0">
-        {/* 每個 agent 各自有一個 Terminal，用 display 切換，避免重建 DOM */}
-        {agents.map((agent) => (
-          <div
-            key={agent.id}
-            className="flex flex-col flex-1 min-w-0 min-h-0"
-            style={{ display: agent.id === activeAgentId ? "flex" : "none" }}
-          >
-            <Terminal
-              agent={agent}
-              onStatusChange={(status) => updateAgentStatus(agent.id, status)}
-              showShellPane={showShellPane}
-              onToggleShell={() => setShowShellPane((v) => !v)}
-              spawnTrigger={spawnTriggers[agent.id] || 0}
-            />
-          </div>
-        ))}
+        {/* 只渲染一個 Terminal，透過 detached DOM cache 切換 */}
+        <Terminal
+          agent={activeAgent}
+          onStatusChange={(status) => updateAgentStatus(activeAgent.id, status)}
+          showShellPane={showShellPane}
+          onToggleShell={() => setShowShellPane((v) => !v)}
+          spawnTrigger={spawnTriggers[activeAgent.id] || 0}
+        />
         {showShellPane && <ShellPane />}
       </div>
     </div>
