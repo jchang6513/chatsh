@@ -5,9 +5,10 @@ interface Props {
   activeAgentId: string;
   onSelect: (id: string) => void;
   onAdd: () => void;
+  onRemove: (id: string) => void;
 }
 
-export default function Sidebar({ agents, activeAgentId, onSelect, onAdd }: Props) {
+export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemove }: Props) {
   return (
     <div className="w-[260px] min-w-[260px] bg-[#1e1e1e] flex flex-col border-r border-[#333]">
       <div className="px-4 py-3 text-lg font-bold tracking-wide border-b border-[#333]">
@@ -16,12 +17,12 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd }: Prop
 
       <div className="flex-1 overflow-y-auto">
         {agents.map((agent) => (
-          <button
+          <div
             key={agent.id}
-            onClick={() => onSelect(agent.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#2a2a2a] ${
+            className={`group relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#2a2a2a] cursor-pointer ${
               agent.id === activeAgentId ? "bg-[#2d3a4a]" : ""
             }`}
+            onClick={() => onSelect(agent.id)}
           >
             <span className="text-2xl">{agent.emoji}</span>
             <div className="flex-1 min-w-0">
@@ -37,7 +38,18 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd }: Prop
                 </span>
               )}
             </div>
-          </button>
+            {agent.id !== activeAgentId && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(agent.id);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 text-[#888] hover:text-[#f44336] text-sm px-1 transition-opacity"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         ))}
       </div>
 

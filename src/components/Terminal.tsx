@@ -148,7 +148,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
         <span className="text-lg">{agent.emoji}</span>
         <div>
           <div className="text-sm font-semibold text-[#e0e0e0]">{agent.name}</div>
-          <div className="text-xs text-[#4caf50]">
+          <div className={`text-xs ${agent.status === "online" ? "text-[#4caf50]" : "text-[#f44336]"}`}>
             {agent.status === "online" ? "● 執行中" : "● 已停止"}
           </div>
         </div>

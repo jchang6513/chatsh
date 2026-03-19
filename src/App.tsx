@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
 import ShellPane from "./components/ShellPane";
@@ -41,6 +42,17 @@ export default function App() {
     setActiveAgentId(id);
   }, []);
 
+  const handleRemoveAgent = useCallback(async (id: string) => {
+    try { await invoke("kill_agent", { agentId: id }); } catch {}
+    setAgents((prev) => {
+      const next = prev.filter((a) => a.id !== id);
+      setActiveAgentId((currentId) =>
+        currentId === id ? (next[0]?.id ?? "") : currentId
+      );
+      return next;
+    });
+  }, []);
+
   return (
     <div className="flex h-screen w-screen bg-[#0d0d0d]">
       <Sidebar
@@ -48,8 +60,14 @@ export default function App() {
         activeAgentId={activeAgentId}
         onSelect={handleSelectAgent}
         onAdd={() => setShowAddModal(true)}
+        onRemove={handleRemoveAgent}
       />
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
+        {agents.length === 0 && (
+          <div className="flex-1 flex items-center justify-center text-[#888] text-lg">
+            點選 <span className="mx-1 text-[#4a9eff]">+ 新增角色</span> 開始使用
+          </div>
+        )}
         {/* 每個 agent 有自己的 Terminal，用 visibility 切換 */}
         {agents.map((agent) => (
           <div
