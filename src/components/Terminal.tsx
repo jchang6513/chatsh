@@ -46,10 +46,18 @@ export default function Terminal({
     xterm.open(container);
     xtermRef.current = xterm;
 
-    requestAnimationFrame(() => {
-      fitAddon.fit();
+    // 給 CSS 足夠時間計算高度再 fit
+    setTimeout(() => {
+      if (container.offsetHeight > 0) {
+        fitAddon.fit();
+      } else {
+        // container 高度還是 0，再等一下
+        requestAnimationFrame(() => {
+          fitAddon.fit();
+        });
+      }
       xterm.focus();
-    });
+    }, 100);
 
     // 鍵盤輸入
     const disposable = xterm.onData((data) => {
