@@ -1,30 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Agent } from "../types";
 
 interface Props {
   onAdd: (agent: Agent) => void;
   onClose: () => void;
+  initialValues?: Partial<Agent>;
 }
 
-export default function AddAgentModal({ onAdd, onClose }: Props) {
-  const [name, setName] = useState("");
-  const [command, setCommand] = useState("");
-  const [workingDir, setWorkingDir] = useState("~");
-  const [llmLabel, setLlmLabel] = useState("");
-  const [emoji, setEmoji] = useState("🤖");
+export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) {
+  const isEditing = !!initialValues?.id;
+  const [name, setName] = useState(initialValues?.name ?? "");
+  const [command, setCommand] = useState(initialValues?.command?.join(" ") ?? "");
+  const [workingDir, setWorkingDir] = useState(initialValues?.workingDir ?? "~");
+  const [llmLabel, setLlmLabel] = useState(initialValues?.llmLabel ?? "");
+  const [emoji, setEmoji] = useState(initialValues?.emoji ?? "🤖");
+
+  useEffect(() => {
+    if (initialValues) {
+      setName(initialValues.name ?? "");
+      setCommand(initialValues.command?.join(" ") ?? "");
+      setWorkingDir(initialValues.workingDir ?? "~");
+      setLlmLabel(initialValues.llmLabel ?? "");
+      setEmoji(initialValues.emoji ?? "🤖");
+    }
+  }, [initialValues]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !command.trim()) return;
 
     const agent: Agent = {
-      id: Date.now().toString(),
+      id: initialValues?.id ?? Date.now().toString(),
       name: name.trim(),
       emoji: emoji || "🤖",
       command: command.split(" ").filter(Boolean),
       workingDir: workingDir.trim() || "~",
       llmLabel: llmLabel.trim() || undefined,
-      status: "offline",
+      status: initialValues?.status ?? "offline",
     };
     onAdd(agent);
   };
@@ -38,7 +50,7 @@ export default function AddAgentModal({ onAdd, onClose }: Props) {
         className="bg-[#1e1e1e] border border-[#444] rounded-lg w-[400px] p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4">新增角色</h2>
+        <h2 className="text-lg font-bold mb-4">{isEditing ? "編輯角色" : "新增角色"}</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <label className="flex flex-col gap-1 text-sm">
             名稱
@@ -102,7 +114,7 @@ export default function AddAgentModal({ onAdd, onClose }: Props) {
               type="submit"
               className="px-4 py-2 rounded text-sm bg-blue-600 hover:bg-blue-700 transition-colors"
             >
-              新增
+              {isEditing ? "儲存" : "新增"}
             </button>
           </div>
         </form>

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
@@ -26,11 +26,30 @@ const DEFAULT_AGENTS: Agent[] = [
   },
 ];
 
+const STORAGE_KEY = "chatsh_agents";
+
+function loadAgents(): Agent[] {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved).map((a: Agent) => ({ ...a, status: "offline" }));
+    }
+  } catch {}
+  return DEFAULT_AGENTS;
+}
+
 export default function App() {
-  const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
-  const [activeAgentId, setActiveAgentId] = useState<string>("claude");
+  const [agents, setAgents] = useState<Agent[]>(loadAgents);
+  const [activeAgentId, setActiveAgentId] = useState<string>(
+    () => loadAgents()[0]?.id ?? ""
+  );
   const [showShellPane, setShowShellPane] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
+  }, [agents]);
 
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
     setAgents((prev) =>
@@ -53,6 +72,16 @@ export default function App() {
     });
   }, []);
 
+  const handleEditAgent = useCallback((agent: Agent) => {
+    setEditingAgent(agent);
+  }, []);
+
+  const handleReorder = useCallback((newAgents: Agent[]) => {
+    setAgents(newAgents);
+  }, []);
+
+  const showModal = showAddModal || editingAgent !== null;
+
   return (
     <div className="flex h-screen w-screen bg-[#0d0d0d]">
       <Sidebar
@@ -61,6 +90,8 @@ export default function App() {
         onSelect={handleSelectAgent}
         onAdd={() => setShowAddModal(true)}
         onRemove={handleRemoveAgent}
+        onEdit={handleEditAgent}
+        onReorder={handleReorder}
       />
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {agents.length === 0 && (
@@ -68,7 +99,6 @@ export default function App() {
             點選 <span className="mx-1 text-[#4a9eff]">+ 新增角色</span> 開始使用
           </div>
         )}
-        {/* 每個 agent 有自己的 Terminal，用 visibility 切換 */}
         {agents.map((agent) => (
           <div
             key={agent.id}
@@ -93,14 +123,25 @@ export default function App() {
         ))}
         {showShellPane && <ShellPane />}
       </div>
-      {showAddModal && (
+      {showModal && (
         <AddAgentModal
+          initialValues={editingAgent ?? undefined}
           onAdd={(agent) => {
-            setAgents((prev) => [...prev, agent]);
-            setActiveAgentId(agent.id);
-            setShowAddModal(false);
+            if (editingAgent) {
+              setAgents((prev) =>
+                prev.map((a) => (a.id === agent.id ? agent : a))
+              );
+              setEditingAgent(null);
+            } else {
+              setAgents((prev) => [...prev, agent]);
+              setActiveAgentId(agent.id);
+              setShowAddModal(false);
+            }
           }}
-          onClose={() => setShowAddModal(false)}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingAgent(null);
+          }}
         />
       )}
     </div>
