@@ -28,7 +28,7 @@ export default function App() {
   const [agents, setAgents] = useState<Agent[]>(DEFAULT_AGENTS);
   const [activeAgentId, setActiveAgentId] = useState<string>("claude");
   const [showShellPane, setShowShellPane] = useState(false);
-  const [spawnTrigger, setSpawnTrigger] = useState(0);
+  const [spawnTriggers, setSpawnTriggers] = useState<Record<string, number>>({});
 
   const activeAgent = agents.find((a) => a.id === activeAgentId)!;
 
@@ -38,14 +38,12 @@ export default function App() {
     );
   };
 
-  // 選擇角色時，若已停止則觸發重新 spawn
   const handleSelectAgent = useCallback(
     (id: string) => {
       setActiveAgentId(id);
       const agent = agents.find((a) => a.id === id);
       if (agent && agent.status === "offline") {
-        console.log(`[App] 選擇已停止的角色 ${id}，觸發 spawn`);
-        setSpawnTrigger((t) => t + 1);
+        setSpawnTriggers((t) => ({ ...t, [id]: (t[id] || 0) + 1 }));
       }
     },
     [agents]
@@ -59,13 +57,22 @@ export default function App() {
         onSelect={handleSelectAgent}
       />
       <div className="flex flex-col flex-1 min-w-0">
-        <Terminal
-          agent={activeAgent}
-          onStatusChange={(status) => updateAgentStatus(activeAgentId, status)}
-          showShellPane={showShellPane}
-          onToggleShell={() => setShowShellPane((v) => !v)}
-          spawnTrigger={spawnTrigger}
-        />
+        {/* 每個 agent 各自有一個 Terminal，用 display 切換，避免重建 DOM */}
+        {agents.map((agent) => (
+          <div
+            key={agent.id}
+            className="flex flex-col flex-1 min-w-0 min-h-0"
+            style={{ display: agent.id === activeAgentId ? "flex" : "none" }}
+          >
+            <Terminal
+              agent={agent}
+              onStatusChange={(status) => updateAgentStatus(agent.id, status)}
+              showShellPane={showShellPane}
+              onToggleShell={() => setShowShellPane((v) => !v)}
+              spawnTrigger={spawnTriggers[agent.id] || 0}
+            />
+          </div>
+        ))}
         {showShellPane && <ShellPane />}
       </div>
     </div>
