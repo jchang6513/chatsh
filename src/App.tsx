@@ -9,7 +9,7 @@ const DEFAULT_AGENTS: Agent[] = [
     id: "claude",
     name: "工程助手",
     emoji: "🤖",
-    command: ["claude", "--dangerously-skip-permissions"],
+    command: ["claude"],
     workingDir: "/Users/jcssecondmind/Workspace/chatsh",
     llmLabel: "Claude",
     status: "offline",

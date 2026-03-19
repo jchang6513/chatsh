@@ -88,6 +88,8 @@ export default function Terminal({
     // 延遲 fit 確保容器有尺寸
     requestAnimationFrame(() => {
       fitAddon.fit();
+      xterm.refresh(0, xterm.rows - 1);
+      xterm.focus();
     });
 
     // 先設定 event listener，再 spawn PTY（修復 race condition）
@@ -95,6 +97,8 @@ export default function Terminal({
     let unlisten: (() => void) | null = null;
 
     const setup = async () => {
+      console.log(`[Terminal] 開始 setup, agent:`, agent.id, agent.command);
+      console.log(`[Terminal] window.__TAURI__ 存在:`, !!(window as any).__TAURI__);
       console.log(`[Terminal] 設定 event listener: pty-output-${agent.id}`);
       const fn = await listen<string>(`pty-output-${agent.id}`, (event) => {
         console.log(`[Terminal] 收到 pty-output-${agent.id}, length: ${event.payload.length}`);
@@ -213,7 +217,14 @@ export default function Terminal({
       </div>
 
       {/* Terminal 容器 */}
-      <div ref={containerRef} className="flex-1 min-h-0 p-1" />
+      <div
+        ref={containerRef}
+        className="flex-1 min-h-0 p-1"
+        onClick={() => {
+          const cached = terminalCache.get(agent.id);
+          if (cached) cached.xterm.focus();
+        }}
+      />
     </div>
   );
 }

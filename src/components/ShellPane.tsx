@@ -80,7 +80,11 @@ export default function ShellPane() {
 
   return (
     <div className="h-[250px] border-t border-[#333] bg-[#111]">
-      <div ref={containerRef} className="h-full p-1" />
+      <div
+        ref={containerRef}
+        className="h-full p-1"
+        onClick={() => shellTerminal?.xterm.focus()}
+      />
     </div>
   );
 }
