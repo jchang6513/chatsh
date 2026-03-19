@@ -29,27 +29,15 @@ export default function App() {
   const [activeAgentId, setActiveAgentId] = useState<string>("claude");
   const [showShellPane, setShowShellPane] = useState(false);
 
-  const activeAgent = agents.find((a) => a.id === activeAgentId)!
-
-  // 切換測試
-  useEffect(() => {
-    const t1 = setTimeout(() => setActiveAgentId("shell"), 5000)
-    const t2 = setTimeout(() => setActiveAgentId("claude"), 9000)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
-  }, []);
-
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
     setAgents((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status } : a))
     );
   };
 
-  const handleSelectAgent = useCallback(
-    (id: string) => {
-      setActiveAgentId(id);
-    },
-    []
-  );
+  const handleSelectAgent = useCallback((id: string) => {
+    setActiveAgentId(id);
+  }, []);
 
   return (
     <div className="flex h-screen w-screen bg-[#0d0d0d]">
@@ -58,13 +46,30 @@ export default function App() {
         activeAgentId={activeAgentId}
         onSelect={handleSelectAgent}
       />
-      <div className="flex flex-col flex-1 min-w-0">
-        <Terminal
-          agent={activeAgent}
-          onStatusChange={(status) => updateAgentStatus(activeAgent.id, status)}
-          showShellPane={showShellPane}
-          onToggleShell={() => setShowShellPane((v) => !v)}
-        />
+      <div className="flex flex-col flex-1 min-w-0 min-h-0">
+        {/* 每個 agent 有自己的 Terminal，用 visibility 切換 */}
+        {agents.map((agent) => (
+          <div
+            key={agent.id}
+            className="flex flex-col flex-1 min-w-0 min-h-0"
+            style={{
+              visibility: agent.id === activeAgentId ? "visible" : "hidden",
+              position: agent.id === activeAgentId ? "relative" : "absolute",
+              width: "100%",
+              height: "100%",
+              top: 0,
+              left: 0,
+            }}
+          >
+            <Terminal
+              agent={agent}
+              isActive={agent.id === activeAgentId}
+              onStatusChange={(status) => updateAgentStatus(agent.id, status)}
+              showShellPane={showShellPane}
+              onToggleShell={() => setShowShellPane((v) => !v)}
+            />
+          </div>
+        ))}
         {showShellPane && <ShellPane />}
       </div>
     </div>
