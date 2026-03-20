@@ -12,7 +12,7 @@ export default function ClaudeMdEditor({ agent, onClose }: Props) {
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const filePath = `${agent.workingDir}/CLAUDE.md`
+  const filePath = `~/.chatsh/agents/${agent.id}/CLAUDE.md`
 
   useEffect(() => {
     invoke<string>("read_file", { path: filePath })
@@ -151,7 +151,7 @@ export default function ClaudeMdEditor({ agent, onClose }: Props) {
             flexShrink: 0,
           }}
         >
-          此檔案會在下次啟動 Claude Code 時自動載入
+          此 CLAUDE.md 為此 agent 專屬，不影響專案目錄的設定
         </div>
       </div>
 

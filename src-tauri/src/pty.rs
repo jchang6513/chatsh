@@ -63,11 +63,25 @@ impl PtyManager {
             working_dir.to_string()
         };
 
-        let mut cmd = CommandBuilder::new(&command[0]);
-        if command.len() > 1 {
-            cmd.args(&command[1..]);
+        // 若是 claude，cwd 改為 agent 專屬目錄，加 --add-dir 指向原始 workingDir
+        let (effective_working_dir, effective_command) =
+            if command.first().map(|s| s.as_str()) == Some("claude") {
+                let home = std::env::var("HOME").unwrap_or_default();
+                let agent_dir = format!("{}/.chatsh/agents/{}", home, agent_id);
+                std::fs::create_dir_all(&agent_dir).ok();
+                let mut cmd = command.to_vec();
+                cmd.push("--add-dir".to_string());
+                cmd.push(expanded_dir.clone());
+                (agent_dir, cmd)
+            } else {
+                (expanded_dir, command.to_vec())
+            };
+
+        let mut cmd = CommandBuilder::new(&effective_command[0]);
+        if effective_command.len() > 1 {
+            cmd.args(&effective_command[1..]);
         }
-        cmd.cwd(&expanded_dir);
+        cmd.cwd(&effective_working_dir);
 
         // 繼承環境變數
         for (key, value) in std::env::vars() {

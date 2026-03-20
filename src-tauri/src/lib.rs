@@ -108,6 +108,77 @@ fn write_file(path: String, content: String) -> Result<(), String> {
     std::fs::write(&expanded, content).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn schedule_deletion(agent_id: String) -> Result<(), String> {
+    let home = std::env::var("HOME").unwrap_or_default();
+    let pending_path = format!("{}/.chatsh/pending_deletion.json", home);
+
+    let mut pending: Vec<serde_json::Value> = if std::path::Path::new(&pending_path).exists() {
+        let content = std::fs::read_to_string(&pending_path).unwrap_or_default();
+        serde_json::from_str(&content).unwrap_or_default()
+    } else {
+        vec![]
+    };
+
+    let ts = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    pending.push(serde_json::json!({
+        "agentId": agent_id,
+        "deletedAt": ts
+    }));
+
+    if let Some(parent) = std::path::Path::new(&pending_path).parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(&pending_path, serde_json::to_string_pretty(&pending).unwrap())
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn cleanup_deleted_agents() -> Result<u32, String> {
+    let home = std::env::var("HOME").unwrap_or_default();
+    let pending_path = format!("{}/.chatsh/pending_deletion.json", home);
+
+    if !std::path::Path::new(&pending_path).exists() {
+        return Ok(0);
+    }
+
+    let content = std::fs::read_to_string(&pending_path).map_err(|e| e.to_string())?;
+    let pending: Vec<serde_json::Value> = serde_json::from_str(&content).unwrap_or_default();
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let seven_days = 7 * 24 * 60 * 60;
+    let mut cleaned = 0u32;
+    let mut remaining = vec![];
+
+    for item in pending {
+        let agent_id = item["agentId"].as_str().unwrap_or_default();
+        let deleted_at = item["deletedAt"].as_u64().unwrap_or(0);
+
+        if now - deleted_at > seven_days {
+            let dir = format!("{}/.chatsh/agents/{}", home, agent_id);
+            if std::path::Path::new(&dir).exists() {
+                let _ = std::fs::remove_dir_all(&dir);
+                cleaned += 1;
+            }
+        } else {
+            remaining.push(item);
+        }
+    }
+
+    std::fs::write(&pending_path, serde_json::to_string_pretty(&remaining).unwrap())
+        .map_err(|e| e.to_string())?;
+
+    Ok(cleaned)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -124,6 +195,8 @@ pub fn run() {
             scan_available_agents,
             read_file,
             write_file,
+            schedule_deletion,
+            cleanup_deleted_agents,
         ])
         .run(tauri::generate_context!())
         .expect("啟動 Tauri 應用程式失敗");

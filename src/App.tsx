@@ -53,6 +53,10 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
   }, [agents]);
 
+  useEffect(() => {
+    invoke("cleanup_deleted_agents").catch(() => {});
+  }, []);
+
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
     setAgents((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status } : a))
@@ -65,6 +69,7 @@ export default function App() {
 
   const handleRemoveAgent = useCallback(async (id: string) => {
     try { await invoke("kill_agent", { agentId: id }); } catch {}
+    await invoke("schedule_deletion", { agentId: id }).catch(() => {});
     setAgents((prev) => {
       const next = prev.filter((a) => a.id !== id);
       setActiveAgentId((currentId) =>
