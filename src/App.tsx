@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
-import ShellPane from "./components/ShellPane";
+import SingleShell from "./components/SingleShell";
 import StatusBar from "./components/StatusBar";
 import AddAgentModal from "./components/AddAgentModal";
 import ClaudeMdEditor from "./components/ClaudeMdEditor";
@@ -45,10 +45,37 @@ export default function App() {
   const [activeAgentId, setActiveAgentId] = useState<string>(
     () => loadAgents()[0]?.id ?? ""
   );
-  const [activeTabs, setActiveTabs] = useState<Record<string, "terminal" | "shell">>({});
-  const getTab = (id: string) => activeTabs[id] ?? "terminal";
-  const setTab = (id: string, tab: "terminal" | "shell") =>
-    setActiveTabs(prev => ({ ...prev, [id]: tab }));
+  const [shellSessions, setShellSessions] = useState<Record<string, string[]>>({});
+  const [activeTabMap, setActiveTabMap] = useState<Record<string, string>>({});
+
+  const getActivePanelTab = (agentId: string) => activeTabMap[agentId] ?? "terminal";
+  const setActivePanelTab = (agentId: string, tab: string) =>
+    setActiveTabMap(prev => ({ ...prev, [agentId]: tab }));
+
+  const addShellToAgent = (agentId: string) => {
+    const shellId = `__shell_${agentId}_${Date.now()}__`;
+    setShellSessions(prev => ({ ...prev, [agentId]: [...(prev[agentId] ?? []), shellId] }));
+    setActivePanelTab(agentId, shellId);
+  };
+
+  const removeShellFromAgent = (agentId: string, shellId: string) => {
+    setShellSessions(prev => {
+      const sessions = prev[agentId] ?? [];
+      const idx = sessions.indexOf(shellId);
+      const next = sessions.filter(id => id !== shellId);
+      // 返回前一個，沒有前一個就回 terminal
+      const prevTab = idx > 0 ? sessions[idx - 1] : "terminal";
+      setActivePanelTab(agentId, prevTab);
+      return { ...prev, [agentId]: next };
+    });
+  };
+
+  // Shell 分頁名稱（自訂）
+  const [shellNames, setShellNames] = useState<Record<string, string>>({});
+  const getShellName = (shellId: string, idx: number) => shellNames[shellId] ?? `Shell ${idx + 1}`;
+  const renameShell = (shellId: string, name: string) =>
+    setShellNames(prev => ({ ...prev, [shellId]: name }));
+
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
@@ -130,44 +157,83 @@ export default function App() {
                 borderTop: "2px solid var(--green)",
               }}
             >
-              {/* Panel label bar */}
+              {/* Panel tab bar */}
               <div style={{
+                height: 28,
                 display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                height: 20,
-                padding: "0 10px",
+                alignItems: "stretch",
                 borderBottom: "1px solid var(--border)",
                 flexShrink: 0,
                 fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
                 fontSize: 10,
-                letterSpacing: "0.08em",
+                letterSpacing: "0.06em",
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-                  <span style={{ color: "var(--green)", marginRight: 8 }}>─ {agent.name.toUpperCase()} ─</span>
-                  {["terminal", "shell"].map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setTab(agent.id, tab as "terminal" | "shell")}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        borderBottom: getTab(agent.id) === tab ? "1px solid var(--green)" : "1px solid transparent",
-                        color: getTab(agent.id) === tab ? "var(--green)" : "var(--muted)",
-                        fontFamily: "monospace",
-                        fontSize: 9,
-                        padding: "0 8px",
-                        cursor: "pointer",
-                        letterSpacing: "0.08em",
-                        height: "100%",
-                      }}
-                    >
-                      {tab.toUpperCase()}
-                    </button>
-                  ))}
+                {/* Agent terminal tab */}
+                <div
+                  onClick={() => setActivePanelTab(agent.id, "terminal")}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 4, padding: "0 12px",
+                    cursor: "pointer",
+                    borderRight: "1px solid var(--border)",
+                    borderBottom: getActivePanelTab(agent.id) === "terminal"
+                      ? "2px solid var(--green)" : "2px solid transparent",
+                    color: getActivePanelTab(agent.id) === "terminal" ? "var(--green)" : "var(--muted)",
+                  }}
+                >
+                  <span style={{ border: "1px solid currentColor", padding: "0 2px", fontSize: 9 }}>
+                    {agent.name[0].toUpperCase()}
+                  </span>
+                  {agent.name}
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ color: "var(--muted)" }}>{agent.workingDir}</span>
+
+                {/* Shell tabs */}
+                {(shellSessions[agent.id] ?? []).map((shellId, idx) => (
+                  <div
+                    key={shellId}
+                    onClick={() => setActivePanelTab(agent.id, shellId)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 4, padding: "0 10px",
+                      cursor: "pointer",
+                      borderRight: "1px solid var(--border)",
+                      borderBottom: getActivePanelTab(agent.id) === shellId
+                        ? "2px solid var(--green)" : "2px solid transparent",
+                      color: getActivePanelTab(agent.id) === shellId ? "var(--green)" : "var(--muted)",
+                    }}
+                  >
+                    <span
+                      onDoubleClick={e => {
+                        e.stopPropagation();
+                        const cur = getShellName(shellId, idx);
+                        const name = window.prompt("分頁名稱", cur);
+                        if (name !== null && name.trim()) renameShell(shellId, name.trim());
+                      }}
+                      title="雙擊重命名"
+                    >{getShellName(shellId, idx)}</span>
+                    <span
+                      onClick={e => { e.stopPropagation(); removeShellFromAgent(agent.id, shellId); }}
+                      style={{ opacity: 0.4, cursor: "pointer", marginLeft: 2, fontSize: 11 }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.color = "var(--red)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = "0.4"; e.currentTarget.style.color = ""; }}
+                    >×</span>
+                  </div>
+                ))}
+
+                {/* + add shell */}
+                <button
+                  onClick={() => addShellToAgent(agent.id)}
+                  style={{
+                    padding: "0 10px", background: "transparent", border: "none",
+                    borderRight: "1px solid var(--border)", color: "var(--muted)",
+                    fontFamily: "monospace", fontSize: 13, cursor: "pointer",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.color = "var(--green)")}
+                  onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}
+                  title="新增 Shell"
+                >+ shell</button>
+
+                {/* 右側工具按鈕 */}
+                <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, padding: "0 10px", borderLeft: "1px solid var(--border)" }}>
+                  <span style={{ color: "var(--muted)", fontSize: 9 }}>{agent.workingDir}</span>
                   {agent.command[0] === "claude" && (
                     <button
                       onClick={() => setShowClaudeMd(true)}
@@ -211,18 +277,22 @@ export default function App() {
                 </div>
               </div>
               {/* Terminal（visibility 切換，不銷毀） */}
-              <div style={{ flex: 1, display: getTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0 }}>
+              <div style={{ flex: 1, display: getActivePanelTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0 }}>
                 <Terminal
                   agent={agent}
-                  isActive={agent.id === activeAgentId && getTab(agent.id) === "terminal"}
+                  isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === "terminal"}
                   onStatusChange={(status) => updateAgentStatus(agent.id, status)}
                   restartKey={restartKeys[agent.id] ?? 0}
                 />
               </div>
-              {/* Shell（visibility 切換） */}
-              <div style={{ flex: 1, display: getTab(agent.id) === "shell" ? "flex" : "none", minHeight: 0 }}>
-                <ShellPane />
-              </div>
+              {/* Shell tabs（各自獨立，visibility 切換） */}
+              {(shellSessions[agent.id] ?? []).map(shellId => (
+                <div key={shellId} style={{ flex: 1, display: getActivePanelTab(agent.id) === shellId ? "flex" : "none", minHeight: 0, position: "relative" }}>
+                  <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+                    <SingleShell sessionId={shellId} isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === shellId} />
+                  </div>
+                </div>
+              ))}
             </div>
           ))}
         </div>
