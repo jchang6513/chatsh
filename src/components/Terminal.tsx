@@ -13,9 +13,10 @@ interface Props {
   onStatusChange: (status: Agent["status"]) => void;
   showShellPane: boolean;
   onToggleShell: () => void;
+  onOpenClaudeMd?: () => void;
 }
 
-export default function Terminal({ agent, isActive, onStatusChange, showShellPane, onToggleShell }: Props) {
+export default function Terminal({ agent, isActive, onStatusChange, showShellPane, onToggleShell, onOpenClaudeMd }: Props) {
   const { scheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
@@ -203,6 +204,28 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
           </div>
         </div>
         <div className="ml-auto flex gap-2">
+          {agent.command[0] === "claude" && onOpenClaudeMd && (
+            <button
+              onClick={onOpenClaudeMd}
+              title="編輯 CLAUDE.md"
+              className="px-2 py-1 text-xs rounded"
+              style={{
+                border: "1px solid var(--border)",
+                background: "var(--surface)",
+                color: "var(--muted)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = "var(--blue)";
+                e.currentTarget.style.color = "var(--blue)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.color = "var(--muted)";
+              }}
+            >
+              📋 CLAUDE.md
+            </button>
+          )}
           <button
             onClick={handleRestart}
             className="px-2 py-1 text-xs rounded"

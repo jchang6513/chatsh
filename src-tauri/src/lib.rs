@@ -93,6 +93,21 @@ fn scan_available_agents() -> Vec<serde_json::Value> {
         .collect()
 }
 
+#[tauri::command]
+fn read_file(path: String) -> Result<String, String> {
+    let expanded = path.replace("~", &std::env::var("HOME").unwrap_or_default());
+    std::fs::read_to_string(&expanded).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn write_file(path: String, content: String) -> Result<(), String> {
+    let expanded = path.replace("~", &std::env::var("HOME").unwrap_or_default());
+    if let Some(parent) = std::path::Path::new(&expanded).parent() {
+        std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+    }
+    std::fs::write(&expanded, content).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -107,6 +122,8 @@ pub fn run() {
             resize_pty,
             is_agent_alive,
             scan_available_agents,
+            read_file,
+            write_file,
         ])
         .run(tauri::generate_context!())
         .expect("啟動 Tauri 應用程式失敗");

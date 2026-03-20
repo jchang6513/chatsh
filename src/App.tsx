@@ -4,6 +4,7 @@ import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
 import ShellPane from "./components/ShellPane";
 import AddAgentModal from "./components/AddAgentModal";
+import ClaudeMdEditor from "./components/ClaudeMdEditor";
 import type { Agent } from "./types";
 
 const DEFAULT_AGENTS: Agent[] = [
@@ -46,6 +47,7 @@ export default function App() {
   const [showShellPane, setShowShellPane] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [showClaudeMd, setShowClaudeMd] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
@@ -80,6 +82,7 @@ export default function App() {
     setAgents(newAgents);
   }, []);
 
+  const activeAgent = agents.find(a => a.id === activeAgentId);
   const showModal = showAddModal || editingAgent !== null;
 
   return (
@@ -118,11 +121,18 @@ export default function App() {
               onStatusChange={(status) => updateAgentStatus(agent.id, status)}
               showShellPane={showShellPane}
               onToggleShell={() => setShowShellPane((v) => !v)}
+              onOpenClaudeMd={() => setShowClaudeMd(true)}
             />
           </div>
         ))}
         {showShellPane && <ShellPane />}
       </div>
+      {showClaudeMd && activeAgent && (
+        <ClaudeMdEditor
+          agent={activeAgent}
+          onClose={() => setShowClaudeMd(false)}
+        />
+      )}
       {showModal && (
         <AddAgentModal
           initialValues={editingAgent ?? undefined}
