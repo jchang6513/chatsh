@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
@@ -6,6 +6,8 @@ import SingleShell from "./components/SingleShell";
 import StatusBar from "./components/StatusBar";
 import AddAgentModal from "./components/AddAgentModal";
 import ClaudeMdEditor from "./components/ClaudeMdEditor";
+import CommandPalette from "./components/CommandPalette";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import type { Agent } from "./types";
 
 const DEFAULT_AGENTS: Agent[] = [
@@ -101,6 +103,8 @@ export default function App() {
   const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
   const bumpRestart = (id: string) => setRestartKeys(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
 
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
   }, [agents]);
@@ -143,6 +147,56 @@ export default function App() {
 
   const activeAgent = agents.find(a => a.id === activeAgentId);
   const showModal = showAddModal || editingAgent !== null;
+
+  // 全域鍵盤快捷鍵
+  const keyHandlers = useMemo(() => ({
+    onSelectAgent: (index: number) => {
+      if (index < agents.length) setActiveAgentId(agents[index].id)
+    },
+    onPrevAgent: () => {
+      const idx = agents.findIndex(a => a.id === activeAgentId)
+      if (idx > 0) setActiveAgentId(agents[idx - 1].id)
+    },
+    onNextAgent: () => {
+      const idx = agents.findIndex(a => a.id === activeAgentId)
+      if (idx < agents.length - 1) setActiveAgentId(agents[idx + 1].id)
+    },
+    onNewAgent: () => setShowAddModal(true),
+    onRestartAgent: async () => {
+      if (!activeAgentId) return
+      try { await invoke("kill_agent", { agentId: activeAgentId }) } catch {}
+      updateAgentStatus(activeAgentId, "offline")
+      bumpRestart(activeAgentId)
+    },
+    onOpenClaudeMd: () => {
+      if (activeAgent?.command[0] === "claude") setShowClaudeMd(prev => !prev)
+    },
+    onNewShell: () => { if (activeAgentId) addShellToAgent(activeAgentId) },
+    onCloseShell: () => {
+      if (!activeAgentId) return
+      const currentTab = getActivePanelTab(activeAgentId)
+      if (currentTab !== "terminal") removeShellFromAgent(activeAgentId, currentTab)
+    },
+    onPrevShell: () => {
+      if (!activeAgentId) return
+      const sessions = shellSessions[activeAgentId] ?? []
+      const allTabs = ["terminal", ...sessions]
+      const currentTab = getActivePanelTab(activeAgentId)
+      const idx = allTabs.indexOf(currentTab)
+      if (idx > 0) setActivePanelTab(activeAgentId, allTabs[idx - 1])
+    },
+    onNextShell: () => {
+      if (!activeAgentId) return
+      const sessions = shellSessions[activeAgentId] ?? []
+      const allTabs = ["terminal", ...sessions]
+      const currentTab = getActivePanelTab(activeAgentId)
+      const idx = allTabs.indexOf(currentTab)
+      if (idx < allTabs.length - 1) setActivePanelTab(activeAgentId, allTabs[idx + 1])
+    },
+    onToggleCommandPalette: () => setShowCommandPalette(prev => !prev),
+  }), [agents, activeAgentId, activeAgent, shellSessions, activeTabMap])
+
+  useKeyboardShortcuts(keyHandlers)
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)" }}>
@@ -347,6 +401,14 @@ export default function App() {
         <ClaudeMdEditor
           agent={activeAgent}
           onClose={() => setShowClaudeMd(false)}
+        />
+      )}
+      {showCommandPalette && (
+        <CommandPalette
+          agents={agents}
+          activeAgentId={activeAgentId}
+          onSelect={handleSelectAgent}
+          onClose={() => setShowCommandPalette(false)}
         />
       )}
       {showModal && (
