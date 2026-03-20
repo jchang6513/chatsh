@@ -119,9 +119,8 @@ export default function App() {
     setActiveAgentId(id);
   }, []);
 
-  const handleRemoveAgent = useCallback(async (id: string) => {
-    try { await invoke("kill_agent", { agentId: id }); } catch {}
-    await invoke("schedule_deletion", { agentId: id }).catch(() => {});
+  const handleRemoveAgent = useCallback((id: string) => {
+    // 先同步更新 UI
     setAgents((prev) => {
       const next = prev.filter((a) => a.id !== id);
       setActiveAgentId((currentId) =>
@@ -129,6 +128,9 @@ export default function App() {
       );
       return next;
     });
+    // 背景清理，不阻塞 UI
+    invoke("kill_agent", { agentId: id }).catch(() => {});
+    invoke("schedule_deletion", { agentId: id }).catch(() => {});
   }, []);
 
   const handleEditAgent = useCallback((agent: Agent) => {
