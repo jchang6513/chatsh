@@ -45,7 +45,7 @@ export default function Avatar({ name, imageUrl, size = 36 }: AvatarProps) {
       justifyContent: "center",
       fontSize: Math.round(size * 0.42),
       fontWeight: 700,
-      color: "#0d0d0d",
+      color: "var(--bg)",
       flexShrink: 0,
       userSelect: "none",
       fontFamily: "Menlo, Monaco, monospace",

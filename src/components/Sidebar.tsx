@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import type { Agent } from "../types";
 import Avatar from "./Avatar";
+import { useTheme } from "../ThemeContext";
 
 interface Props {
   agents: Agent[];
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemove, onEdit, onReorder }: Props) {
+  const { scheme, schemeKey, setScheme, availableSchemes } = useTheme();
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragCounter = useRef<Record<string, number>>({});
@@ -67,8 +69,8 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
   };
 
   return (
-    <div className="w-[260px] min-w-[260px] bg-[#0d0d0d] flex flex-col border-r border-[#404040]">
-      <div className="px-4 h-11 flex items-center text-lg font-bold tracking-wide text-[#e0e0e0] border-b border-[#404040]">
+    <div className="w-[260px] min-w-[260px] flex flex-col" style={{ background: "var(--bg)", borderRight: "1px solid var(--border)" }}>
+      <div className="px-4 h-11 flex items-center text-lg font-bold tracking-wide" style={{ color: "var(--fg)", borderBottom: "1px solid var(--border)" }}>
         chat.sh
       </div>
 
@@ -83,23 +85,26 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
             onDragLeave={(e) => handleDragLeave(e, agent.id)}
             onDrop={(e) => handleDrop(e, agent.id)}
             onDragEnd={handleDragEnd}
-            className={`group relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#161616] cursor-pointer ${
-              agent.id === activeAgentId ? "bg-[#1e1e1e]" : ""
-            } ${dragOverId === agent.id && dragId !== agent.id ? "border-t-2 border-blue-500" : ""} ${
-              dragId === agent.id ? "opacity-40" : ""
-            }`}
+            className={`group relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer ${
+              dragOverId === agent.id && dragId !== agent.id ? "border-t-2 border-blue-500" : ""
+            } ${dragId === agent.id ? "opacity-40" : ""}`}
+            style={{
+              background: agent.id === activeAgentId ? "var(--surface)" : undefined,
+            }}
+            onMouseEnter={(e) => { if (agent.id !== activeAgentId) e.currentTarget.style.background = "var(--surface)"; }}
+            onMouseLeave={(e) => { if (agent.id !== activeAgentId) e.currentTarget.style.background = ""; }}
             onClick={() => onSelect(agent.id)}
           >
             <Avatar name={agent.name} imageUrl={agent.avatar} size={36} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium truncate text-[#e0e0e0]">{agent.name}</span>
-                <span className={`text-xs ${agent.status === "online" ? "text-[#3fb950]" : "text-[#f85149]"}`}>
+                <span className="font-medium truncate" style={{ color: "var(--fg)" }}>{agent.name}</span>
+                <span className="text-xs" style={{ color: agent.status === "online" ? "var(--green)" : "var(--red)" }}>
                   ●
                 </span>
               </div>
               {agent.llmLabel && (
-                <span className="text-xs text-[#808080] bg-[#1e1e1e] px-1.5 py-0.5 rounded">
+                <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: "var(--muted)", background: "var(--surface)" }}>
                   {agent.llmLabel}
                 </span>
               )}
@@ -110,7 +115,10 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                   e.stopPropagation();
                   onEdit(agent);
                 }}
-                className="text-[#555555] hover:text-[#e0e0e0] text-sm px-1"
+                className="text-sm px-1 transition-colors"
+                style={{ color: "var(--muted)" }}
+                onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
+                onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
                 title="編輯"
               >
                 ✎
@@ -121,7 +129,10 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                     e.stopPropagation();
                     onRemove(agent.id);
                   }}
-                  className="text-[#555555] hover:text-[#e0e0e0] text-sm px-1"
+                  className="text-sm px-1 transition-colors"
+                  style={{ color: "var(--muted)" }}
+                  onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
+                  onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
                   title="刪除"
                 >
                   ✕
@@ -132,9 +143,40 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
         ))}
       </div>
 
+      {/* Theme Switcher */}
+      <div className="px-3 py-2 flex items-center gap-2" style={{ borderTop: "1px solid var(--border)" }}>
+        {Object.entries(availableSchemes).map(([key, s]) => (
+          <button
+            key={key}
+            title={s.name}
+            onClick={() => setScheme(key)}
+            style={{
+              width: 14,
+              height: 14,
+              borderRadius: "50%",
+              background: s.background,
+              border: key === schemeKey ? `2px solid ${s.blue}` : `2px solid ${s.border}`,
+              cursor: "pointer",
+              flexShrink: 0,
+            }}
+          />
+        ))}
+      </div>
+
       <button
         onClick={onAdd}
-        className="m-3 py-2 rounded bg-[#1e1e1e] hover:bg-[#252525] text-[#808080] hover:text-[#e0e0e0] transition-colors text-sm border-t border-[#404040]"
+        className="m-3 mt-0 py-2 rounded text-sm transition-colors"
+        style={{
+          background: "var(--surface)",
+          color: "var(--muted)",
+          borderTop: "1px solid var(--border)",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.color = "var(--fg)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.color = "var(--muted)";
+        }}
       >
         + 新增角色
       </button>

@@ -101,8 +101,20 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
     onAdd(agent);
   };
 
-  const inputClass =
-    "bg-[#0d0d0d] border border-[#404040] rounded px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-[#4a9eff]";
+  const inputStyle: React.CSSProperties = {
+    background: "var(--bg)",
+    border: "1px solid var(--border)",
+    borderRadius: 6,
+    padding: "8px 12px",
+    fontSize: 14,
+    color: "var(--fg)",
+    outline: "none",
+  };
+
+  const secondaryBtnStyle: React.CSSProperties = {
+    background: "var(--surface)",
+    color: "var(--muted)",
+  };
 
   return (
     <div
@@ -110,16 +122,17 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       onClick={onClose}
     >
       <div
-        className="bg-[#0d0d0d] border border-[#404040] rounded-lg w-[440px] p-6 shadow-xl"
+        className="rounded-lg w-[440px] p-6 shadow-xl"
+        style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
         onClick={(e) => e.stopPropagation()}
       >
         {step === 1 && !isEditing ? (
           <>
-            <h2 className="text-lg font-bold mb-4 text-[#e0e0e0]">
+            <h2 className="text-lg font-bold mb-4" style={{ color: "var(--fg)" }}>
               選擇要新增的 Agent
             </h2>
             {scanning ? (
-              <div className="text-sm text-[#808080] py-8 text-center">
+              <div className="text-sm py-8 text-center" style={{ color: "var(--muted)" }}>
                 掃描可用 CLI 中…
               </div>
             ) : (
@@ -130,29 +143,41 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       key={a.command}
                       type="button"
                       onClick={() => selectAgent(a)}
-                      className="flex flex-col gap-1 p-3 rounded-lg border border-[#404040] bg-[#0d0d0d] hover:border-[#4a9eff] hover:bg-[#0d0d0d] transition-colors text-left"
+                      className="flex flex-col gap-1 p-3 rounded-lg transition-colors text-left"
+                      style={{ border: "1px solid var(--border)", background: "var(--bg)" }}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                      onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                     >
-                      <span className="text-sm font-medium text-[#e0e0e0]">
+                      <span className="text-sm font-medium" style={{ color: "var(--fg)" }}>
                         {a.name}
                       </span>
-                      <span className="text-xs text-[#808080]">
+                      <span className="text-xs" style={{ color: "var(--muted)" }}>
                         {a.description}
                       </span>
-                      <code className="text-xs text-[#555] mt-0.5">
+                      <code className="text-xs mt-0.5" style={{ color: "var(--muted)", opacity: 0.7 }}>
                         {a.command}
                       </code>
                     </button>
                   ))}
                 </div>
                 {available.length === 0 && (
-                  <div className="text-sm text-[#808080] py-4 text-center">
+                  <div className="text-sm py-4 text-center" style={{ color: "var(--muted)" }}>
                     未偵測到可用的 CLI 工具
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={goCustom}
-                  className="w-full py-2.5 rounded-lg border border-dashed border-[#404040] text-sm text-[#808080] hover:border-[#4a9eff] hover:text-[#e0e0e0] transition-colors"
+                  className="w-full py-2.5 rounded-lg text-sm transition-colors"
+                  style={{ border: "1px dashed var(--border)", color: "var(--muted)" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--blue)";
+                    e.currentTarget.style.color = "var(--fg)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border)";
+                    e.currentTarget.style.color = "var(--muted)";
+                  }}
                 >
                   + 自訂指令
                 </button>
@@ -162,7 +187,10 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded text-sm bg-[#1e1e1e] text-[#808080] hover:text-[#e0e0e0] transition-colors"
+                className="px-4 py-2 rounded text-sm transition-colors"
+                style={secondaryBtnStyle}
+                onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
+                onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
               >
                 取消
               </button>
@@ -170,7 +198,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
           </>
         ) : (
           <>
-            <h2 className="text-lg font-bold mb-4 text-[#e0e0e0]">
+            <h2 className="text-lg font-bold mb-4" style={{ color: "var(--fg)" }}>
               {isEditing ? "編輯角色" : `設定 ${name || "Agent"}`}
             </h2>
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -184,7 +212,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="text-xs text-[#4a9eff] hover:underline"
+                    className="text-xs hover:underline"
+                    style={{ color: "var(--blue)" }}
                   >
                     上傳頭像
                   </button>
@@ -197,36 +226,42 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   />
                 </div>
                 <div className="flex-1 flex flex-col gap-3">
-                  <label className="flex flex-col gap-1 text-sm text-[#808080]">
+                  <label className="flex flex-col gap-1 text-sm" style={{ color: "var(--muted)" }}>
                     名稱
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className={inputClass}
+                      style={inputStyle}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                       placeholder="例如：工程助手"
                       autoFocus
                     />
                   </label>
                   {isEditing && (
-                    <label className="flex flex-col gap-1 text-sm text-[#808080]">
+                    <label className="flex flex-col gap-1 text-sm" style={{ color: "var(--muted)" }}>
                       指令
                       <input
                         type="text"
                         value={command}
                         onChange={(e) => setCommand(e.target.value)}
-                        className={inputClass}
+                        style={inputStyle}
+                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                         placeholder="例如：claude 或 /bin/zsh"
                       />
                     </label>
                   )}
-                  <label className="flex flex-col gap-1 text-sm text-[#808080]">
+                  <label className="flex flex-col gap-1 text-sm" style={{ color: "var(--muted)" }}>
                     工作目錄
                     <input
                       type="text"
                       value={workingDir}
                       onChange={(e) => setWorkingDir(e.target.value)}
-                      className={inputClass}
+                      style={inputStyle}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                       placeholder="~"
                     />
                   </label>
@@ -238,7 +273,10 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="px-4 py-2 rounded text-sm bg-[#1e1e1e] text-[#808080] hover:text-[#e0e0e0] transition-colors"
+                      className="px-4 py-2 rounded text-sm transition-colors"
+                      style={secondaryBtnStyle}
+                      onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
+                      onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
                     >
                       上一步
                     </button>
@@ -248,13 +286,17 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 rounded text-sm bg-[#1e1e1e] text-[#808080] hover:text-[#e0e0e0] transition-colors"
+                    className="px-4 py-2 rounded text-sm transition-colors"
+                    style={secondaryBtnStyle}
+                    onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
+                    onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
                   >
                     取消
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded text-sm bg-[#1a2d4a] text-[#4a9eff] hover:bg-[#1e3355] transition-colors"
+                    className="px-4 py-2 rounded text-sm transition-colors"
+                    style={{ background: "var(--selection)", color: "var(--blue)" }}
                   >
                     {isEditing ? "儲存" : "確認新增"}
                   </button>

@@ -83,7 +83,7 @@ export default function App() {
   const showModal = showAddModal || editingAgent !== null;
 
   return (
-    <div className="flex h-screen w-screen bg-[#0d0d0d]">
+    <div className="flex h-screen w-screen" style={{ background: "var(--bg)" }}>
       <Sidebar
         agents={agents}
         activeAgentId={activeAgentId}
@@ -95,8 +95,8 @@ export default function App() {
       />
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {agents.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-[#555555] text-lg bg-[#0d0d0d]">
-            點選 <span className="mx-1 text-[#4a9eff]">+ 新增角色</span> 開始使用
+          <div className="flex-1 flex items-center justify-center text-lg" style={{ color: "var(--muted)", background: "var(--bg)" }}>
+            點選 <span className="mx-1" style={{ color: "var(--blue)" }}>+ 新增角色</span> 開始使用
           </div>
         )}
         {agents.map((agent) => (

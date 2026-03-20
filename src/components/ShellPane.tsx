@@ -3,6 +3,7 @@ import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { useTheme } from "../ThemeContext";
 import "@xterm/xterm/css/xterm.css";
 
 const SHELL_AGENT_ID = "__shell_pane__";
@@ -10,6 +11,7 @@ const SHELL_AGENT_ID = "__shell_pane__";
 let shellTerminal: { xterm: XTerm; fitAddon: FitAddon; spawned: boolean } | null = null;
 
 export default function ShellPane() {
+  const { scheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,9 +26,16 @@ export default function ShellPane() {
         fontSize: 13,
         fontFamily: "Menlo, Monaco, 'Courier New', monospace",
         theme: {
-          background: "#111",
-          foreground: "#d4d4d4",
-          cursor: "#d4d4d4",
+          background: scheme.background,
+          foreground: scheme.foreground,
+          cursor: scheme.cursor,
+          selectionBackground: scheme.selection,
+          green: scheme.green,
+          red: scheme.red,
+          blue: scheme.blue,
+          cyan: scheme.cyan,
+          magenta: scheme.magenta,
+          yellow: scheme.yellow,
         },
         allowProposedApi: true,
       });
@@ -79,7 +88,7 @@ export default function ShellPane() {
   }, []);
 
   return (
-    <div className="h-[250px] border-t border-[#333] bg-[#111]">
+    <div className="h-[250px]" style={{ borderTop: "1px solid var(--border)", background: "var(--bg)" }}>
       <div
         ref={containerRef}
         className="h-full p-1"
