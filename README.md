@@ -4,7 +4,6 @@ A terminal-native desktop app for managing multiple AI coding assistants — Cla
 
 Built with Tauri v2 + React + xterm.js. Lightweight (~12MB), no Electron.
 
-![chat.sh screenshot](docs/screenshot.png)
 
 ## Features
 
