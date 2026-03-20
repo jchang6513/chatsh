@@ -66,8 +66,8 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
   };
 
   return (
-    <div className="w-[260px] min-w-[260px] bg-[#1e1e1e] flex flex-col border-r border-[#333]">
-      <div className="px-4 py-3 text-lg font-bold tracking-wide border-b border-[#333]">
+    <div className="w-[260px] min-w-[260px] bg-[#141414] flex flex-col border-r border-[#2a2a2a]">
+      <div className="px-4 py-3 text-lg font-bold tracking-wide text-[#e0e0e0] border-b border-[#2a2a2a]">
         chat.sh
       </div>
 
@@ -82,8 +82,8 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
             onDragLeave={(e) => handleDragLeave(e, agent.id)}
             onDrop={(e) => handleDrop(e, agent.id)}
             onDragEnd={handleDragEnd}
-            className={`group relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#2a2a2a] cursor-pointer ${
-              agent.id === activeAgentId ? "bg-[#2d3a4a]" : ""
+            className={`group relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#1a1a1a] cursor-pointer ${
+              agent.id === activeAgentId ? "bg-[#1e1e1e]" : ""
             } ${dragOverId === agent.id && dragId !== agent.id ? "border-t-2 border-blue-500" : ""} ${
               dragId === agent.id ? "opacity-40" : ""
             }`}
@@ -92,13 +92,13 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
             <span className="text-2xl">{agent.emoji}</span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium truncate">{agent.name}</span>
-                <span className="text-xs">
-                  {agent.status === "online" ? "🟢" : "🔴"}
+                <span className="font-medium truncate text-[#e0e0e0]">{agent.name}</span>
+                <span className={`text-xs ${agent.status === "online" ? "text-[#3fb950]" : "text-[#f85149]"}`}>
+                  ●
                 </span>
               </div>
               {agent.llmLabel && (
-                <span className="text-xs text-gray-400 bg-[#333] px-1.5 py-0.5 rounded">
+                <span className="text-xs text-[#808080] bg-[#1e1e1e] px-1.5 py-0.5 rounded">
                   {agent.llmLabel}
                 </span>
               )}
@@ -109,7 +109,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                   e.stopPropagation();
                   onEdit(agent);
                 }}
-                className="text-[#888] hover:text-[#4a9eff] text-sm px-1"
+                className="text-[#555555] hover:text-[#e0e0e0] text-sm px-1"
                 title="編輯"
               >
                 ✎
@@ -120,7 +120,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                     e.stopPropagation();
                     onRemove(agent.id);
                   }}
-                  className="text-[#888] hover:text-[#f44336] text-sm px-1"
+                  className="text-[#555555] hover:text-[#e0e0e0] text-sm px-1"
                   title="刪除"
                 >
                   ✕
@@ -133,7 +133,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
 
       <button
         onClick={onAdd}
-        className="m-3 py-2 rounded bg-[#2d3a4a] hover:bg-[#3d4a5a] transition-colors text-sm"
+        className="m-3 py-2 rounded bg-[#1e1e1e] hover:bg-[#252525] text-[#808080] hover:text-[#e0e0e0] transition-colors text-sm border-t border-[#2a2a2a]"
       >
         + 新增角色
       </button>

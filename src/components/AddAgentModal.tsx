@@ -41,78 +41,80 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
     onAdd(agent);
   };
 
+  const inputClass = "bg-[#0d0d0d] border border-[#2a2a2a] rounded px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-[#4a9eff]";
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
       onClick={onClose}
     >
       <div
-        className="bg-[#1e1e1e] border border-[#444] rounded-lg w-[400px] p-6 shadow-xl"
+        className="bg-[#141414] border border-[#2a2a2a] rounded-lg w-[400px] p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold mb-4">{isEditing ? "編輯角色" : "新增角色"}</h2>
+        <h2 className="text-lg font-bold mb-4 text-[#e0e0e0]">{isEditing ? "編輯角色" : "新增角色"}</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm text-[#808080]">
             名稱
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-[#2a2a2a] border border-[#555] rounded px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClass}
               placeholder="例如：工程助手"
               autoFocus
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm text-[#808080]">
             指令
             <input
               type="text"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              className="bg-[#2a2a2a] border border-[#555] rounded px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClass}
               placeholder="例如：claude 或 /bin/zsh（空格分隔）"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm text-[#808080]">
             工作目錄
             <input
               type="text"
               value={workingDir}
               onChange={(e) => setWorkingDir(e.target.value)}
-              className="bg-[#2a2a2a] border border-[#555] rounded px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClass}
               placeholder="~"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm text-[#808080]">
             標籤（選填）
             <input
               type="text"
               value={llmLabel}
               onChange={(e) => setLlmLabel(e.target.value)}
-              className="bg-[#2a2a2a] border border-[#555] rounded px-3 py-2 text-sm outline-none focus:border-blue-500"
+              className={inputClass}
               placeholder="例如：Claude、GPT-4"
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm">
+          <label className="flex flex-col gap-1 text-sm text-[#808080]">
             Emoji
             <input
               type="text"
               value={emoji}
               onChange={(e) => setEmoji(e.target.value)}
-              className="bg-[#2a2a2a] border border-[#555] rounded px-3 py-2 text-sm outline-none focus:border-blue-500 w-20"
+              className={`${inputClass} w-20`}
             />
           </label>
           <div className="flex justify-end gap-2 mt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded text-sm bg-[#333] hover:bg-[#444] transition-colors"
+              className="px-4 py-2 rounded text-sm bg-[#1e1e1e] text-[#808080] hover:text-[#e0e0e0] transition-colors"
             >
               取消
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded text-sm bg-blue-600 hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 rounded text-sm bg-[#1a2d4a] text-[#4a9eff] hover:bg-[#1e3355] transition-colors"
             >
               {isEditing ? "儲存" : "新增"}
             </button>

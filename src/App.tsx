@@ -95,7 +95,7 @@ export default function App() {
       />
       <div className="flex flex-col flex-1 min-w-0 min-h-0">
         {agents.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-[#888] text-lg">
+          <div className="flex-1 flex items-center justify-center text-[#555555] text-lg bg-[#0d0d0d]">
             點選 <span className="mx-1 text-[#4a9eff]">+ 新增角色</span> 開始使用
           </div>
         )}
