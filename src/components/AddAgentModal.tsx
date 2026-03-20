@@ -41,7 +41,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
     onAdd(agent);
   };
 
-  const inputClass = "bg-[#0d0d0d] border border-[#2a2a2a] rounded px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-[#4a9eff]";
+  const inputClass = "bg-[#0d0d0d] border border-[#3a3a3a] rounded px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-[#4a9eff]";
 
   return (
     <div
@@ -49,7 +49,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       onClick={onClose}
     >
       <div
-        className="bg-[#141414] border border-[#2a2a2a] rounded-lg w-[400px] p-6 shadow-xl"
+        className="bg-[#141414] border border-[#3a3a3a] rounded-lg w-[400px] p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-bold mb-4 text-[#e0e0e0]">{isEditing ? "編輯角色" : "新增角色"}</h2>

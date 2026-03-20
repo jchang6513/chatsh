@@ -144,7 +144,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* 頂部 bar */}
-      <div className="flex items-center gap-2 px-4 h-11 bg-[#141414] border-b border-[#2a2a2a] flex-shrink-0">
+      <div className="flex items-center gap-2 px-4 h-11 bg-[#1a1a1a] border-b border-[#404040] flex-shrink-0">
         <span className="text-lg">{agent.emoji}</span>
         <div>
           <div className="text-sm font-semibold text-[#e0e0e0]">{agent.name}</div>
@@ -155,7 +155,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
         <div className="ml-auto flex gap-2">
           <button
             onClick={handleRestart}
-            className="px-2 py-1 text-xs rounded border border-[#2a2a2a] bg-[#1e1e1e] text-[#808080] hover:border-[#4a9eff] hover:text-[#4a9eff]"
+            className="px-2 py-1 text-xs rounded border border-[#404040] bg-[#1e1e1e] text-[#808080] hover:border-[#4a9eff] hover:text-[#4a9eff]"
           >
             重啟
           </button>
@@ -164,7 +164,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
             className={`px-2 py-1 text-xs rounded border ${
               showShellPane
                 ? "border-[#4a9eff] bg-[#0d1a2a] text-[#4a9eff]"
-                : "border-[#2a2a2a] bg-[#1e1e1e] text-[#808080] hover:border-[#4a9eff] hover:text-[#4a9eff]"
+                : "border-[#404040] bg-[#1e1e1e] text-[#808080] hover:border-[#4a9eff] hover:text-[#4a9eff]"
             }`}
           >
             Shell ↓

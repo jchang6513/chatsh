@@ -66,8 +66,8 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
   };
 
   return (
-    <div className="w-[260px] min-w-[260px] bg-[#141414] flex flex-col border-r border-[#2a2a2a]">
-      <div className="px-4 py-3 text-lg font-bold tracking-wide text-[#e0e0e0] border-b border-[#2a2a2a]">
+    <div className="w-[260px] min-w-[260px] bg-[#1a1a1a] flex flex-col border-r border-[#404040]">
+      <div className="px-4 py-3 text-lg font-bold tracking-wide text-[#e0e0e0] border-b border-[#404040]">
         chat.sh
       </div>
 
@@ -133,7 +133,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
 
       <button
         onClick={onAdd}
-        className="m-3 py-2 rounded bg-[#1e1e1e] hover:bg-[#252525] text-[#808080] hover:text-[#e0e0e0] transition-colors text-sm border-t border-[#2a2a2a]"
+        className="m-3 py-2 rounded bg-[#1e1e1e] hover:bg-[#252525] text-[#808080] hover:text-[#e0e0e0] transition-colors text-sm border-t border-[#404040]"
       >
         + 新增角色
       </button>
