@@ -87,6 +87,26 @@ impl PtyManager {
         for (key, value) in std::env::vars() {
             cmd.env(key, value);
         }
+
+        // 補充 PATH：確保常見 CLI 工具路徑都在（macOS App 啟動時 PATH 很少）
+        let home = std::env::var("HOME").unwrap_or_default();
+        let current_path = std::env::var("PATH").unwrap_or_default();
+        let extra_paths = [
+            format!("{}/.local/bin", home),
+            format!("{}/.local/share/mise/shims", home),
+            "/opt/homebrew/bin".to_string(),
+            "/opt/homebrew/sbin".to_string(),
+            "/usr/local/bin".to_string(),
+            "/usr/bin".to_string(),
+            "/bin".to_string(),
+        ];
+        let mut path_parts: Vec<&str> = current_path.split(':').collect();
+        for p in extra_paths.iter() {
+            if !path_parts.contains(&p.as_str()) {
+                path_parts.insert(0, p.as_str());
+            }
+        }
+        cmd.env("PATH", path_parts.join(":"));
         cmd.env("TERM", "xterm-256color");
 
         let child = pair
