@@ -132,8 +132,17 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                   <button
                     onClick={(e) => { e.stopPropagation(); onEdit(agent); }}
                     style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 10, padding: "0 2px", fontFamily: "monospace" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "var(--green)")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}
                     title="編輯"
                   >✎</button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRemove(agent.id); }}
+                    style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 11, padding: "0 2px", fontFamily: "monospace" }}
+                    onMouseEnter={e => (e.currentTarget.style.color = "var(--red)")}
+                    onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}
+                    title="刪除"
+                  >×</button>
                 </div>
               )}
             </div>
