@@ -7,6 +7,7 @@ import StatusBar from "./components/StatusBar";
 import AddAgentModal from "./components/AddAgentModal";
 import ClaudeMdEditor from "./components/ClaudeMdEditor";
 import CommandPalette from "./components/CommandPalette";
+import SettingsPanel from "./components/SettingsPanel";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import type { Agent } from "./types";
 
@@ -104,6 +105,7 @@ export default function App() {
   const bumpRestart = (id: string) => setRestartKeys(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
 
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
@@ -168,9 +170,7 @@ export default function App() {
       updateAgentStatus(activeAgentId, "offline")
       bumpRestart(activeAgentId)
     },
-    onOpenClaudeMd: () => {
-      if (activeAgent?.command[0] === "claude") setShowClaudeMd(prev => !prev)
-    },
+    onOpenSettings: () => setShowSettings(prev => !prev),
     onNewShell: () => { if (activeAgentId) addShellToAgent(activeAgentId) },
     onCloseShell: () => {
       if (!activeAgentId) return
@@ -211,6 +211,7 @@ export default function App() {
           onRemove={handleRemoveAgent}
           onEdit={handleEditAgent}
           onReorder={handleReorder}
+          onOpenSettings={() => setShowSettings(true)}
         />
 
         {/* Terminal panels */}
@@ -385,7 +386,7 @@ export default function App() {
               {(shellSessions[agent.id] ?? []).map(shellId => (
                 <div key={shellId} style={{ flex: 1, display: getActivePanelTab(agent.id) === shellId ? "flex" : "none", minHeight: 0, position: "relative" }}>
                   <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
-                    <SingleShell sessionId={shellId} isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === shellId} />
+                    <SingleShell sessionId={shellId} agentId={agent.id} isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === shellId} />
                   </div>
                 </div>
               ))}
@@ -397,6 +398,12 @@ export default function App() {
       {/* Status bar */}
       <StatusBar agent={activeAgent} />
 
+      {showSettings && (
+        <SettingsPanel
+          agents={agents}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
       {showClaudeMd && activeAgent && (
         <ClaudeMdEditor
           agent={activeAgent}

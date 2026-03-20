@@ -6,7 +6,7 @@ interface Handlers {
   onNextAgent: () => void                      // ⌘]
   onNewAgent: () => void                       // ⌘N
   onRestartAgent: () => void                   // ⌘R
-  onOpenClaudeMd: () => void                   // ⌘,
+  onOpenSettings: () => void                     // ⌘,
   onNewShell: () => void                       // ⌘T
   onCloseShell: () => void                     // ⌘W
   onPrevShell: () => void                      // ⌘Shift+[
@@ -55,7 +55,7 @@ export function useKeyboardShortcuts(handlers: Handlers) {
           if (!shift) { e.preventDefault(); handlers.onRestartAgent() }
           break
         case ",":
-          e.preventDefault(); handlers.onOpenClaudeMd()
+          e.preventDefault(); handlers.onOpenSettings()
           break
         case "t":
           if (!shift) { e.preventDefault(); handlers.onNewShell() }

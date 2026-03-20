@@ -10,9 +10,10 @@ interface Props {
   onRemove: (id: string) => void;
   onEdit: (agent: Agent) => void;
   onReorder: (agents: Agent[]) => void;
+  onOpenSettings: () => void;
 }
 
-export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemove, onEdit, onReorder }: Props) {
+export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemove, onEdit, onReorder, onOpenSettings }: Props) {
   const { schemeKey, setScheme, availableSchemes } = useTheme();
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -180,6 +181,28 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
           />
         ))}
       </div>
+
+      {/* 設定ボタン */}
+      <button
+        onClick={onOpenSettings}
+        style={{
+          display: "block",
+          width: "calc(100% - 16px)",
+          margin: "4px 8px",
+          padding: "5px 0",
+          background: "transparent",
+          border: "1px solid var(--border)",
+          color: "var(--muted)",
+          fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+          fontSize: 10,
+          letterSpacing: "0.08em",
+          cursor: "pointer",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+      >
+        [SETTINGS ⌘,]
+      </button>
 
       {/* 新增角色按鈕 */}
       <button

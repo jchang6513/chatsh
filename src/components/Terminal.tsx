@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { Agent } from "../types";
 import { useTheme } from "../ThemeContext";
+import { useSettings } from "../SettingsContext";
 import "@xterm/xterm/css/xterm.css";
 
 interface Props {
@@ -16,9 +17,24 @@ interface Props {
 
 export default function Terminal({ agent, isActive, onStatusChange, restartKey = 0 }: Props) {
   const { scheme } = useTheme();
+  const { getResolvedSettings } = useSettings();
+  const settings = getResolvedSettings(agent.id);
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+
+  // 設定変更時にリアルタイム反映
+  useEffect(() => {
+    if (!xtermRef.current) return;
+    const xterm = xtermRef.current;
+    xterm.options.fontSize = settings.fontSize;
+    xterm.options.fontFamily = settings.fontFamily;
+    xterm.options.lineHeight = settings.lineHeight;
+    xterm.options.cursorBlink = settings.cursorBlink;
+    xterm.options.cursorStyle = settings.cursorStyle;
+    xterm.options.scrollback = settings.scrollback;
+    if (fitAddonRef.current) fitAddonRef.current.fit();
+  }, [settings]);
 
   // scheme 變化時動態更新 xterm theme
   useEffect(() => {
@@ -68,9 +84,12 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     let disposed = false;
 
     const xterm = new XTerm({
-      cursorBlink: true,
-      fontSize: 14,
-      fontFamily: '"SF Mono", Menlo, Monaco, "Courier New", monospace',
+      cursorBlink: settings.cursorBlink,
+      cursorStyle: settings.cursorStyle,
+      fontSize: settings.fontSize,
+      fontFamily: settings.fontFamily,
+      lineHeight: settings.lineHeight,
+      scrollback: settings.scrollback,
       theme: {
         background: scheme.background,
         foreground: scheme.foreground,
@@ -173,7 +192,8 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
       {/* xterm 容器 */}
       <div
         ref={containerRef}
-        className="flex-1 min-h-0 p-1"
+        className="flex-1 min-h-0"
+        style={{ padding: settings.padding }}
         onClick={() => xtermRef.current?.focus()}
       />
     </div>

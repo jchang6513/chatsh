@@ -4,18 +4,22 @@ import { FitAddon } from "@xterm/addon-fit";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTheme } from "../ThemeContext";
+import { useSettings } from "../SettingsContext";
 import "@xterm/xterm/css/xterm.css";
 
 interface SingleShellProps {
   sessionId: string;
   isActive: boolean;
+  agentId: string;
 }
 
-export default function SingleShell({ sessionId, isActive }: SingleShellProps) {
+export default function SingleShell({ sessionId, isActive, agentId }: SingleShellProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const { scheme } = useTheme();
+  const { getResolvedSettings } = useSettings();
+  const settings = getResolvedSettings(agentId);
 
   // xterm 生命週期：mount 時建立，unmount 時清除
   useEffect(() => {
@@ -23,9 +27,12 @@ export default function SingleShell({ sessionId, isActive }: SingleShellProps) {
     if (!container) return;
 
     const xterm = new XTerm({
-      cursorBlink: true,
-      fontSize: 13,
-      fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+      cursorBlink: settings.cursorBlink,
+      cursorStyle: settings.cursorStyle,
+      fontSize: settings.fontSize,
+      fontFamily: settings.fontFamily,
+      lineHeight: settings.lineHeight,
+      scrollback: settings.scrollback,
       theme: {
         background: scheme.background,
         foreground: scheme.foreground,
@@ -109,6 +116,19 @@ export default function SingleShell({ sessionId, isActive }: SingleShellProps) {
     xterm.refresh(0, xterm.rows - 1);
   }, [scheme]);
 
+  // 設定変更時にリアルタイム反映
+  useEffect(() => {
+    const xterm = xtermRef.current;
+    if (!xterm) return;
+    xterm.options.fontSize = settings.fontSize;
+    xterm.options.fontFamily = settings.fontFamily;
+    xterm.options.lineHeight = settings.lineHeight;
+    xterm.options.cursorBlink = settings.cursorBlink;
+    xterm.options.cursorStyle = settings.cursorStyle;
+    xterm.options.scrollback = settings.scrollback;
+    if (fitRef.current) fitRef.current.fit();
+  }, [settings]);
+
   // active 時 focus
   useEffect(() => {
     if (isActive) {
@@ -126,7 +146,7 @@ export default function SingleShell({ sessionId, isActive }: SingleShellProps) {
   return (
     <div
       ref={containerRef}
-      style={{ flex: 1, minHeight: 0, padding: 2, display: "flex", flexDirection: "column" }}
+      style={{ flex: 1, minHeight: 0, padding: settings.padding, display: "flex", flexDirection: "column" }}
       onClick={() => xtermRef.current?.focus()}
     />
   );

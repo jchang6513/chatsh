@@ -87,7 +87,7 @@ export default function ShellPane() {
       <div style={{ flex: 1, minHeight: 0, display: "flex", position: "relative" }}>
         {sessionIds.map(id => (
           <div key={id} style={{ position: "absolute", inset: 0, display: id === activeId ? "flex" : "none", flexDirection: "column" }}>
-            <SingleShell sessionId={id} isActive={id === activeId} />
+            <SingleShell sessionId={id} agentId="shell" isActive={id === activeId} />
           </div>
         ))}
       </div>
