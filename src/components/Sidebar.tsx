@@ -180,6 +180,28 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
           />
         ))}
       </div>
+
+      {/* 新增角色按鈕 */}
+      <button
+        onClick={onAdd}
+        style={{
+          display: "block",
+          width: "calc(100% - 16px)",
+          margin: "6px 8px",
+          padding: "5px 0",
+          background: "transparent",
+          border: "1px solid var(--border)",
+          color: "var(--muted)",
+          fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+          fontSize: 10,
+          letterSpacing: "0.08em",
+          cursor: "pointer",
+        }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+      >
+        [+ NEW AGENT]
+      </button>
     </div>
   );
 }
