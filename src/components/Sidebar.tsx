@@ -66,7 +66,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
   };
 
   return (
-    <div className="w-[260px] min-w-[260px] bg-[#1a1a1a] flex flex-col border-r border-[#404040]">
+    <div className="w-[260px] min-w-[260px] bg-[#0d0d0d] flex flex-col border-r border-[#404040]">
       <div className="px-4 h-11 flex items-center text-lg font-bold tracking-wide text-[#e0e0e0] border-b border-[#404040]">
         chat.sh
       </div>
@@ -82,7 +82,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
             onDragLeave={(e) => handleDragLeave(e, agent.id)}
             onDrop={(e) => handleDrop(e, agent.id)}
             onDragEnd={handleDragEnd}
-            className={`group relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#1a1a1a] cursor-pointer ${
+            className={`group relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#161616] cursor-pointer ${
               agent.id === activeAgentId ? "bg-[#1e1e1e]" : ""
             } ${dragOverId === agent.id && dragId !== agent.id ? "border-t-2 border-blue-500" : ""} ${
               dragId === agent.id ? "opacity-40" : ""

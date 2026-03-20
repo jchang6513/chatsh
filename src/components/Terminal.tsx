@@ -43,7 +43,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
       fontSize: 14,
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       theme: {
-        background: "#111111",
+        background: "#0d0d0d",
         foreground: "#d4d4d4",
         cursor: "#d4d4d4",
         selectionBackground: "#2d3a4a",
@@ -144,7 +144,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* 頂部 bar */}
-      <div className="flex items-center gap-2 px-4 h-11 bg-[#1a1a1a] border-b border-[#404040] flex-shrink-0">
+      <div className="flex items-center gap-2 px-4 h-11 bg-[#0d0d0d] border-b border-[#404040] flex-shrink-0">
         <span className="text-lg">{agent.emoji}</span>
         <div>
           <div className="text-sm font-semibold text-[#e0e0e0]">{agent.name}</div>
