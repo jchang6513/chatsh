@@ -22,6 +22,36 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
   const fitAddonRef = useRef<FitAddon | null>(null);
   const mountedRef = useRef(false);
 
+  // scheme 變化時動態更新 xterm theme
+  useEffect(() => {
+    if (!xtermRef.current) return;
+    xtermRef.current.options.theme = {
+      background: scheme.background,
+      foreground: scheme.foreground,
+      cursor: scheme.cursor,
+      cursorAccent: scheme.background,
+      selectionBackground: scheme.selection,
+      black: scheme.ansi.black,
+      red: scheme.ansi.red,
+      green: scheme.ansi.green,
+      yellow: scheme.ansi.yellow,
+      blue: scheme.ansi.blue,
+      magenta: scheme.ansi.magenta,
+      cyan: scheme.ansi.cyan,
+      white: scheme.ansi.white,
+      brightBlack: scheme.ansi.brightBlack,
+      brightRed: scheme.ansi.brightRed,
+      brightGreen: scheme.ansi.brightGreen,
+      brightYellow: scheme.ansi.brightYellow,
+      brightBlue: scheme.ansi.brightBlue,
+      brightMagenta: scheme.ansi.brightMagenta,
+      brightCyan: scheme.ansi.brightCyan,
+      brightWhite: scheme.ansi.brightWhite,
+    };
+    // refresh 強制重繪
+    xtermRef.current.refresh(0, xtermRef.current.rows - 1);
+  }, [scheme]);
+
   // isActive 變化時 fit + focus
   useEffect(() => {
     if (isActive && xtermRef.current && fitAddonRef.current) {
