@@ -102,7 +102,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
   };
 
   const inputClass =
-    "bg-[#0d0d0d] border border-[#3a3a3a] rounded px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-[#4a9eff]";
+    "bg-[#0d0d0d] border border-[#404040] rounded px-3 py-2 text-sm text-[#e0e0e0] outline-none focus:border-[#4a9eff]";
 
   return (
     <div
@@ -110,7 +110,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       onClick={onClose}
     >
       <div
-        className="bg-[#141414] border border-[#3a3a3a] rounded-lg w-[440px] p-6 shadow-xl"
+        className="bg-[#0d0d0d] border border-[#404040] rounded-lg w-[440px] p-6 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         {step === 1 && !isEditing ? (
@@ -130,7 +130,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       key={a.command}
                       type="button"
                       onClick={() => selectAgent(a)}
-                      className="flex flex-col gap-1 p-3 rounded-lg border border-[#3a3a3a] bg-[#0d0d0d] hover:border-[#4a9eff] hover:bg-[#111] transition-colors text-left"
+                      className="flex flex-col gap-1 p-3 rounded-lg border border-[#404040] bg-[#0d0d0d] hover:border-[#4a9eff] hover:bg-[#0d0d0d] transition-colors text-left"
                     >
                       <span className="text-sm font-medium text-[#e0e0e0]">
                         {a.name}
@@ -152,7 +152,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                 <button
                   type="button"
                   onClick={goCustom}
-                  className="w-full py-2.5 rounded-lg border border-dashed border-[#3a3a3a] text-sm text-[#808080] hover:border-[#4a9eff] hover:text-[#e0e0e0] transition-colors"
+                  className="w-full py-2.5 rounded-lg border border-dashed border-[#404040] text-sm text-[#808080] hover:border-[#4a9eff] hover:text-[#e0e0e0] transition-colors"
                 >
                   + 自訂指令
                 </button>
