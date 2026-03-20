@@ -131,23 +131,28 @@ export default function App() {
                 flex: 1,
                 minHeight: 0,
                 border: "1px solid var(--border)",
-                position: "relative",
+                borderTop: "2px solid var(--green)",
               }}
             >
-              {/* Panel label */}
+              {/* Panel label bar */}
               <div style={{
-                position: "absolute",
-                top: -1,
-                left: 8,
-                fontSize: 10,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                height: 20,
+                padding: "0 10px",
+                borderBottom: "1px solid var(--border)",
+                flexShrink: 0,
                 fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
-                color: "var(--green)",
-                background: "var(--bg)",
-                padding: "0 4px",
-                letterSpacing: "0.1em",
-                zIndex: 1,
+                fontSize: 10,
+                letterSpacing: "0.08em",
               }}>
-                {agent.name.toUpperCase()} ── {agent.workingDir}
+                <span style={{ color: "var(--green)" }}>
+                  ─ {agent.name.toUpperCase()} ─
+                </span>
+                <span style={{ color: "var(--muted)" }}>
+                  {agent.workingDir}
+                </span>
               </div>
               <Terminal
                 agent={agent}
