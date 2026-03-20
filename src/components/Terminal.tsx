@@ -18,7 +18,6 @@ export default function Terminal({ agent, isActive, onStatusChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const mountedRef = useRef(false);
 
   // scheme 變化時動態更新 xterm theme
   useEffect(() => {
@@ -59,13 +58,13 @@ export default function Terminal({ agent, isActive, onStatusChange }: Props) {
     }
   }, [isActive]);
 
-  // 只 mount 一次，建立 xterm + spawn PTY
+  // agent.id 變化時重建 xterm + spawn PTY
   useEffect(() => {
-    if (mountedRef.current) return;
-    mountedRef.current = true;
-
     const container = containerRef.current;
     if (!container) return;
+    container.innerHTML = "";
+
+    let disposed = false;
 
     const xterm = new XTerm({
       cursorBlink: true,
@@ -125,16 +124,19 @@ export default function Terminal({ agent, isActive, onStatusChange }: Props) {
 
     let unlisten: (() => void) | null = null;
     listen<string>(`pty-output-${agent.id}`, (event) => {
+      if (disposed) return;
       const bytes = Uint8Array.from(atob(event.payload), (c) => c.charCodeAt(0));
       xterm.write(bytes);
     }).then((fn) => { unlisten = fn; });
 
     let unlistenExit: (() => void) | null = null;
     listen<void>(`pty-exit-${agent.id}`, () => {
+      if (disposed) return;
       onStatusChange("offline");
     }).then((fn) => { unlistenExit = fn; });
 
     setTimeout(async () => {
+      if (disposed) return;
       fitAddon.fit();
       try {
         await invoke("spawn_agent", {
@@ -144,20 +146,25 @@ export default function Terminal({ agent, isActive, onStatusChange }: Props) {
           cols: xterm.cols,
           rows: xterm.rows,
         });
-        onStatusChange("online");
+        if (!disposed) onStatusChange("online");
       } catch (e) {
-        xterm.writeln(`\r\n[錯誤] 無法啟動: ${e}`);
-        onStatusChange("offline");
+        if (!disposed) {
+          xterm.writeln(`\r\n[錯誤] 無法啟動: ${e}`);
+          onStatusChange("offline");
+        }
       }
     }, 200);
 
     return () => {
+      disposed = true;
       resizeObs.disconnect();
       if (unlisten) unlisten();
       if (unlistenExit) unlistenExit();
       xterm.dispose();
+      xtermRef.current = null;
+      fitAddonRef.current = null;
     };
-  }, []);
+  }, [agent.id]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">

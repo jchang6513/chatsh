@@ -88,10 +88,10 @@ export default function ShellPane() {
   }, []);
 
   return (
-    <div className="h-[250px]" style={{ borderTop: "1px solid var(--border)", background: "var(--bg)" }}>
+    <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "var(--bg)" }}>
       <div
         ref={containerRef}
-        className="h-full p-1"
+        style={{ flex: 1, minHeight: 0, padding: 2 }}
         onClick={() => shellTerminal?.xterm.focus()}
       />
     </div>

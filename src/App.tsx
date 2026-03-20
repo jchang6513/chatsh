@@ -45,7 +45,10 @@ export default function App() {
   const [activeAgentId, setActiveAgentId] = useState<string>(
     () => loadAgents()[0]?.id ?? ""
   );
-  const [showShellPane, setShowShellPane] = useState(false);
+  const [activeTabs, setActiveTabs] = useState<Record<string, "terminal" | "shell">>({});
+  const getTab = (id: string) => activeTabs[id] ?? "terminal";
+  const setTab = (id: string, tab: "terminal" | "shell") =>
+    setActiveTabs(prev => ({ ...prev, [id]: tab }));
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
@@ -138,9 +141,29 @@ export default function App() {
                 fontSize: 10,
                 letterSpacing: "0.08em",
               }}>
-                <span style={{ color: "var(--green)" }}>
-                  ─ {agent.name.toUpperCase()} ─
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                  <span style={{ color: "var(--green)", marginRight: 8 }}>─ {agent.name.toUpperCase()} ─</span>
+                  {["terminal", "shell"].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setTab(agent.id, tab as "terminal" | "shell")}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        borderBottom: getTab(agent.id) === tab ? "1px solid var(--green)" : "1px solid transparent",
+                        color: getTab(agent.id) === tab ? "var(--green)" : "var(--muted)",
+                        fontFamily: "monospace",
+                        fontSize: 9,
+                        padding: "0 8px",
+                        cursor: "pointer",
+                        letterSpacing: "0.08em",
+                        height: "100%",
+                      }}
+                    >
+                      {tab.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ color: "var(--muted)" }}>{agent.workingDir}</span>
                   {agent.command[0] === "claude" && (
@@ -184,14 +207,20 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              <Terminal
-                agent={agent}
-                isActive={agent.id === activeAgentId}
-                onStatusChange={(status) => updateAgentStatus(agent.id, status)}
-              />
+              {/* Terminal（visibility 切換，不銷毀） */}
+              <div style={{ flex: 1, display: getTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0 }}>
+                <Terminal
+                  agent={agent}
+                  isActive={agent.id === activeAgentId && getTab(agent.id) === "terminal"}
+                  onStatusChange={(status) => updateAgentStatus(agent.id, status)}
+                />
+              </div>
+              {/* Shell（visibility 切換） */}
+              <div style={{ flex: 1, display: getTab(agent.id) === "shell" ? "flex" : "none", minHeight: 0 }}>
+                <ShellPane />
+              </div>
             </div>
           ))}
-          {showShellPane && <ShellPane />}
         </div>
       </div>
 
