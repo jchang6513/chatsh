@@ -1,6 +1,5 @@
 import { useState, useRef } from "react";
 import type { Agent } from "../types";
-import Avatar from "./Avatar";
 import { useTheme } from "../ThemeContext";
 
 interface Props {
@@ -14,10 +13,11 @@ interface Props {
 }
 
 export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemove, onEdit, onReorder }: Props) {
-  const { scheme, schemeKey, setScheme, availableSchemes } = useTheme();
+  const { schemeKey, setScheme, availableSchemes } = useTheme();
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragCounter = useRef<Record<string, number>>({});
+  const [hoverId, setHoverId] = useState<string | null>(null);
 
   const handleDragStart = (e: React.DragEvent, id: string) => {
     setDragId(id);
@@ -69,116 +69,149 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
   };
 
   return (
-    <div className="w-[260px] min-w-[260px] flex flex-col" style={{ background: "var(--bg)", borderRight: "1px solid var(--border)" }}>
-      <div className="px-4 h-11 flex items-center text-lg font-bold tracking-wide" style={{ color: "var(--fg)", borderBottom: "1px solid var(--border)" }}>
-        chat.sh
+    <div style={{
+      width: 220,
+      minWidth: 220,
+      display: "flex",
+      flexDirection: "column",
+      background: "var(--bg)",
+      borderRight: "1px solid var(--border)",
+      fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+      height: "100%",
+    }}>
+      {/* ASCII 標題 */}
+      <div style={{
+        padding: "12px 16px",
+        borderBottom: "1px solid var(--border)",
+        fontSize: 11,
+        letterSpacing: "0.1em",
+        lineHeight: 1.4,
+      }}>
+        <div style={{ color: "var(--muted)" }}>┌────────────────┐</div>
+        <div>│ <span style={{ color: "var(--green)" }}>CHAT.SH</span> <span style={{ color: "var(--muted)" }}>v0.1</span> │</div>
+        <div style={{ color: "var(--muted)" }}>└────────────────┘</div>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        {agents.map((agent) => (
-          <div
-            key={agent.id}
-            draggable
-            onDragStart={(e) => handleDragStart(e, agent.id)}
-            onDragOver={handleDragOver}
-            onDragEnter={(e) => handleDragEnter(e, agent.id)}
-            onDragLeave={(e) => handleDragLeave(e, agent.id)}
-            onDrop={(e) => handleDrop(e, agent.id)}
-            onDragEnd={handleDragEnd}
-            className={`group relative w-full flex items-center gap-3 px-4 py-3 text-left transition-colors cursor-pointer ${
-              dragOverId === agent.id && dragId !== agent.id ? "border-t-2 border-blue-500" : ""
-            } ${dragId === agent.id ? "opacity-40" : ""}`}
-            style={{
-              background: agent.id === activeAgentId ? "var(--surface)" : undefined,
-            }}
-            onMouseEnter={(e) => { if (agent.id !== activeAgentId) e.currentTarget.style.background = "var(--surface)"; }}
-            onMouseLeave={(e) => { if (agent.id !== activeAgentId) e.currentTarget.style.background = ""; }}
-            onClick={() => onSelect(agent.id)}
-          >
-            <Avatar name={agent.name} imageUrl={agent.avatar} size={36} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium truncate" style={{ color: "var(--fg)" }}>{agent.name}</span>
-                <span className="text-xs" style={{ color: agent.status === "online" ? "var(--green)" : "var(--red)" }}>
-                  ●
-                </span>
+      {/* Agent 列表 */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {agents.map((agent) => {
+          const isActive = agent.id === activeAgentId;
+          const isHover = hoverId === agent.id;
+          return (
+            <div
+              key={agent.id}
+              draggable
+              onDragStart={(e) => handleDragStart(e, agent.id)}
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => handleDragEnter(e, agent.id)}
+              onDragLeave={(e) => handleDragLeave(e, agent.id)}
+              onDrop={(e) => handleDrop(e, agent.id)}
+              onDragEnd={handleDragEnd}
+              onClick={() => onSelect(agent.id)}
+              onMouseEnter={() => setHoverId(agent.id)}
+              onMouseLeave={() => setHoverId(null)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 16px",
+                fontSize: 12,
+                color: isActive ? "var(--green)" : "var(--fg)",
+                background: isActive || isHover ? "var(--surface)" : "transparent",
+                cursor: "pointer",
+                borderLeft: isActive ? "2px solid var(--green)" : "2px solid transparent",
+                position: "relative",
+                opacity: dragId === agent.id ? 0.4 : 1,
+                borderTop: dragOverId === agent.id && dragId !== agent.id ? "2px solid var(--green)" : undefined,
+              }}
+            >
+              <span style={{ color: "var(--muted)", width: 12, flexShrink: 0 }}>
+                {isActive ? ">" : "\u00A0"}
+              </span>
+              <span style={{
+                fontSize: 11,
+                color: isActive ? "var(--green)" : "var(--muted)",
+                border: "1px solid currentColor",
+                padding: "0 3px",
+                marginRight: 4,
+                flexShrink: 0,
+              }}>
+                {agent.name[0].toUpperCase()}
+              </span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{agent.name}</div>
+                {agent.llmLabel && <div style={{ fontSize: 10, color: "var(--muted)" }}>{agent.llmLabel}</div>}
               </div>
-              {agent.llmLabel && (
-                <span className="text-xs px-1.5 py-0.5 rounded" style={{ color: "var(--muted)", background: "var(--surface)" }}>
-                  {agent.llmLabel}
-                </span>
+              <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 10, flexShrink: 0 }}>●</span>
+              {/* Hover 按鈕 */}
+              {isHover && (
+                <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 2 }}>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onEdit(agent); }}
+                    style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 11, padding: "0 2px", fontFamily: "monospace" }}
+                    title="編輯"
+                  >✎</button>
+                  {!isActive && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onRemove(agent.id); }}
+                      style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 11, padding: "0 2px", fontFamily: "monospace" }}
+                      title="刪除"
+                    >✕</button>
+                  )}
+                </div>
               )}
             </div>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit(agent);
-                }}
-                className="text-sm px-1 transition-colors"
-                style={{ color: "var(--muted)" }}
-                onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
-                onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
-                title="編輯"
-              >
-                ✎
-              </button>
-              {agent.id !== activeAgentId && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove(agent.id);
-                  }}
-                  className="text-sm px-1 transition-colors"
-                  style={{ color: "var(--muted)" }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
-                  onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
-                  title="刪除"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Theme Switcher */}
-      <div className="px-3 py-2 flex items-center gap-2" style={{ borderTop: "1px solid var(--border)" }}>
+      <div style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 4, borderTop: "1px solid var(--border)" }}>
         {Object.entries(availableSchemes).map(([key, s]) => (
           <button
             key={key}
             title={s.name}
             onClick={() => setScheme(key)}
             style={{
-              width: 14,
-              height: 14,
+              width: 10,
+              height: 10,
               borderRadius: "50%",
               background: s.background,
-              border: key === schemeKey ? `2px solid ${s.blue}` : `2px solid ${s.border}`,
+              border: key === schemeKey ? `2px solid ${s.green}` : `2px solid ${s.border}`,
               cursor: "pointer",
               flexShrink: 0,
+              padding: 0,
             }}
           />
         ))}
       </div>
 
+      {/* New Agent 按鈕 */}
       <button
         onClick={onAdd}
-        className="m-3 mt-0 py-2 rounded text-sm transition-colors"
         style={{
-          background: "var(--surface)",
+          display: "block",
+          width: "calc(100% - 24px)",
+          margin: "8px 12px",
+          padding: "6px",
+          background: "transparent",
+          border: "1px solid var(--border)",
           color: "var(--muted)",
-          borderTop: "1px solid var(--border)",
+          fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+          fontSize: 11,
+          letterSpacing: "0.05em",
+          cursor: "pointer",
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--fg)";
+          e.currentTarget.style.borderColor = "var(--green)";
+          e.currentTarget.style.color = "var(--green)";
         }}
         onMouseLeave={(e) => {
+          e.currentTarget.style.borderColor = "var(--border)";
           e.currentTarget.style.color = "var(--muted)";
         }}
       >
-        + 新增角色
+        [+ NEW AGENT]
       </button>
     </div>
   );

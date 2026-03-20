@@ -16,6 +16,18 @@ interface Props {
   onOpenClaudeMd?: () => void;
 }
 
+const btnStyle: React.CSSProperties = {
+  padding: "3px 8px",
+  background: "transparent",
+  border: "1px solid var(--border)",
+  color: "var(--muted)",
+  fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+  fontSize: 10,
+  letterSpacing: "0.05em",
+  cursor: "pointer",
+  borderRadius: 0,
+};
+
 export default function Terminal({ agent, isActive, onStatusChange, showShellPane, onToggleShell, onOpenClaudeMd }: Props) {
   const { scheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,7 +61,6 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
       brightCyan: scheme.ansi.brightCyan,
       brightWhite: scheme.ansi.brightWhite,
     };
-    // refresh 強制重繪
     xtermRef.current.refresh(0, xtermRef.current.rows - 1);
   }, [scheme]);
 
@@ -74,14 +85,13 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
     const xterm = new XTerm({
       cursorBlink: true,
       fontSize: 14,
-      fontFamily: "Menlo, Monaco, 'Courier New', monospace",
+      fontFamily: '"SF Mono", Menlo, Monaco, "Courier New", monospace',
       theme: {
         background: scheme.background,
         foreground: scheme.foreground,
         cursor: scheme.cursor,
         cursorAccent: scheme.background,
         selectionBackground: scheme.selection,
-        // ANSI 16 colors
         black: scheme.ansi.black,
         red: scheme.ansi.red,
         green: scheme.ansi.green,
@@ -112,7 +122,6 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
       if (isActive) xterm.focus();
     }, 100);
 
-    // resize observer
     const resizeObs = new ResizeObserver(() => {
       if (fitAddonRef.current) {
         fitAddonRef.current.fit();
@@ -125,25 +134,21 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
     });
     resizeObs.observe(container);
 
-    // 鍵盤輸入
     xterm.onData((data) => {
       invoke("write_to_agent", { agentId: agent.id, data });
     });
 
-    // listen PTY output
     let unlisten: (() => void) | null = null;
     listen<string>(`pty-output-${agent.id}`, (event) => {
       const bytes = Uint8Array.from(atob(event.payload), (c) => c.charCodeAt(0));
       xterm.write(bytes);
     }).then((fn) => { unlisten = fn; });
 
-    // listen PTY exit
     let unlistenExit: (() => void) | null = null;
     listen<void>(`pty-exit-${agent.id}`, () => {
       onStatusChange("offline");
     }).then((fn) => { unlistenExit = fn; });
 
-    // spawn PTY
     setTimeout(async () => {
       fitAddon.fit();
       try {
@@ -167,7 +172,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
       if (unlistenExit) unlistenExit();
       xterm.dispose();
     };
-  }, []); // 空 deps，只跑一次
+  }, []);
 
   const handleRestart = async () => {
     const xterm = xtermRef.current;
@@ -192,85 +197,71 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
     }
   };
 
+  const btnHover = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.borderColor = "var(--green)";
+    e.currentTarget.style.color = "var(--green)";
+  };
+  const btnLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.borderColor = "var(--border)";
+    e.currentTarget.style.color = "var(--muted)";
+  };
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* 頂部 bar */}
-      <div className="flex items-center gap-2 px-4 h-11 flex-shrink-0" style={{ background: "var(--bg)", borderBottom: "1px solid var(--border)" }}>
-        <span className="text-lg">{agent.emoji}</span>
-        <div>
-          <div className="text-sm font-semibold" style={{ color: "var(--fg)" }}>{agent.name}</div>
-          <div className="text-xs" style={{ color: agent.status === "online" ? "var(--green)" : "var(--red)" }}>
-            {agent.status === "online" ? "● 執行中" : "● 已停止"}
-          </div>
-        </div>
-        <div className="ml-auto flex gap-2">
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "0 12px",
+        height: 36,
+        flexShrink: 0,
+        background: "var(--bg)",
+        borderBottom: "1px solid var(--border)",
+        fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+        fontSize: 11,
+      }}>
+        <span style={{ color: "var(--green)", fontWeight: 600, letterSpacing: "0.05em" }}>
+          [{agent.name.toUpperCase()}]
+        </span>
+        <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 10 }}>
+          {agent.status === "online" ? "● RUNNING" : "● STOPPED"}
+        </span>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           {agent.command[0] === "claude" && onOpenClaudeMd && (
             <button
               onClick={onOpenClaudeMd}
               title="編輯 CLAUDE.md"
-              className="px-2 py-1 text-xs rounded"
-              style={{
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                color: "var(--muted)",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "var(--blue)";
-                e.currentTarget.style.color = "var(--blue)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.color = "var(--muted)";
-              }}
+              style={btnStyle}
+              onMouseEnter={btnHover}
+              onMouseLeave={btnLeave}
             >
-              📋 CLAUDE.md
+              [CLAUDE.MD]
             </button>
           )}
           <button
             onClick={handleRestart}
-            className="px-2 py-1 text-xs rounded"
-            style={{
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              color: "var(--muted)",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--blue)";
-              e.currentTarget.style.color = "var(--blue)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--border)";
-              e.currentTarget.style.color = "var(--muted)";
-            }}
+            style={btnStyle}
+            onMouseEnter={btnHover}
+            onMouseLeave={btnLeave}
           >
-            重啟
+            [RESTART]
           </button>
           <button
             onClick={onToggleShell}
-            className="px-2 py-1 text-xs rounded"
             style={showShellPane ? {
-              border: "1px solid var(--blue)",
-              background: "var(--selection)",
-              color: "var(--blue)",
-            } : {
-              border: "1px solid var(--border)",
-              background: "var(--surface)",
-              color: "var(--muted)",
-            }}
+              ...btnStyle,
+              border: "1px solid var(--green)",
+              color: "var(--green)",
+            } : btnStyle}
             onMouseEnter={(e) => {
-              if (!showShellPane) {
-                e.currentTarget.style.borderColor = "var(--blue)";
-                e.currentTarget.style.color = "var(--blue)";
-              }
+              if (!showShellPane) btnHover(e);
             }}
             onMouseLeave={(e) => {
-              if (!showShellPane) {
-                e.currentTarget.style.borderColor = "var(--border)";
-                e.currentTarget.style.color = "var(--muted)";
-              }
+              if (!showShellPane) btnLeave(e);
             }}
           >
-            Shell ↓
+            [SHELL ↓]
           </button>
         </div>
       </div>

@@ -1,13 +1,13 @@
 // Terminal ANSI 色系 palette（對齊 xterm theme）
 const COLORS = [
-  "#3fb950", // green
-  "#4a9eff", // blue
-  "#e67e22", // orange (ANSI yellow-bright)
-  "#9b59b6", // magenta
-  "#1abc9c", // cyan
-  "#f85149", // red
-  "#e91e63", // pink
-  "#58a6ff", // blue-light
+  "#00ff9f", // green
+  "#00ccff", // blue
+  "#ffcc00", // yellow
+  "#ff00ff", // magenta
+  "#00ffff", // cyan
+  "#ff3333", // red
+  "#ff66ff", // pink
+  "#33ddff", // blue-light
 ]
 
 function hashColor(name: string): string {
@@ -22,12 +22,12 @@ interface AvatarProps {
   size?: number
 }
 
-export default function Avatar({ name, imageUrl, size = 36 }: AvatarProps) {
+export default function Avatar({ name, imageUrl, size }: AvatarProps) {
   if (imageUrl) {
     return (
       <img
         src={imageUrl}
-        style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }}
+        style={{ width: size ?? 36, height: size ?? 36, objectFit: "cover", flexShrink: 0 }}
         alt={name}
       />
     )
@@ -35,22 +35,16 @@ export default function Avatar({ name, imageUrl, size = 36 }: AvatarProps) {
   const initial = name.trim()[0]?.toUpperCase() ?? "?"
   const color = hashColor(name)
   return (
-    <div style={{
-      width: size,
-      height: size,
-      borderRadius: "50%",
-      background: color,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: Math.round(size * 0.42),
-      fontWeight: 700,
-      color: "var(--bg)",
+    <span style={{
+      fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+      fontSize: 11,
+      color: color,
+      border: `1px solid ${color}`,
+      padding: "1px 4px",
       flexShrink: 0,
       userSelect: "none",
-      fontFamily: "Menlo, Monaco, monospace",
     }}>
       {initial}
-    </div>
+    </span>
   )
 }

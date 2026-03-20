@@ -31,15 +31,27 @@ function resizeImage(file: File, size = 64): Promise<string> {
   });
 }
 
+const monoFont = '"SF Mono", "Menlo", "Monaco", "Courier New", monospace';
+
+const btnStyle: React.CSSProperties = {
+  padding: "6px 12px",
+  background: "transparent",
+  border: "1px solid var(--border)",
+  color: "var(--muted)",
+  fontFamily: monoFont,
+  fontSize: 11,
+  letterSpacing: "0.05em",
+  cursor: "pointer",
+  borderRadius: 0,
+};
+
 export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) {
   const isEditing = !!initialValues?.id;
 
-  // Step 1 state
   const [step, setStep] = useState<1 | 2>(isEditing ? 2 : 1);
   const [available, setAvailable] = useState<AvailableAgent[]>([]);
   const [scanning, setScanning] = useState(false);
 
-  // Step 2 state
   const [name, setName] = useState(initialValues?.name ?? "");
   const [command, setCommand] = useState(initialValues?.command?.join(" ") ?? "");
   const [workingDir, setWorkingDir] = useState(initialValues?.workingDir ?? "~");
@@ -101,7 +113,6 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       status: initialValues?.status ?? "offline",
     };
 
-    // 若是 claude 且有填 CLAUDE.md，建立目錄並寫入
     const isClaudeCmd = agent.command[0] === "claude";
     if (isClaudeCmd && claudeMd.trim()) {
       const path = `~/.chatsh/agents/${agentId}/CLAUDE.md`;
@@ -114,106 +125,124 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
   const inputStyle: React.CSSProperties = {
     background: "var(--bg)",
     border: "1px solid var(--border)",
-    borderRadius: 6,
     padding: "8px 12px",
-    fontSize: 14,
+    fontSize: 12,
     color: "var(--fg)",
     outline: "none",
+    fontFamily: monoFont,
+    borderRadius: 0,
   };
 
-  const secondaryBtnStyle: React.CSSProperties = {
-    background: "var(--surface)",
-    color: "var(--muted)",
+  const btnHover = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.borderColor = "var(--green)";
+    e.currentTarget.style.color = "var(--green)";
+  };
+  const btnLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.currentTarget.style.borderColor = "var(--border)";
+    e.currentTarget.style.color = "var(--muted)";
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "rgba(0, 0, 0, 0.8)" }}
       onClick={onClose}
     >
       <div
-        className="rounded-lg w-[440px] p-6 shadow-xl"
-        style={{ background: "var(--bg)", border: "1px solid var(--border)" }}
+        style={{
+          width: 440,
+          padding: 24,
+          background: "var(--bg)",
+          border: "1px solid var(--border)",
+          fontFamily: monoFont,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         {step === 1 && !isEditing ? (
           <>
-            <h2 className="text-lg font-bold mb-4" style={{ color: "var(--fg)" }}>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>┌─── SELECT AGENT ───┐</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 16 }}>
               選擇要新增的 Agent
-            </h2>
+            </div>
             {scanning ? (
-              <div className="text-sm py-8 text-center" style={{ color: "var(--muted)" }}>
+              <div style={{ fontSize: 12, padding: "32px 0", textAlign: "center", color: "var(--muted)" }}>
                 掃描可用 CLI 中…
               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
                   {available.map((a) => (
                     <button
                       key={a.command}
                       type="button"
                       onClick={() => selectAgent(a)}
-                      className="flex flex-col gap-1 p-3 rounded-lg transition-colors text-left"
-                      style={{ border: "1px solid var(--border)", background: "var(--bg)" }}
-                      onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 4,
+                        padding: 12,
+                        textAlign: "left",
+                        border: "1px solid var(--border)",
+                        background: "var(--bg)",
+                        cursor: "pointer",
+                        fontFamily: monoFont,
+                        borderRadius: 0,
+                        color: "var(--fg)",
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--green)"}
                       onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                     >
-                      <span className="text-sm font-medium" style={{ color: "var(--fg)" }}>
-                        {a.name}
-                      </span>
-                      <span className="text-xs" style={{ color: "var(--muted)" }}>
-                        {a.description}
-                      </span>
-                      <code className="text-xs mt-0.5" style={{ color: "var(--muted)", opacity: 0.7 }}>
-                        {a.command}
-                      </code>
+                      <span style={{ fontSize: 12, fontWeight: 600 }}>{a.name}</span>
+                      <span style={{ fontSize: 10, color: "var(--muted)" }}>{a.description}</span>
+                      <code style={{ fontSize: 10, color: "var(--muted)", opacity: 0.7 }}>{a.command}</code>
                     </button>
                   ))}
                 </div>
                 {available.length === 0 && (
-                  <div className="text-sm py-4 text-center" style={{ color: "var(--muted)" }}>
+                  <div style={{ fontSize: 12, padding: "16px 0", textAlign: "center", color: "var(--muted)" }}>
                     未偵測到可用的 CLI 工具
                   </div>
                 )}
                 <button
                   type="button"
                   onClick={goCustom}
-                  className="w-full py-2.5 rounded-lg text-sm transition-colors"
-                  style={{ border: "1px dashed var(--border)", color: "var(--muted)" }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = "var(--blue)";
-                    e.currentTarget.style.color = "var(--fg)";
+                  style={{
+                    ...btnStyle,
+                    display: "block",
+                    width: "100%",
+                    padding: "10px",
+                    border: "1px dashed var(--border)",
                   }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = "var(--border)";
-                    e.currentTarget.style.color = "var(--muted)";
-                  }}
+                  onMouseEnter={btnHover}
+                  onMouseLeave={btnLeave}
                 >
-                  + 自訂指令
+                  [+ 自訂指令]
                 </button>
               </>
             )}
-            <div className="flex justify-end mt-4">
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded text-sm transition-colors"
-                style={secondaryBtnStyle}
-                onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
-                onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
+                style={btnStyle}
+                onMouseEnter={btnHover}
+                onMouseLeave={btnLeave}
               >
-                取消
+                [取消]
               </button>
             </div>
           </>
         ) : (
           <>
-            <h2 className="text-lg font-bold mb-4" style={{ color: "var(--fg)" }}>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
+              ┌─── {isEditing ? "EDIT AGENT" : "CONFIGURE"} ───┐
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 16 }}>
               {isEditing ? "編輯角色" : `設定 ${name || "Agent"}`}
-            </h2>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex flex-col items-center gap-1.5">
+            </div>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                   <Avatar
                     name={name || "?"}
                     imageUrl={avatarUrl || undefined}
@@ -222,10 +251,11 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   <button
                     type="button"
                     onClick={() => fileRef.current?.click()}
-                    className="text-xs hover:underline"
-                    style={{ color: "var(--blue)" }}
+                    style={{ ...btnStyle, fontSize: 10, padding: "2px 6px" }}
+                    onMouseEnter={btnHover}
+                    onMouseLeave={btnLeave}
                   >
-                    上傳頭像
+                    [上傳]
                   </button>
                   <input
                     ref={fileRef}
@@ -235,52 +265,51 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     onChange={handleFileChange}
                   />
                 </div>
-                <div className="flex-1 flex flex-col gap-3">
-                  <label className="flex flex-col gap-1 text-sm" style={{ color: "var(--muted)" }}>
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
                     名稱
                     <input
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       style={inputStyle}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
                       onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                       placeholder="例如：工程助手"
                       autoFocus
                     />
                   </label>
                   {isEditing && (
-                    <label className="flex flex-col gap-1 text-sm" style={{ color: "var(--muted)" }}>
+                    <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
                       指令
                       <input
                         type="text"
                         value={command}
                         onChange={(e) => setCommand(e.target.value)}
                         style={inputStyle}
-                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
                         onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                         placeholder="例如：claude 或 /bin/zsh"
                       />
                     </label>
                   )}
-                  <label className="flex flex-col gap-1 text-sm" style={{ color: "var(--muted)" }}>
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
                     工作目錄
                     <input
                       type="text"
                       value={workingDir}
                       onChange={(e) => setWorkingDir(e.target.value)}
                       style={inputStyle}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
                       onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                       placeholder="~"
                     />
                   </label>
                 </div>
               </div>
-              {/* CLAUDE.md — 只對 claude 指令顯示 */}
               {command.split(" ")[0] === "claude" && (
-                <label className="flex flex-col gap-1 text-sm mt-3" style={{ color: "var(--muted)" }}>
-                  <span>CLAUDE.md <span style={{ color: "var(--muted)", fontSize: 11 }}>（System prompt，選填）</span></span>
+                <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+                  <span>CLAUDE.md <span style={{ fontSize: 10 }}>（System prompt，選填）</span></span>
                   <textarea
                     value={claudeMd}
                     onChange={(e) => setClaudeMd(e.target.value)}
@@ -289,48 +318,55 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     style={{
                       ...inputStyle,
                       resize: "vertical",
-                      fontFamily: "Menlo, Monaco, monospace",
-                      fontSize: 12,
                       lineHeight: 1.6,
                     }}
-                    onFocus={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                    onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
                     onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                   />
-                  <span style={{ fontSize: 11, color: "var(--muted)" }}>存放於 ~/.chatsh/agents/{"{id}"}/CLAUDE.md，不影響專案目錄</span>
+                  <span style={{ fontSize: 10, color: "var(--muted)" }}>存放於 ~/.chatsh/agents/{"{id}"}/CLAUDE.md，不影響專案目錄</span>
                 </label>
               )}
-              <div className="flex justify-between mt-2">
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
                 <div>
                   {!isEditing && (
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      className="px-4 py-2 rounded text-sm transition-colors"
-                      style={secondaryBtnStyle}
-                      onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
-                      onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
+                      style={btnStyle}
+                      onMouseEnter={btnHover}
+                      onMouseLeave={btnLeave}
                     >
-                      上一步
+                      [上一步]
                     </button>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div style={{ display: "flex", gap: 8 }}>
                   <button
                     type="button"
                     onClick={onClose}
-                    className="px-4 py-2 rounded text-sm transition-colors"
-                    style={secondaryBtnStyle}
-                    onMouseEnter={(e) => e.currentTarget.style.color = "var(--fg)"}
-                    onMouseLeave={(e) => e.currentTarget.style.color = "var(--muted)"}
+                    style={btnStyle}
+                    onMouseEnter={btnHover}
+                    onMouseLeave={btnLeave}
                   >
-                    取消
+                    [取消]
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded text-sm transition-colors"
-                    style={{ background: "var(--selection)", color: "var(--blue)" }}
+                    style={{
+                      ...btnStyle,
+                      border: "1px solid var(--green)",
+                      color: "var(--green)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "var(--green)";
+                      e.currentTarget.style.color = "var(--bg)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = "var(--green)";
+                    }}
                   >
-                    {isEditing ? "儲存" : "確認新增"}
+                    [{isEditing ? "儲存" : "確認新增"}]
                   </button>
                 </div>
               </div>

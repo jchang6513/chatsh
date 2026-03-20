@@ -3,19 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --bg: #0d0d0d;
-  --fg: #d4d4d4;
-  --cursor: #d4d4d4;
-  --selection: #2d3a4a;
-  --green: #3fb950;
-  --red: #f85149;
-  --blue: #4a9eff;
-  --yellow: #e6a817;
-  --cyan: #1abc9c;
-  --magenta: #9b59b6;
-  --surface: #1e1e1e;
-  --border: #404040;
-  --muted: #808080;
+  --bg: #0a0a0a;
+  --fg: #00ff9f;
+  --cursor: #00ff9f;
+  --selection: #003320;
+  --green: #00ff9f;
+  --red: #ff3333;
+  --blue: #00ccff;
+  --yellow: #ffcc00;
+  --cyan: #00ffff;
+  --magenta: #ff00ff;
+  --surface: #111111;
+  --border: #1a3a2a;
+  --muted: #336644;
+}
+
+* {
+  border-radius: 0 !important;
 }
 
 body {
@@ -23,5 +27,10 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+  font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
 }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }

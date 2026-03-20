@@ -130,6 +130,29 @@ export const SCHEMES: Record<string, ColorScheme> = {
       brightCyan: "#a4ffff", brightWhite: "#ffffff",
     },
   },
+  "hacker": {
+    name: "Hacker",
+    background: "#0a0a0a",
+    foreground: "#00ff9f",
+    cursor: "#00ff9f",
+    selection: "#003320",
+    green: "#00ff9f",
+    red: "#ff3333",
+    blue: "#00ccff",
+    yellow: "#ffcc00",
+    cyan: "#00ffff",
+    magenta: "#ff00ff",
+    surface: "#111111",
+    border: "#1a3a2a",
+    muted: "#336644",
+    ansi: {
+      black: "#0a0a0a", red: "#ff3333", green: "#00ff9f", yellow: "#ffcc00",
+      blue: "#00ccff", magenta: "#ff00ff", cyan: "#00ffff", white: "#ccffcc",
+      brightBlack: "#1a3a2a", brightRed: "#ff6666", brightGreen: "#33ffbb",
+      brightYellow: "#ffee44", brightBlue: "#33ddff", brightMagenta: "#ff66ff",
+      brightCyan: "#66ffff", brightWhite: "#00ff9f",
+    },
+  },
 }
 
-export const DEFAULT_SCHEME = "default"
+export const DEFAULT_SCHEME = "hacker"
