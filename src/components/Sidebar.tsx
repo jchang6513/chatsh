@@ -67,7 +67,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
 
   return (
     <div className="w-[260px] min-w-[260px] bg-[#1a1a1a] flex flex-col border-r border-[#404040]">
-      <div className="px-4 py-3 text-lg font-bold tracking-wide text-[#e0e0e0] border-b border-[#404040]">
+      <div className="px-4 h-11 flex items-center text-lg font-bold tracking-wide text-[#e0e0e0] border-b border-[#404040]">
         chat.sh
       </div>
 

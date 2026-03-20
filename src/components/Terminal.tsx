@@ -43,7 +43,7 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
       fontSize: 14,
       fontFamily: "Menlo, Monaco, 'Courier New', monospace",
       theme: {
-        background: "#0d0d0d",
+        background: "#111111",
         foreground: "#d4d4d4",
         cursor: "#d4d4d4",
         selectionBackground: "#2d3a4a",
