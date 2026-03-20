@@ -95,10 +95,13 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
         brightWhite: scheme.ansi.brightWhite,
       },
       allowProposedApi: true,
+      customGlyphs: false,
     });
     const fitAddon = new FitAddon();
     xterm.loadAddon(fitAddon);
     xterm.open(container);
+    // 禁用 modifyOtherKeys（避免送出 ~XXXX~ escape sequence）
+    xterm.write("\x1b[>4;0m");
     xtermRef.current = xterm;
     fitAddonRef.current = fitAddon;
 

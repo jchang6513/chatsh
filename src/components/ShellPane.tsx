@@ -65,6 +65,7 @@ function ShellTerminal({ session, isActive }: ShellTerminalProps) {
     if (!container) return;
 
     session.xterm.open(container);
+    session.xterm.write("\x1b[>4;0m");
     setTimeout(() => {
       session.fitAddon.fit();
       if (isActive) session.xterm.focus();
