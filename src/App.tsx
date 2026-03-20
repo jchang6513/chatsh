@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import TabBar from "./components/TabBar";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
 import ShellPane from "./components/ShellPane";
@@ -94,14 +93,6 @@ export default function App() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)" }}>
-      {/* Tab bar */}
-      <TabBar
-        agents={agents}
-        activeAgentId={activeAgentId}
-        onSelect={handleSelectAgent}
-        onAdd={() => setShowAddModal(true)}
-        onRemove={handleRemoveAgent}
-      />
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
         {/* Sidebar */}
