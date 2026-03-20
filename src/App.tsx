@@ -52,9 +52,14 @@ export default function App() {
   const setActivePanelTab = (agentId: string, tab: string) =>
     setActiveTabMap(prev => ({ ...prev, [agentId]: tab }));
 
+  const shellCounters = useRef<Record<string, number>>({});
   const addShellToAgent = (agentId: string) => {
-    const shellId = `__shell_${agentId}_${Date.now()}__`;
+    shellCounters.current[agentId] = (shellCounters.current[agentId] ?? 0) + 1;
+    const n = shellCounters.current[agentId];
+    const shellId = `__shell_${agentId}_${n}__`;
     setShellSessions(prev => ({ ...prev, [agentId]: [...(prev[agentId] ?? []), shellId] }));
+    // 預設名稱帶上 stable 編號
+    setShellNames(prev => ({ ...prev, [shellId]: `Shell ${n}` }));
     setActivePanelTab(agentId, shellId);
   };
 
