@@ -61,20 +61,34 @@ export default function App() {
   const removeShellFromAgent = (agentId: string, shellId: string) => {
     setShellSessions(prev => {
       const sessions = prev[agentId] ?? [];
-      const idx = sessions.indexOf(shellId);
       const next = sessions.filter(id => id !== shellId);
-      // 返回前一個，沒有前一個就回 terminal
-      const prevTab = idx > 0 ? sessions[idx - 1] : "terminal";
-      setActivePanelTab(agentId, prevTab);
+      // 只有關掉的是當前分頁才切換
+      if (getActivePanelTab(agentId) === shellId) {
+        const idx = sessions.indexOf(shellId);
+        const prevTab = idx > 0 ? sessions[idx - 1] : "terminal";
+        setActivePanelTab(agentId, prevTab);
+      }
       return { ...prev, [agentId]: next };
     });
   };
 
   // Shell 分頁名稱（自訂）
   const [shellNames, setShellNames] = useState<Record<string, string>>({});
+  const [editingShellId, setEditingShellId] = useState<string | null>(null);
+  const [editingShellName, setEditingShellName] = useState("");
   const getShellName = (shellId: string, idx: number) => shellNames[shellId] ?? `Shell ${idx + 1}`;
   const renameShell = (shellId: string, name: string) =>
     setShellNames(prev => ({ ...prev, [shellId]: name }));
+  const startRename = (shellId: string, idx: number) => {
+    setEditingShellId(shellId);
+    setEditingShellName(getShellName(shellId, idx));
+  };
+  const commitRename = () => {
+    if (editingShellId && editingShellName.trim()) {
+      renameShell(editingShellId, editingShellName.trim());
+    }
+    setEditingShellId(null);
+  };
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
@@ -200,15 +214,36 @@ export default function App() {
                       color: getActivePanelTab(agent.id) === shellId ? "var(--green)" : "var(--muted)",
                     }}
                   >
-                    <span
-                      onDoubleClick={e => {
-                        e.stopPropagation();
-                        const cur = getShellName(shellId, idx);
-                        const name = window.prompt("分頁名稱", cur);
-                        if (name !== null && name.trim()) renameShell(shellId, name.trim());
-                      }}
-                      title="雙擊重命名"
-                    >{getShellName(shellId, idx)}</span>
+                    {editingShellId === shellId ? (
+                      <input
+                        autoFocus
+                        value={editingShellName}
+                        onChange={e => setEditingShellName(e.target.value)}
+                        onBlur={commitRename}
+                        onKeyDown={e => {
+                          if (e.key === "Enter") commitRename();
+                          if (e.key === "Escape") setEditingShellId(null);
+                          e.stopPropagation();
+                        }}
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          borderBottom: "1px solid var(--green)",
+                          color: "var(--green)",
+                          fontFamily: "monospace",
+                          fontSize: 10,
+                          outline: "none",
+                          width: 80,
+                          padding: 0,
+                        }}
+                      />
+                    ) : (
+                      <span
+                        onDoubleClick={e => { e.stopPropagation(); startRename(shellId, idx); }}
+                        title="雙擊重命名"
+                      >{getShellName(shellId, idx)}</span>
+                    )}
                     <span
                       onClick={e => { e.stopPropagation(); removeShellFromAgent(agent.id, shellId); }}
                       style={{ opacity: 0.4, cursor: "pointer", marginLeft: 2, fontSize: 11 }}
