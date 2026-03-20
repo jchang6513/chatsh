@@ -128,19 +128,29 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
               <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 8, flexShrink: 0 }}>●</span>
               {/* Hover 按鈕 */}
               {isHover && (
-                <div style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 2 }}>
+                <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, display: "flex", alignItems: "stretch" }}>
                   <button
-                    onClick={(e) => { e.stopPropagation(); onEdit(agent); }}
-                    style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 10, padding: "0 2px", fontFamily: "monospace" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "var(--green)")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}
+                    onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onEdit(agent); }}
+                    style={{
+                      color: "var(--muted)", background: "var(--surface)",
+                      border: "none", borderLeft: "1px solid var(--border)",
+                      cursor: "pointer", fontSize: 11, padding: "0 8px",
+                      fontFamily: "monospace",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = "var(--green)"; e.currentTarget.style.background = "var(--bg)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.background = "var(--surface)"; }}
                     title="編輯"
                   >✎</button>
                   <button
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onRemove(agent.id); }}
-                    style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 11, padding: "0 2px", fontFamily: "monospace" }}
-                    onMouseEnter={e => (e.currentTarget.style.color = "var(--red)")}
-                    onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}
+                    style={{
+                      color: "var(--red)", background: "var(--surface)",
+                      border: "none", borderLeft: "1px solid var(--border)",
+                      cursor: "pointer", fontSize: 13, padding: "0 10px",
+                      fontFamily: "monospace", fontWeight: "bold",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "var(--red)"; e.currentTarget.style.color = "var(--bg)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.color = "var(--red)"; }}
                     title="刪除"
                   >×</button>
                 </div>
