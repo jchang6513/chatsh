@@ -1,25 +1,37 @@
 # chat.sh
 
-A terminal-native desktop app for managing multiple AI coding assistants — Claude Code, Codex, and more — in a single window.
+A terminal-native desktop app for managing multiple AI coding assistants — Claude Code, OpenAI Codex, Gemini CLI, and more — in a single window.
 
-Built with Tauri v2 + React + xterm.js. Lightweight (~12MB), no Electron.
+Built with Tauri v2 + React + xterm.js. ~12MB, no Electron.
 
+## Download
+
+**macOS (Apple Silicon / Intel)**
+
+→ [Download latest release](https://github.com/jchang6513/chatsh/releases/latest)
+
+```bash
+# or via Homebrew
+brew install jchang6513/chatsh/chatsh
+```
+
+> First launch: right-click → Open (bypasses Gatekeeper for unsigned builds)
 
 ## Features
 
-- **Multiple AI agents** — Claude Code, OpenAI Codex, or any CLI tool
-- **Shell sessions** — add/remove shell tabs per agent panel, rename with double-click
-- **CLAUDE.md editor** — edit system prompts per agent without touching project files
-- **Theme system** — 8 built-in color schemes (Hacker, Dracula, GitHub Dark, Solarized, Amber, Cyan Noir, Red Alert, Phosphor), all synced to terminal ANSI colors
-- **Persistent agents** — agent config saved to localStorage, survives restarts
-- **Terminal-first UI** — monospace fonts, bracket buttons, no rounded corners
+- **Multiple AI agents** — Claude Code, Codex, Gemini, Aider, or any CLI tool
+- **Per-agent CLAUDE.md** — edit system prompts isolated from your project
+- **Shell sessions** — add/remove/rename shell tabs per panel
+- **8 color themes** — Hacker, Dracula, GitHub Dark, Solarized, Amber, Cyan Noir, Red Alert, Phosphor — all synced to terminal ANSI colors
+- **Persistent config** — agents survive restarts
+- **Terminal-first UI** — monospace, bracket buttons, zero rounded corners
 
-## Quick Start
+## Quick Start (Dev)
 
 ```bash
-# Prerequisites: Rust, Node.js 18+, Xcode CLI tools (macOS)
+# Prerequisites: Rust, Node.js 18+
 
-git clone https://github.com/your-username/chatsh
+git clone https://github.com/jchang6513/chatsh
 cd chatsh
 npm install
 npm run tauri dev
@@ -29,31 +41,22 @@ npm run tauri dev
 
 ```bash
 npm run tauri build
-# Output: src-tauri/target/release/chatsh (macOS ~12MB)
+# → src-tauri/target/release/bundle/dmg/chatsh_*.dmg
 ```
 
-## Adding Agents
-
-Click `+ NEW AGENT` in the sidebar. The app scans for installed CLI tools (claude, codex, gemini, aider, zsh, python3, node) and presents them as quick-add options.
-
-## CLAUDE.md
-
-Each Claude Code agent has its own `CLAUDE.md` stored at `~/.chatsh/agents/{id}/CLAUDE.md`, isolated from your project directory. Edit it via the `[CLAUDE.MD]` button in the panel header.
-
-## Keyboard Shortcuts
+## Keyboard
 
 | Key | Action |
 |-----|--------|
-| `Ctrl+C` | Send SIGINT to current process |
-| `⌘S` | Save CLAUDE.md (in editor) |
-| Double-click shell tab | Rename shell session |
+| `Ctrl+C` | Send SIGINT |
+| `⌘S` | Save CLAUDE.md |
+| Double-click shell tab | Rename |
 
-## Tech Stack
+## Tech
 
-- **Tauri v2** — Rust backend, native WebView
-- **React + TypeScript** — UI
-- **xterm.js** — terminal rendering
-- **portable-pty** — cross-platform PTY
+- [Tauri v2](https://tauri.app) — Rust backend, native WebView
+- [xterm.js](https://xtermjs.org) — terminal rendering  
+- [portable-pty](https://docs.rs/portable-pty) — PTY
 
 ## License
 
