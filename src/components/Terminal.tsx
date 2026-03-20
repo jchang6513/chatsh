@@ -11,9 +11,10 @@ interface Props {
   agent: Agent;
   isActive: boolean;
   onStatusChange: (status: Agent["status"]) => void;
+  restartKey?: number;
 }
 
-export default function Terminal({ agent, isActive, onStatusChange }: Props) {
+export default function Terminal({ agent, isActive, onStatusChange, restartKey = 0 }: Props) {
   const { scheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
@@ -164,7 +165,7 @@ export default function Terminal({ agent, isActive, onStatusChange }: Props) {
       xtermRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [agent.id]);
+  }, [agent.id, restartKey]);
 
   return (
     <div className="flex flex-col flex-1 min-h-0">

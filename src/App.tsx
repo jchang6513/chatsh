@@ -52,6 +52,8 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
+  const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
+  const bumpRestart = (id: string) => setRestartKeys(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
@@ -189,6 +191,7 @@ export default function App() {
                     onClick={async () => {
                       try { await invoke("kill_agent", { agentId: agent.id }) } catch {}
                       updateAgentStatus(agent.id, "offline")
+                      bumpRestart(agent.id)
                     }}
                     style={{
                       background: "transparent",
@@ -213,6 +216,7 @@ export default function App() {
                   agent={agent}
                   isActive={agent.id === activeAgentId && getTab(agent.id) === "terminal"}
                   onStatusChange={(status) => updateAgentStatus(agent.id, status)}
+                  restartKey={restartKeys[agent.id] ?? 0}
                 />
               </div>
               {/* Shell（visibility 切換） */}
