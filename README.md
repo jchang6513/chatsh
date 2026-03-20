@@ -1,5 +1,7 @@
 # chat.sh
 
+![chat.sh](docs/screenshot.png)
+
 A terminal-native desktop app for managing multiple AI coding assistants — Claude Code, OpenAI Codex, Gemini CLI, and more — in a single window.
 
 Built with Tauri v2 + React + xterm.js. ~12MB, no Electron.
