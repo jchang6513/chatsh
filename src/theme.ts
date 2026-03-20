@@ -16,6 +16,25 @@ export interface ColorScheme {
   surface: string  // 比 background 稍亮（按鈕、卡片）
   border: string   // 分割線
   muted: string    // 次要文字
+  // ANSI 16-color palette（xterm 直接套用）
+  ansi: {
+    black: string        // 0
+    red: string          // 1
+    green: string        // 2
+    yellow: string       // 3
+    blue: string         // 4
+    magenta: string      // 5
+    cyan: string         // 6
+    white: string        // 7
+    brightBlack: string  // 8 (dark gray)
+    brightRed: string    // 9
+    brightGreen: string  // 10
+    brightYellow: string // 11
+    brightBlue: string   // 12
+    brightMagenta: string// 13
+    brightCyan: string   // 14
+    brightWhite: string  // 15
+  }
 }
 
 export const SCHEMES: Record<string, ColorScheme> = {
@@ -34,6 +53,13 @@ export const SCHEMES: Record<string, ColorScheme> = {
     surface: "#1e1e1e",
     border: "#404040",
     muted: "#808080",
+    ansi: {
+      black: "#1e1e1e", red: "#f85149", green: "#3fb950", yellow: "#e6a817",
+      blue: "#4a9eff", magenta: "#9b59b6", cyan: "#1abc9c", white: "#d4d4d4",
+      brightBlack: "#404040", brightRed: "#ff7b72", brightGreen: "#56d364",
+      brightYellow: "#f0b72f", brightBlue: "#79c0ff", brightMagenta: "#d2a8ff",
+      brightCyan: "#39d3c3", brightWhite: "#e0e0e0",
+    },
   },
   "github-dark": {
     name: "GitHub Dark",
@@ -50,6 +76,13 @@ export const SCHEMES: Record<string, ColorScheme> = {
     surface: "#161b22",
     border: "#30363d",
     muted: "#8b949e",
+    ansi: {
+      black: "#161b22", red: "#f85149", green: "#3fb950", yellow: "#d29922",
+      blue: "#58a6ff", magenta: "#bc8cff", cyan: "#39c5cf", white: "#c9d1d9",
+      brightBlack: "#30363d", brightRed: "#ff7b72", brightGreen: "#56d364",
+      brightYellow: "#e3b341", brightBlue: "#79c0ff", brightMagenta: "#d2a8ff",
+      brightCyan: "#56d4dd", brightWhite: "#f0f6fc",
+    },
   },
   "solarized-dark": {
     name: "Solarized Dark",
@@ -66,6 +99,13 @@ export const SCHEMES: Record<string, ColorScheme> = {
     surface: "#073642",
     border: "#586e75",
     muted: "#657b83",
+    ansi: {
+      black: "#073642", red: "#dc322f", green: "#859900", yellow: "#b58900",
+      blue: "#268bd2", magenta: "#d33682", cyan: "#2aa198", white: "#eee8d5",
+      brightBlack: "#002b36", brightRed: "#cb4b16", brightGreen: "#586e75",
+      brightYellow: "#657b83", brightBlue: "#839496", brightMagenta: "#6c71c4",
+      brightCyan: "#93a1a1", brightWhite: "#fdf6e3",
+    },
   },
   "dracula": {
     name: "Dracula",
@@ -82,6 +122,13 @@ export const SCHEMES: Record<string, ColorScheme> = {
     surface: "#44475a",
     border: "#6272a4",
     muted: "#6272a4",
+    ansi: {
+      black: "#21222c", red: "#ff5555", green: "#50fa7b", yellow: "#f1fa8c",
+      blue: "#bd93f9", magenta: "#ff79c6", cyan: "#8be9fd", white: "#f8f8f2",
+      brightBlack: "#6272a4", brightRed: "#ff6e6e", brightGreen: "#69ff94",
+      brightYellow: "#ffffa5", brightBlue: "#d6acff", brightMagenta: "#ff92df",
+      brightCyan: "#a4ffff", brightWhite: "#ffffff",
+    },
   },
 }
 
