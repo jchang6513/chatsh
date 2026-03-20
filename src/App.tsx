@@ -141,9 +141,48 @@ export default function App() {
                 <span style={{ color: "var(--green)" }}>
                   ─ {agent.name.toUpperCase()} ─
                 </span>
-                <span style={{ color: "var(--muted)" }}>
-                  {agent.workingDir}
-                </span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ color: "var(--muted)" }}>{agent.workingDir}</span>
+                  {agent.command[0] === "claude" && (
+                    <button
+                      onClick={() => setShowClaudeMd(true)}
+                      style={{
+                        background: "transparent",
+                        border: "1px solid var(--border)",
+                        color: "var(--muted)",
+                        fontFamily: "monospace",
+                        fontSize: 9,
+                        padding: "1px 6px",
+                        cursor: "pointer",
+                        letterSpacing: "0.05em",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                    >
+                      [CLAUDE.MD]
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      try { await invoke("kill_agent", { agentId: agent.id }) } catch {}
+                      updateAgentStatus(agent.id, "offline")
+                    }}
+                    style={{
+                      background: "transparent",
+                      border: "1px solid var(--border)",
+                      color: "var(--muted)",
+                      fontFamily: "monospace",
+                      fontSize: 9,
+                      padding: "1px 6px",
+                      cursor: "pointer",
+                      letterSpacing: "0.05em",
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                  >
+                    [RESTART]
+                  </button>
+                </div>
               </div>
               <Terminal
                 agent={agent}
