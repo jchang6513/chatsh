@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import type { Agent } from "../types";
+import Avatar from "./Avatar";
 
 interface Props {
   agents: Agent[];
@@ -89,7 +90,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
             }`}
             onClick={() => onSelect(agent.id)}
           >
-            <span className="text-2xl">{agent.emoji}</span>
+            <Avatar name={agent.name} imageUrl={agent.avatar} size={36} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-medium truncate text-[#e0e0e0]">{agent.name}</span>
