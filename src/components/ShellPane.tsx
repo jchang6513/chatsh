@@ -65,7 +65,6 @@ function ShellTerminal({ session, isActive }: ShellTerminalProps) {
     if (!container) return;
 
     session.xterm.open(container);
-    session.xterm.write("\x1b[>4;0m");
     setTimeout(() => {
       session.fitAddon.fit();
       if (isActive) session.xterm.focus();
@@ -92,21 +91,8 @@ function ShellTerminal({ session, isActive }: ShellTerminalProps) {
       }).catch(e => session.xterm.writeln(`\r\n[錯誤] ${e}`));
     }
 
-    // IME 組字期間暫停送出
-    let composing = false;
-    const xtermEl = container.querySelector(".xterm-helper-textarea") as HTMLTextAreaElement | null;
-    if (xtermEl) {
-      xtermEl.addEventListener("compositionstart", () => { composing = true; });
-      xtermEl.addEventListener("compositionend", (e) => {
-        composing = false;
-        const text = (e as CompositionEvent).data;
-        if (text) invoke("write_to_agent", { agentId: session.id, data: text });
-      });
-    }
-
     // keyboard
     const disposable = session.xterm.onData(data => {
-      if (composing) return;
       invoke("write_to_agent", { agentId: session.id, data });
     });
 

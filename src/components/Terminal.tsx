@@ -100,8 +100,6 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     const fitAddon = new FitAddon();
     xterm.loadAddon(fitAddon);
     xterm.open(container);
-    // 禁用 modifyOtherKeys（避免送出 ~XXXX~ escape sequence）
-    xterm.write("\x1b[>4;0m");
     xtermRef.current = xterm;
     fitAddonRef.current = fitAddon;
 
@@ -122,21 +120,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     });
     resizeObs.observe(container);
 
-    // IME 組字期間暫停送出
-    let composing = false;
-    const xtermEl = container.querySelector(".xterm-helper-textarea") as HTMLTextAreaElement | null;
-    if (xtermEl) {
-      xtermEl.addEventListener("compositionstart", () => { composing = true; });
-      xtermEl.addEventListener("compositionend", (e) => {
-        composing = false;
-        // 組字完成後送出結果
-        const text = (e as CompositionEvent).data;
-        if (text) invoke("write_to_agent", { agentId: agent.id, data: text });
-      });
-    }
-
     xterm.onData((data) => {
-      if (composing) return; // 組字中，略過
       invoke("write_to_agent", { agentId: agent.id, data });
     });
 
