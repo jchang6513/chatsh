@@ -11,24 +11,9 @@ interface Props {
   agent: Agent;
   isActive: boolean;
   onStatusChange: (status: Agent["status"]) => void;
-  showShellPane: boolean;
-  onToggleShell: () => void;
-  onOpenClaudeMd?: () => void;
 }
 
-const btnStyle: React.CSSProperties = {
-  padding: "3px 8px",
-  background: "transparent",
-  border: "1px solid var(--border)",
-  color: "var(--muted)",
-  fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
-  fontSize: 10,
-  letterSpacing: "0.05em",
-  cursor: "pointer",
-  borderRadius: 0,
-};
-
-export default function Terminal({ agent, isActive, onStatusChange, showShellPane, onToggleShell, onOpenClaudeMd }: Props) {
+export default function Terminal({ agent, isActive, onStatusChange }: Props) {
   const { scheme } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
@@ -174,98 +159,8 @@ export default function Terminal({ agent, isActive, onStatusChange, showShellPan
     };
   }, []);
 
-  const handleRestart = async () => {
-    const xterm = xtermRef.current;
-    const fitAddon = fitAddonRef.current;
-    if (!xterm) return;
-    try { await invoke("kill_agent", { agentId: agent.id }); } catch {}
-    xterm.clear();
-    xterm.writeln("[重新啟動中...]");
-    fitAddon?.fit();
-    try {
-      await invoke("spawn_agent", {
-        agentId: agent.id,
-        command: agent.command,
-        workingDir: agent.workingDir,
-        cols: xterm.cols,
-        rows: xterm.rows,
-      });
-      onStatusChange("online");
-    } catch (e) {
-      xterm.writeln(`[錯誤] ${e}`);
-      onStatusChange("offline");
-    }
-  };
-
-  const btnHover = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.borderColor = "var(--green)";
-    e.currentTarget.style.color = "var(--green)";
-  };
-  const btnLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.borderColor = "var(--border)";
-    e.currentTarget.style.color = "var(--muted)";
-  };
-
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* 頂部 bar */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "0 12px",
-        height: 36,
-        flexShrink: 0,
-        background: "var(--bg)",
-        borderBottom: "1px solid var(--border)",
-        fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
-        fontSize: 11,
-      }}>
-        <span style={{ color: "var(--green)", fontWeight: 600, letterSpacing: "0.05em" }}>
-          [{agent.name.toUpperCase()}]
-        </span>
-        <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 10 }}>
-          {agent.status === "online" ? "● RUNNING" : "● STOPPED"}
-        </span>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-          {agent.command[0] === "claude" && onOpenClaudeMd && (
-            <button
-              onClick={onOpenClaudeMd}
-              title="編輯 CLAUDE.md"
-              style={btnStyle}
-              onMouseEnter={btnHover}
-              onMouseLeave={btnLeave}
-            >
-              [CLAUDE.MD]
-            </button>
-          )}
-          <button
-            onClick={handleRestart}
-            style={btnStyle}
-            onMouseEnter={btnHover}
-            onMouseLeave={btnLeave}
-          >
-            [RESTART]
-          </button>
-          <button
-            onClick={onToggleShell}
-            style={showShellPane ? {
-              ...btnStyle,
-              border: "1px solid var(--green)",
-              color: "var(--green)",
-            } : btnStyle}
-            onMouseEnter={(e) => {
-              if (!showShellPane) btnHover(e);
-            }}
-            onMouseLeave={(e) => {
-              if (!showShellPane) btnLeave(e);
-            }}
-          >
-            [SHELL ↓]
-          </button>
-        </div>
-      </div>
-
       {/* xterm 容器 */}
       <div
         ref={containerRef}

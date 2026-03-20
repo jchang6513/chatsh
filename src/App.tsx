@@ -1,8 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import TabBar from "./components/TabBar";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
 import ShellPane from "./components/ShellPane";
+import StatusBar from "./components/StatusBar";
 import AddAgentModal from "./components/AddAgentModal";
 import ClaudeMdEditor from "./components/ClaudeMdEditor";
 import type { Agent } from "./types";
@@ -91,47 +93,76 @@ export default function App() {
   const showModal = showAddModal || editingAgent !== null;
 
   return (
-    <div className="flex h-screen w-screen" style={{ background: "var(--bg)" }}>
-      <Sidebar
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)" }}>
+      {/* Tab bar */}
+      <TabBar
         agents={agents}
         activeAgentId={activeAgentId}
         onSelect={handleSelectAgent}
         onAdd={() => setShowAddModal(true)}
         onRemove={handleRemoveAgent}
-        onEdit={handleEditAgent}
-        onReorder={handleReorder}
       />
-      <div className="flex flex-col flex-1 min-w-0 min-h-0">
-        {agents.length === 0 && (
-          <div className="flex-1 flex items-center justify-center text-lg" style={{ color: "var(--muted)", background: "var(--bg)" }}>
-            點選 <span className="mx-1" style={{ color: "var(--blue)" }}>+ 新增角色</span> 開始使用
-          </div>
-        )}
-        {agents.map((agent) => (
-          <div
-            key={agent.id}
-            className="flex flex-col flex-1 min-w-0 min-h-0"
-            style={{
-              visibility: agent.id === activeAgentId ? "visible" : "hidden",
-              position: agent.id === activeAgentId ? "relative" : "absolute",
-              width: "100%",
-              height: "100%",
-              top: 0,
-              left: 0,
-            }}
-          >
-            <Terminal
-              agent={agent}
-              isActive={agent.id === activeAgentId}
-              onStatusChange={(status) => updateAgentStatus(agent.id, status)}
-              showShellPane={showShellPane}
-              onToggleShell={() => setShowShellPane((v) => !v)}
-              onOpenClaudeMd={() => setShowClaudeMd(true)}
-            />
-          </div>
-        ))}
-        {showShellPane && <ShellPane />}
+
+      <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+        {/* Sidebar */}
+        <Sidebar
+          agents={agents}
+          activeAgentId={activeAgentId}
+          onSelect={handleSelectAgent}
+          onAdd={() => setShowAddModal(true)}
+          onRemove={handleRemoveAgent}
+          onEdit={handleEditAgent}
+          onReorder={handleReorder}
+        />
+
+        {/* Terminal panels */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, padding: 4 }}>
+          {agents.length === 0 && (
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 14 }}>
+              點選 <span style={{ color: "var(--blue)", margin: "0 4px" }}>+</span> 開始使用
+            </div>
+          )}
+          {agents.map((agent) => (
+            <div
+              key={agent.id}
+              style={{
+                display: agent.id === activeAgentId ? "flex" : "none",
+                flexDirection: "column",
+                flex: 1,
+                minHeight: 0,
+                border: "1px solid var(--border)",
+                position: "relative",
+              }}
+            >
+              {/* Panel label */}
+              <div style={{
+                position: "absolute",
+                top: -1,
+                left: 8,
+                fontSize: 10,
+                fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+                color: "var(--green)",
+                background: "var(--bg)",
+                padding: "0 4px",
+                letterSpacing: "0.1em",
+                zIndex: 1,
+              }}>
+                {agent.name.toUpperCase()} ── {agent.workingDir}
+              </div>
+              <Terminal
+                agent={agent}
+                isActive={agent.id === activeAgentId}
+                onStatusChange={(status) => updateAgentStatus(agent.id, status)}
+              />
+            </div>
+          ))}
+          {showShellPane && <ShellPane />}
+        </div>
       </div>
+
+      {/* Status bar */}
+      <StatusBar agent={activeAgent} />
+
       {showClaudeMd && activeAgent && (
         <ClaudeMdEditor
           agent={activeAgent}

@@ -70,8 +70,8 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
 
   return (
     <div style={{
-      width: 220,
-      minWidth: 220,
+      width: 160,
+      minWidth: 160,
       display: "flex",
       flexDirection: "column",
       background: "var(--bg)",
@@ -79,22 +79,6 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
       fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
       height: "100%",
     }}>
-      {/* 標題列 — 高度對齊 topbar 36px */}
-      <div style={{
-        height: 36,
-        display: "flex",
-        alignItems: "center",
-        padding: "0 16px",
-        borderBottom: "1px solid var(--border)",
-        fontSize: 11,
-        letterSpacing: "0.12em",
-        flexShrink: 0,
-      }}>
-        <span style={{ color: "var(--muted)" }}>[ </span>
-        <span style={{ color: "var(--green)", fontWeight: 700 }}>CHAT.SH</span>
-        <span style={{ color: "var(--muted)" }}> v0.1 ]</span>
-      </div>
-
       {/* Agent 列表 */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {agents.map((agent) => {
@@ -116,9 +100,10 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
-                padding: "6px 16px",
-                fontSize: 12,
+                gap: 6,
+                padding: "0 10px",
+                height: 32,
+                fontSize: 11,
                 color: isActive ? "var(--green)" : "var(--fg)",
                 background: isActive || isHover ? "var(--surface)" : "transparent",
                 cursor: "pointer",
@@ -128,39 +113,27 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                 borderTop: dragOverId === agent.id && dragId !== agent.id ? "2px solid var(--green)" : undefined,
               }}
             >
-              <span style={{ color: "var(--muted)", width: 12, flexShrink: 0 }}>
-                {isActive ? ">" : "\u00A0"}
-              </span>
               <span style={{
-                fontSize: 11,
+                fontSize: 9,
                 color: isActive ? "var(--green)" : "var(--muted)",
                 border: "1px solid currentColor",
-                padding: "0 3px",
-                marginRight: 4,
+                padding: "0 2px",
                 flexShrink: 0,
               }}>
                 {agent.name[0].toUpperCase()}
               </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{agent.name}</div>
-                {agent.llmLabel && <div style={{ fontSize: 10, color: "var(--muted)" }}>{agent.llmLabel}</div>}
-              </div>
-              <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 10, flexShrink: 0 }}>●</span>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {agent.name}
+              </span>
+              <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 8, flexShrink: 0 }}>●</span>
               {/* Hover 按鈕 */}
               {isHover && (
-                <div style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 2 }}>
+                <div style={{ position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)", display: "flex", gap: 2 }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); onEdit(agent); }}
-                    style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 11, padding: "0 2px", fontFamily: "monospace" }}
+                    style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 10, padding: "0 2px", fontFamily: "monospace" }}
                     title="編輯"
                   >✎</button>
-                  {!isActive && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onRemove(agent.id); }}
-                      style={{ color: "var(--muted)", background: "none", border: "none", cursor: "pointer", fontSize: 11, padding: "0 2px", fontFamily: "monospace" }}
-                      title="刪除"
-                    >✕</button>
-                  )}
                 </div>
               )}
             </div>
@@ -169,7 +142,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
       </div>
 
       {/* Theme Switcher */}
-      <div style={{ padding: "8px 12px", display: "flex", alignItems: "center", gap: 4, borderTop: "1px solid var(--border)" }}>
+      <div style={{ padding: "6px 10px", display: "flex", alignItems: "center", gap: 4, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
         {Object.entries(availableSchemes).map(([key, s]) => (
           <button
             key={key}
@@ -188,34 +161,6 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
           />
         ))}
       </div>
-
-      {/* New Agent 按鈕 */}
-      <button
-        onClick={onAdd}
-        style={{
-          display: "block",
-          width: "calc(100% - 24px)",
-          margin: "8px 12px",
-          padding: "6px",
-          background: "transparent",
-          border: "1px solid var(--border)",
-          color: "var(--muted)",
-          fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
-          fontSize: 11,
-          letterSpacing: "0.05em",
-          cursor: "pointer",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = "var(--green)";
-          e.currentTarget.style.color = "var(--green)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = "var(--border)";
-          e.currentTarget.style.color = "var(--muted)";
-        }}
-      >
-        [+ NEW AGENT]
-      </button>
     </div>
   );
 }
