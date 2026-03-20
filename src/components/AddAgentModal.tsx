@@ -44,6 +44,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
   const [command, setCommand] = useState(initialValues?.command?.join(" ") ?? "");
   const [workingDir, setWorkingDir] = useState(initialValues?.workingDir ?? "~");
   const [avatarUrl, setAvatarUrl] = useState(initialValues?.avatar ?? "");
+  const [claudeMd, setClaudeMd] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -85,12 +86,13 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !command.trim()) return;
 
+    const agentId = initialValues?.id ?? Date.now().toString();
     const agent: Agent = {
-      id: initialValues?.id ?? Date.now().toString(),
+      id: agentId,
       name: name.trim(),
       emoji: "🤖",
       avatar: avatarUrl || undefined,
@@ -98,6 +100,14 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       workingDir: workingDir.trim() || "~",
       status: initialValues?.status ?? "offline",
     };
+
+    // 若是 claude 且有填 CLAUDE.md，建立目錄並寫入
+    const isClaudeCmd = agent.command[0] === "claude";
+    if (isClaudeCmd && claudeMd.trim()) {
+      const path = `~/.chatsh/agents/${agentId}/CLAUDE.md`;
+      await invoke("write_file", { path, content: claudeMd }).catch(() => {});
+    }
+
     onAdd(agent);
   };
 
@@ -267,6 +277,28 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   </label>
                 </div>
               </div>
+              {/* CLAUDE.md — 只對 claude 指令顯示 */}
+              {command.split(" ")[0] === "claude" && (
+                <label className="flex flex-col gap-1 text-sm mt-3" style={{ color: "var(--muted)" }}>
+                  <span>CLAUDE.md <span style={{ color: "var(--muted)", fontSize: 11 }}>（System prompt，選填）</span></span>
+                  <textarea
+                    value={claudeMd}
+                    onChange={(e) => setClaudeMd(e.target.value)}
+                    rows={5}
+                    placeholder={"你是一個專注於 React 的前端工程師...\n\n可以在這裡設定 Claude 的角色、工作習慣、注意事項等"}
+                    style={{
+                      ...inputStyle,
+                      resize: "vertical",
+                      fontFamily: "Menlo, Monaco, monospace",
+                      fontSize: 12,
+                      lineHeight: 1.6,
+                    }}
+                    onFocus={(e) => e.currentTarget.style.borderColor = "var(--blue)"}
+                    onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                  />
+                  <span style={{ fontSize: 11, color: "var(--muted)" }}>存放於 ~/.chatsh/agents/{"{id}"}/CLAUDE.md，不影響專案目錄</span>
+                </label>
+              )}
               <div className="flex justify-between mt-2">
                 <div>
                   {!isEditing && (

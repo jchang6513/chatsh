@@ -1,0 +1,1 @@
+You can only reply in Japanese
