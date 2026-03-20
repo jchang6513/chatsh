@@ -79,17 +79,20 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
       fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
       height: "100%",
     }}>
-      {/* ASCII 標題 */}
+      {/* 標題列 — 高度對齊 topbar 36px */}
       <div style={{
-        padding: "12px 16px",
+        height: 36,
+        display: "flex",
+        alignItems: "center",
+        padding: "0 16px",
         borderBottom: "1px solid var(--border)",
         fontSize: 11,
-        letterSpacing: "0.1em",
-        lineHeight: 1.4,
+        letterSpacing: "0.12em",
+        flexShrink: 0,
       }}>
-        <div style={{ color: "var(--muted)" }}>┌────────────────┐</div>
-        <div>│ <span style={{ color: "var(--green)" }}>CHAT.SH</span> <span style={{ color: "var(--muted)" }}>v0.1</span> │</div>
-        <div style={{ color: "var(--muted)" }}>└────────────────┘</div>
+        <span style={{ color: "var(--muted)" }}>[ </span>
+        <span style={{ color: "var(--green)", fontWeight: 700 }}>CHAT.SH</span>
+        <span style={{ color: "var(--muted)" }}> v0.1 ]</span>
       </div>
 
       {/* Agent 列表 */}
