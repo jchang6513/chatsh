@@ -278,16 +278,16 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                         onFocus={onFocusInput} onBlur={onBlurInput} />
                       <button type="button" onClick={async () => { const f = await pickFolder(); if (f) setNewTpl(p => ({ ...p, workingDir: f })) }}
                         style={{ ...btnBase, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                        onMouseEnter={onHoverGreen}
+                        onMouseLeave={onLeaveGreen}
                       >[...]</button>
                     </div>
                   </label>
                   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 4 }}>
                     <button onClick={() => setShowNewTemplateForm(false)}
                       style={{ ...btnBase, fontSize: 10 }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                      onMouseEnter={onHoverGreen}
+                      onMouseLeave={onLeaveGreen}
                     >[Cancel]</button>
                     <button onClick={() => {
                       if (!newTpl.name.trim() || !newTpl.command.trim()) return
@@ -333,8 +333,8 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                       onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleFromTemplate() } }} />
                     <button type="button" onClick={async () => { const f = await pickFolder(); if (f) setTemplateWorkingDir(f) }}
                       style={{ ...btnBase, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                      onMouseEnter={onHoverGreen}
+                      onMouseLeave={onLeaveGreen}
                     >[...]</button>
                   </div>
                 </label>
@@ -351,8 +351,8 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
 
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                 <button onClick={() => setMode("choose")} style={btnBase}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                  onMouseEnter={onHoverGreen}
+                  onMouseLeave={onLeaveGreen}
                 >[Back]</button>
                 <button onClick={handleFromTemplate} disabled={!selectedTemplate}
                   style={{ ...btnBase, borderColor: selectedTemplate ? "var(--green)" : "var(--border)", color: selectedTemplate ? "var(--green)" : "var(--muted)" }}
@@ -386,8 +386,8 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                     onFocus={onFocusInput} onBlur={onBlurInput} />
                   <button type="button" onClick={async () => { const f = await pickFolder(); if (f) setWorkingDir(f) }}
                     style={{ ...btnBase, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                    onMouseEnter={onHoverGreen}
+                    onMouseLeave={onLeaveGreen}
                   >[...]</button>
                 </div>
               </label>
@@ -402,8 +402,8 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
               )}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                 <button type="button" onClick={() => setMode("choose")} style={btnBase}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                  onMouseEnter={onHoverGreen}
+                  onMouseLeave={onLeaveGreen}
                 >[Back]</button>
                 <button type="submit" style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}

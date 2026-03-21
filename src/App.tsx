@@ -1,4 +1,4 @@
-import { MONO_FONT } from "./ui"
+import { MONO_FONT, onHoverGreen, onLeaveGreen } from "./ui"
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./components/Sidebar";
@@ -360,8 +360,8 @@ export default function App() {
                         cursor: "pointer",
                         letterSpacing: "0.05em",
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                      onMouseEnter={onHoverGreen}
+                      onMouseLeave={onLeaveGreen}
                     >
                       [CLAUDE.MD]
                     </button>
@@ -382,8 +382,8 @@ export default function App() {
                       cursor: "pointer",
                       letterSpacing: "0.05em",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                    onMouseEnter={onHoverGreen}
+                    onMouseLeave={onLeaveGreen}
                   >
                     [RESTART]
                   </button>

@@ -1,4 +1,4 @@
-import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
+import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
@@ -184,7 +184,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                         borderRadius: 0,
                         color: "var(--fg)",
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--green)"}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--green)" }}
                       onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                     >
                       <span style={{ fontSize: 12, fontWeight: 600 }}>{a.name}</span>
@@ -268,8 +268,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       style={inputStyle}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                      onFocus={onFocusInput}
+                      onBlur={onBlurInput}
                       placeholder="e.g. Engineering"
                       autoFocus
                     />
@@ -282,8 +282,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                         value={command}
                         onChange={(e) => setCommand(e.target.value)}
                         style={inputStyle}
-                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
-                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                        onFocus={onFocusInput}
+                        onBlur={onBlurInput}
                         placeholder="e.g. claude or /bin/zsh"
                       />
                     </label>
@@ -296,8 +296,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                         value={workingDir}
                         onChange={(e) => setWorkingDir(e.target.value)}
                         style={{ ...inputStyle, flex: 1 }}
-                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
-                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                        onFocus={onFocusInput}
+                        onBlur={onBlurInput}
                         placeholder="~"
                       />
                       <button type="button" onClick={async () => {
@@ -308,8 +308,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                         border: "1px solid var(--border)", color: "var(--muted)",
                         fontFamily: "monospace", fontSize: 10, cursor: "pointer", flexShrink: 0,
                       }}
-                        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                        onMouseEnter={onHoverGreen}
+                        onMouseLeave={onLeaveGreen}
                       >[...]</button>
                     </div>
                   </label>
@@ -328,8 +328,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       resize: "vertical",
                       lineHeight: 1.6,
                     }}
-                    onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
-                    onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                    onFocus={onFocusInput}
+                    onBlur={onBlurInput}
                   />
                   <span style={{ fontSize: 10, color: "var(--muted)" }}>Stored at ~/.chatsh/agents/{"{id}"}/CLAUDE.md — project directory is unaffected</span>
                 </label>

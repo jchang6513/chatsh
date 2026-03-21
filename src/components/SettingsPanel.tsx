@@ -1,4 +1,4 @@
-import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
+import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState } from "react"
 import { useSettings } from "../SettingsContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
@@ -253,7 +253,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
               color: "var(--fg)", fontFamily: mono, fontSize: 11,
               padding: "5px 8px", outline: "none", width: "100%", boxSizing: "border-box" as const,
             }
-            const onFocus = (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.style.borderColor = "var(--green)"
+            // onFocus → use imported onFocusInput from ui.ts
             const onBlur = (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.style.borderColor = "var(--border)"
 
             const saveNewTemplate = () => {
@@ -303,8 +303,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                     <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>Custom Templates</div>
                     <button onClick={() => setShowNewTemplate(v => !v)}
                       style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "2px 6px", cursor: "pointer" }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                      onMouseEnter={onHoverGreen}
+                      onMouseLeave={onLeaveGreen}
                     >[+ New]</button>
                   </div>
 
@@ -321,7 +321,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                         <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
                           {label}
                           <input value={newTpl[key]} onChange={e => setNewTpl(p => ({ ...p, [key]: e.target.value }))}
-                            style={inputSt} placeholder={placeholder} onFocus={onFocus} onBlur={onBlur} />
+                            style={inputSt} placeholder={placeholder} onFocus={onFocusInput} onBlur={onBlur} />
                         </label>
                       ))}
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
@@ -378,8 +378,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                 value={isGlobal ? resolved.fontFamily : (isOverridden("fontFamily") ? (currentOverrides.fontFamily ?? "") : resolved.fontFamily)}
                 onChange={e => updateField("fontFamily", e.target.value)}
                 style={inputStyle}
-                onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+                onFocus={onFocusInput}
+                onBlur={onBlurInput}
               />
             )}
             {renderFieldRow("Font Size", "fontSize",
@@ -390,8 +390,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                 value={resolved.fontSize}
                 onChange={e => updateField("fontSize", Number(e.target.value))}
                 style={{ ...inputStyle, width: 80 }}
-                onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+                onFocus={onFocusInput}
+                onBlur={onBlurInput}
               />
             )}
             {renderFieldRow("Line Height", "lineHeight",
@@ -403,8 +403,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                 value={resolved.lineHeight}
                 onChange={e => updateField("lineHeight", Number(e.target.value))}
                 style={{ ...inputStyle, width: 80 }}
-                onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+                onFocus={onFocusInput}
+                onBlur={onBlurInput}
               />
             )}
           </div>
@@ -463,8 +463,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                 value={resolved.scrollback}
                 onChange={e => updateField("scrollback", Number(e.target.value))}
                 style={{ ...inputStyle, width: 100 }}
-                onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+                onFocus={onFocusInput}
+                onBlur={onBlurInput}
               />
             )}
           </div>
@@ -496,8 +496,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                 value={resolved.padding}
                 onChange={e => updateField("padding", Number(e.target.value))}
                 style={{ ...inputStyle, width: 80 }}
-                onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
+                onFocus={onFocusInput}
+                onBlur={onBlurInput}
               />
             )}
           </div>

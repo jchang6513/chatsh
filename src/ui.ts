@@ -2,6 +2,8 @@
  * Shared UI constants and helpers — keep DRY
  */
 
+// Single source of truth for mono font.
+// Also defined as CSS var(--mono-font) in index.css — change both together.
 export const MONO_FONT = '"SF Mono", "Menlo", "Monaco", "Courier New", monospace'
 
 export const INPUT_STYLE: React.CSSProperties = {

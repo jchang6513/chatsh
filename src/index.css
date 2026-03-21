@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 :root {
+  --mono-font: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
   --bg: #0a0a0a;
   --fg: #00ff9f;
   --cursor: #00ff9f;
@@ -27,7 +28,7 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: "SF Mono", "Menlo", "Monaco", "Courier New", monospace;
+  font-family: var(--mono-font);
 }
 
 ::-webkit-scrollbar { width: 4px; }

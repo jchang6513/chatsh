@@ -1,4 +1,4 @@
-import { MONO_FONT } from "../ui"
+import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Agent } from "../types";
@@ -86,8 +86,8 @@ export default function ClaudeMdEditor({ agent, onClose }: Props) {
                 cursor: "pointer",
                 letterSpacing: "0.05em",
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+              onMouseEnter={onHoverGreen}
+              onMouseLeave={onLeaveGreen}
             >
               [SAVE]
             </button>
@@ -104,7 +104,7 @@ export default function ClaudeMdEditor({ agent, onClose }: Props) {
                 letterSpacing: "0.05em",
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--red)"; e.currentTarget.style.color = "var(--red)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+              onMouseLeave={onLeaveGreen}
             >
               [×]
             </button>

@@ -1,4 +1,4 @@
-import { MONO_FONT } from "../ui"
+import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useRef } from "react";
 import type { Agent } from "../types";
 import { useTheme } from "../ThemeContext";
@@ -199,8 +199,8 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
           letterSpacing: "0.08em",
           cursor: "pointer",
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+        onMouseEnter={onHoverGreen}
+        onMouseLeave={onLeaveGreen}
       >
         [Preferences ⌘,]
       </button>
@@ -221,8 +221,8 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
           letterSpacing: "0.08em",
           cursor: "pointer",
         }}
-        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+        onMouseEnter={onHoverGreen}
+        onMouseLeave={onLeaveGreen}
       >
         [+ New REPL]
       </button>
