@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Agent } from "../types";
 import type { Template } from "../templates";
-import { KNOWN_TOOLS } from "../templates";
+import { KNOWN_TOOLS, addTemplate } from "../templates";
 
 interface Props {
   templates: Template[];
   onAdd: (agent: Agent) => void;
+  onAddTemplate?: (t: Template) => void;
   onClose: () => void;
 }
 
@@ -63,7 +64,7 @@ async function writeSystemPrompt(agentId: string, command: string, content: stri
   await invoke("write_file", { path, content }).catch(() => {})
 }
 
-export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
+export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClose }: Props) {
   const [mode, setMode] = useState<Mode>("choose");
   const [detectedIds, setDetectedIds] = useState<string[]>([]);
 
@@ -72,6 +73,8 @@ export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
   const [sessionName, setSessionName] = useState("");
   const [templateWorkingDir, setTemplateWorkingDir] = useState("~");
   const [templateSystemPrompt, setTemplateSystemPrompt] = useState("");
+  const [showNewTemplatForm, setShowNewTemplateForm] = useState(false);
+  const [newTpl, setNewTpl] = useState({ name: "", command: "", workingDir: "~", description: "" });
 
   // 自訂
   const [name, setName] = useState("");
@@ -217,6 +220,71 @@ export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
                       <code style={{ fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>{t.command}</code>
                     </button>
                   ))}
+
+                  {/* + 新增自訂樣板格子 */}
+                  {!showNewTemplatForm && (
+                    <button onClick={() => setShowNewTemplateForm(true)} style={{
+                      ...btnBase,
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                      gap: 4, padding: 12, textAlign: "center",
+                      border: "1px dashed var(--border)", minHeight: 80,
+                    }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                    >
+                      <span style={{ fontSize: 20, color: "var(--muted)" }}>+</span>
+                      <span style={{ fontSize: 10, color: "var(--muted)" }}>新增自訂樣板</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* 新增樣板表單 */}
+              {showNewTemplatForm && (
+                <div style={{ border: "1px solid var(--green)", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ fontSize: 10, color: "var(--green)", marginBottom: 2 }}>NEW TEMPLATE</div>
+                  {([
+                    { label: "名稱", key: "name", placeholder: "例如：後端助手" },
+                    { label: "指令", key: "command", placeholder: "例如：claude 或 python3" },
+                    { label: "工作目錄", key: "workingDir", placeholder: "~" },
+                    { label: "描述", key: "description", placeholder: "選填" },
+                  ] as const).map(({ label, key, placeholder }) => (
+                    <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
+                      {label}
+                      <input value={newTpl[key]} onChange={e => setNewTpl(p => ({ ...p, [key]: e.target.value }))}
+                        style={inputStyle} placeholder={placeholder}
+                        onFocus={onFocusInput} onBlur={onBlurInput} />
+                    </label>
+                  ))}
+                  <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 4 }}>
+                    <button onClick={() => setShowNewTemplateForm(false)}
+                      style={{ ...btnBase, fontSize: 10 }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                    >[取消]</button>
+                    <button onClick={() => {
+                      if (!newTpl.name.trim() || !newTpl.command.trim()) return
+                      const t: Template = {
+                        id: Date.now().toString(),
+                        name: newTpl.name.trim(),
+                        command: newTpl.command.trim(),
+                        workingDir: newTpl.workingDir.trim() || "~",
+                        description: newTpl.description.trim(),
+                        isBuiltin: false,
+                      }
+                      const next = addTemplate(templates, t)
+                      onAddTemplate?.(t)
+                      setNewTpl({ name: "", command: "", workingDir: "~", description: "" })
+                      setShowNewTemplateForm(false)
+                      setSelectedTemplate(t)
+                      setSessionName(t.name)
+                      setTemplateWorkingDir(t.workingDir)
+                    }}
+                      style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)", fontSize: 10 }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
+                    >[儲存樣板]</button>
+                  </div>
                 </div>
               )}
 
