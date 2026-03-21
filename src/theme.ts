@@ -38,6 +38,30 @@ export interface ColorScheme {
 }
 
 export const SCHEMES: Record<string, ColorScheme> = {
+  "nightfox": {
+    name: "Nightfox",
+    background: "#192330",
+    foreground: "#cdcecf",
+    cursor: "#cdcecf",
+    selection: "#2b3b51",
+    green: "#81b29a",
+    red: "#c94f6d",
+    blue: "#719cd6",
+    yellow: "#dbc074",
+    cyan: "#63cdcf",
+    magenta: "#9d79d6",
+    surface: "#212e3f",
+    border: "#2b3b51",
+    muted: "#526176",
+    ansi: {
+      black: "#192330", red: "#c94f6d", green: "#81b29a", yellow: "#dbc074",
+      blue: "#719cd6", magenta: "#9d79d6", cyan: "#63cdcf", white: "#cdcecf",
+      brightBlack: "#526176", brightRed: "#d16983", brightGreen: "#8ebda8",
+      brightYellow: "#e0c989", brightBlue: "#86abdc", brightMagenta: "#b48de3",
+      brightCyan: "#7adfe0", brightWhite: "#d8dee9",
+    },
+  },
+
   "kanagawa": {
     name: "Kanagawa",
     background: "#1f1f28",
@@ -155,30 +179,6 @@ export const SCHEMES: Record<string, ColorScheme> = {
     },
   },
 
-  "nightfox": {
-    name: "Nightfox",
-    background: "#192330",
-    foreground: "#cdcecf",
-    cursor: "#cdcecf",
-    selection: "#2b3b51",
-    green: "#81b29a",
-    red: "#c94f6d",
-    blue: "#719cd6",
-    yellow: "#dbc074",
-    cyan: "#63cdcf",
-    magenta: "#9d79d6",
-    surface: "#212e3f",
-    border: "#2b3b51",
-    muted: "#526176",
-    ansi: {
-      black: "#192330", red: "#c94f6d", green: "#81b29a", yellow: "#dbc074",
-      blue: "#719cd6", magenta: "#9d79d6", cyan: "#63cdcf", white: "#cdcecf",
-      brightBlack: "#526176", brightRed: "#d16983", brightGreen: "#8ebda8",
-      brightYellow: "#e0c989", brightBlue: "#86abdc", brightMagenta: "#b48de3",
-      brightCyan: "#7adfe0", brightWhite: "#d8dee9",
-    },
-  },
-
   "lucario": {
     name: "Lucario",
     background: "#2b3e50",
@@ -276,29 +276,7 @@ export const SCHEMES: Record<string, ColorScheme> = {
   },
 
 
-  "iceberg": {
-    name: "Iceberg",
-    background: "#161821",
-    foreground: "#c6c8d1",
-    cursor: "#c6c8d1",
-    selection: "#1e2132",
-    green: "#b4be82",
-    red: "#e27878",
-    blue: "#84a0c6",
-    yellow: "#e2a478",
-    cyan: "#89b8c2",
-    magenta: "#a093c7",
-    surface: "#1e2132",
-    border: "#272c42",
-    muted: "#444b71",
-    ansi: {
-      black: "#161821", red: "#e27878", green: "#b4be82", yellow: "#e2a478",
-      blue: "#84a0c6", magenta: "#a093c7", cyan: "#89b8c2", white: "#c6c8d1",
-      brightBlack: "#444b71", brightRed: "#e98989", brightGreen: "#c0ca8e",
-      brightYellow: "#e9b189", brightBlue: "#91acd1", brightMagenta: "#ada0d3",
-      brightCyan: "#95c4ce", brightWhite: "#d2d4de",
-    },
-  },
+
 }
 
-export const DEFAULT_SCHEME = "kanagawa"
+export const DEFAULT_SCHEME = "nightfox"
