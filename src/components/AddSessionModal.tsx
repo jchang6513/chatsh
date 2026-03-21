@@ -1,3 +1,4 @@
+import FolderButton from "./ui/FolderButton"
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -6,11 +7,6 @@ import type { Template } from "../templates";
 import { KNOWN_TOOLS, addTemplate } from "../templates";
 import { MONO_FONT, INPUT_STYLE, BTN_BASE, onHoverGreen, onLeaveGreen, onFocusInput as onFocusInputUI, onBlurInput as onBlurInputUI } from "../ui";
 
-async function pickFolder(): Promise<string | null> {
-  const result = await open({ directory: true, multiple: false });
-  if (typeof result === "string") return result;
-  return null;
-}
 
 interface Props {
   templates: Template[];
@@ -276,11 +272,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                       <input value={newTpl.workingDir} onChange={e => setNewTpl(p => ({ ...p, workingDir: e.target.value }))}
                         style={{ ...inputStyle, flex: 1 }} placeholder="~"
                         onFocus={onFocusInput} onBlur={onBlurInput} />
-                      <button type="button" onClick={async () => { const f = await pickFolder(); if (f) setNewTpl(p => ({ ...p, workingDir: f })) }}
-                        style={{ ...btnBase, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
-                        onMouseEnter={onHoverGreen}
-                        onMouseLeave={onLeaveGreen}
-                      >[...]</button>
+                      <FolderButton onSelect={f => setNewTpl(p => ({ ...p, workingDir: f }))} />
                     </div>
                   </label>
                   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 4 }}>
@@ -331,11 +323,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                       style={{ ...inputStyle, flex: 1 }} placeholder="~"
                       onFocus={onFocusInput} onBlur={onBlurInput}
                       onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleFromTemplate() } }} />
-                    <button type="button" onClick={async () => { const f = await pickFolder(); if (f) setTemplateWorkingDir(f) }}
-                      style={{ ...btnBase, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
-                      onMouseEnter={onHoverGreen}
-                      onMouseLeave={onLeaveGreen}
-                    >[...]</button>
+                    <FolderButton onSelect={setTemplateWorkingDir} />
                   </div>
                 </label>
                 {templatePromptInfo && (
@@ -384,11 +372,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                   <input type="text" value={workingDir} onChange={e => setWorkingDir(e.target.value)}
                     style={{ ...inputStyle, flex: 1 }} placeholder="~"
                     onFocus={onFocusInput} onBlur={onBlurInput} />
-                  <button type="button" onClick={async () => { const f = await pickFolder(); if (f) setWorkingDir(f) }}
-                    style={{ ...btnBase, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
-                    onMouseEnter={onHoverGreen}
-                    onMouseLeave={onLeaveGreen}
-                  >[...]</button>
+                  <FolderButton onSelect={setWorkingDir} />
                 </div>
               </label>
               {customPromptInfo && (
