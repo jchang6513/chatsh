@@ -7,6 +7,7 @@ use tauri::{AppHandle, Emitter};
 
 const MAX_BUFFER: usize = 50 * 1024; // 50KB
 
+#[allow(dead_code)]
 struct PtySession {
     master: Box<dyn MasterPty + Send>,
     writer: Box<dyn Write + Send>,
@@ -223,6 +224,7 @@ impl PtyManager {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_buffer(&self, agent_id: &str) -> Result<String, String> {
         let bufs = self.buffers.lock().map_err(|e| e.to_string())?;
         if let Some(buffer) = bufs.get(agent_id) {
