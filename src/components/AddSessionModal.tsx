@@ -1,3 +1,4 @@
+import CloseButton from "./ui/CloseButton"
 import FolderButton from "./ui/FolderButton"
 import { MONO_FONT, onHoverGreen, onLeaveGreen, onFocusInput, onBlurInput, onHoverBorder, onLeaveBorder } from "../ui"
 import { useState, useEffect } from "react";
@@ -170,10 +171,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
           <span style={{ fontSize: 10, color: "var(--green)", letterSpacing: "0.1em" }}>
             ─ {mode === "choose" ? "NEW REPL" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
           </span>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontFamily: mono, fontSize: 12 }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--red)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--muted)"}
-          >[×]</button>
+          <CloseButton onClose={onClose} />
         </div>
 
         <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>

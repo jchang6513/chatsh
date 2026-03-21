@@ -1,3 +1,4 @@
+import CloseButton from "./ui/CloseButton"
 import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState } from "react"
 import { useSettings } from "../SettingsContext"
@@ -351,11 +352,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                           {t.description && <span style={{ color: "var(--muted)", fontSize: 10, marginLeft: 8 }}>{t.description}</span>}
                         </div>
                         <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
-                        <button onClick={() => deleteTemplate(t.id)}
-                          style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontFamily: mono, fontSize: 10, padding: "0 4px" }}
-                          onMouseEnter={e => e.currentTarget.style.color = "var(--red)"}
-                          onMouseLeave={e => e.currentTarget.style.color = "var(--muted)"}
-                        >[×]</button>
+                        <CloseButton onClose={() => deleteTemplate(t.id)} style={{ fontSize: 10 }} />
                       </div>
                     ))}
                   </div>
