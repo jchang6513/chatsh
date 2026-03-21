@@ -170,6 +170,29 @@ impl PtyManager {
         let sessions = self.sessions.clone();
         let aid = agent_id.to_string();
 
+        // Shared last-output timestamp for idle detection
+        let last_output = std::sync::Arc::new(std::sync::atomic::AtomicU64::new(0));
+        let last_output_idle = last_output.clone();
+        let idle_aid = aid.clone();
+        let idle_app = app_handle.clone();
+
+        // Idle watcher thread: fires pty-idle when 500ms without output
+        std::thread::spawn(move || {
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(100));
+                let ts = last_output_idle.load(std::sync::atomic::Ordering::Relaxed);
+                if ts == 0 { continue; }
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .unwrap_or_default()
+                    .as_millis() as u64;
+                if now.saturating_sub(ts) >= 500 {
+                    idle_app.emit(&format!("pty-idle-{idle_aid}"), ()).ok();
+                    last_output_idle.store(0, std::sync::atomic::Ordering::Relaxed);
+                }
+            }
+        });
+
         std::thread::spawn(move || {
             let mut buf = [0u8; 4096];
             loop {
@@ -188,6 +211,13 @@ impl PtyManager {
                         let data =
                             base64::engine::general_purpose::STANDARD.encode(&buf[..n]);
                         let _ = app_handle.emit(&event_name, data);
+
+                        // Update last output timestamp
+                        let now = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .unwrap_or_default()
+                            .as_millis() as u64;
+                        last_output.store(now, std::sync::atomic::Ordering::Relaxed);
                     }
                     Err(_) => break,
                 }

@@ -126,35 +126,21 @@ export default function App() {
     invoke("cleanup_deleted_agents").catch(() => {});
   }, []);
 
-  // Listen for output from non-active mounted agents → mark unread after silence
-  // Debounced: only mark unread after 2s of no new output (avoid marking while still streaming)
+  // Listen for pty-idle (Rust emits after 500ms silence) → mark unread if not active
   useEffect(() => {
     const unlisteners: (() => void)[] = []
-    const timers: Map<string, ReturnType<typeof setTimeout>> = new Map()
-
     for (const agentId of mountedAgents) {
-      listen<string>(`pty-output-${agentId}`, () => {
-        if (agentId === activeAgentId) return // active, skip
-        // Reset debounce timer
-        const existing = timers.get(agentId)
-        if (existing) clearTimeout(existing)
-        const t = setTimeout(() => {
-          setUnreadAgents(prev => {
-            if (prev.has(agentId)) return prev
-            const next = new Set(prev)
-            next.add(agentId)
-            return next
-          })
-          timers.delete(agentId)
-        }, 2000) // 2s silence = response done
-        timers.set(agentId, t)
+      listen<void>(`pty-idle-${agentId}`, () => {
+        if (agentId === activeAgentId) return
+        setUnreadAgents(prev => {
+          if (prev.has(agentId)) return prev
+          const next = new Set(prev)
+          next.add(agentId)
+          return next
+        })
       }).then(fn => unlisteners.push(fn))
     }
-
-    return () => {
-      unlisteners.forEach(fn => fn())
-      timers.forEach(t => clearTimeout(t))
-    }
+    return () => unlisteners.forEach(fn => fn())
   }, [mountedAgents, activeAgentId]);
 
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
