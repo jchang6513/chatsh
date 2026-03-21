@@ -148,7 +148,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center" }}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}
       onClick={onClose}
     >
       <div

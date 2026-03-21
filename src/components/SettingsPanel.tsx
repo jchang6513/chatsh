@@ -139,7 +139,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
 
   return (
     <div
-      style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0, 0, 0, 0.8)" }}
+      style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0, 0, 0, 0.8)" }}
       onClick={onClose}
     >
       <div

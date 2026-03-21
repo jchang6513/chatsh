@@ -45,7 +45,7 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 200,
+        zIndex: 150,
         display: "flex",
         justifyContent: "center",
         paddingTop: 80,
