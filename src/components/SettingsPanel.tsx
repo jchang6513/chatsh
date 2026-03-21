@@ -186,12 +186,12 @@ export default function SettingsPanel({ agents, onClose }: Props) {
 
         {/* 主 Tab：TERMINAL / TEMPLATES */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", fontSize: 10, letterSpacing: "0.06em", flexShrink: 0 }}>
-          {(["terminal", "templates"] as MainTab[]).map(t => (
+          {([["terminal", "Terminal"], ["templates", "Templates"]] as [MainTab, string][]).map(([t, label]) => (
             <div key={t} onClick={() => setMainTab(t)} style={{
               padding: "7px 16px", cursor: "pointer",
               borderBottom: mainTab === t ? "2px solid var(--green)" : "2px solid transparent",
               color: mainTab === t ? "var(--green)" : "var(--muted)",
-            }}>{t.toUpperCase()}</div>
+            }}>{label}</div>
           ))}
         </div>
 
@@ -282,7 +282,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {/* 系統偵測 (read-only) */}
                 <div>
-                  <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em", marginBottom: 8 }}>AUTO-DETECTED</div>
+                  <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em", marginBottom: 8 }}>Auto-detected</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     {KNOWN_TOOLS.map(t => (
                       <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", border: "1px solid var(--border)", fontSize: 11 }}>
@@ -297,12 +297,12 @@ export default function SettingsPanel({ agents, onClose }: Props) {
                 {/* 自訂樣板 */}
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>CUSTOM TEMPLATES</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>Custom Templates</div>
                     <button onClick={() => setShowNewTemplate(v => !v)}
                       style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "2px 6px", cursor: "pointer" }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
-                    >[+ NEW]</button>
+                    >[+ New]</button>
                   </div>
 
                   {/* 新增表單 */}
@@ -336,7 +336,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
 
                   {userTemplates.length === 0 && !showNewTemplate && (
                     <div style={{ fontSize: 11, color: "var(--muted)", padding: "12px 0", textAlign: "center" }}>
-                      尚無自訂樣板
+                      No custom templates yet
                     </div>
                   )}
 

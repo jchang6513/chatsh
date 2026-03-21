@@ -158,7 +158,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           <span style={{ fontSize: 10, color: "var(--green)", letterSpacing: "0.1em" }}>
-            ─ {mode === "choose" ? "NEW SESSION" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
+            ─ {mode === "choose" ? "NEW CHAT" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
           </span>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontFamily: mono, fontSize: 12 }}
             onMouseEnter={e => e.currentTarget.style.color = "var(--red)"}
@@ -176,15 +176,15 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
                 onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
               >
-                <span style={{ color: "var(--fg)", fontSize: 12 }}>[從樣板開啟]</span>
-                <span style={{ color: "var(--muted)", fontSize: 10 }}>從已偵測的 CLI 或自訂樣板建立 session</span>
+                <span style={{ color: "var(--fg)", fontSize: 12 }}>[From Template]</span>
+                <span style={{ color: "var(--muted)", fontSize: 10 }}>從 Template 開啟 Chat</span>
               </button>
               <button onClick={() => setMode("custom")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px dashed var(--border)" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
                 onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
               >
-                <span style={{ color: "var(--fg)", fontSize: 12 }}>[直接輸入指令]</span>
-                <span style={{ color: "var(--muted)", fontSize: 10 }}>自填指令，不存為樣板</span>
+                <span style={{ color: "var(--fg)", fontSize: 12 }}>[Custom]</span>
+                <span style={{ color: "var(--muted)", fontSize: 10 }}>自填指令，不存為 Template</span>
               </button>
             </div>
           )}
@@ -195,7 +195,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
               {/* 樣板格子 */}
               {allTemplates.length === 0 ? (
                 <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", padding: "24px 0" }}>
-                  未偵測到可用工具，請用「直接輸入指令」
+                  未偵測到可用工具，請用「Custom」
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -221,7 +221,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                     </button>
                   ))}
 
-                  {/* + 新增自訂樣板格子 */}
+                  {/* + New Template格子 */}
                   {!showNewTemplatForm && (
                     <button onClick={() => setShowNewTemplateForm(true)} style={{
                       ...btnBase,
@@ -233,7 +233,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                       onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
                     >
                       <span style={{ fontSize: 20, color: "var(--muted)" }}>+</span>
-                      <span style={{ fontSize: 10, color: "var(--muted)" }}>新增自訂樣板</span>
+                      <span style={{ fontSize: 10, color: "var(--muted)" }}>New Template</span>
                     </button>
                   )}
                 </div>
@@ -283,7 +283,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                       style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)", fontSize: 10 }}
                       onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
-                    >[儲存樣板]</button>
+                    >[Save Template]</button>
                   </div>
                 </div>
               )}
@@ -291,7 +291,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
               {/* 選好之後的設定 */}
               {selectedTemplate && (<>
                 <label style={labelStyle}>
-                  Session 名稱
+                  Chat 名稱
                   <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
                     style={inputStyle} placeholder={selectedTemplate.name} autoFocus
                     onFocus={onFocusInput} onBlur={onBlurInput} />
@@ -322,7 +322,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                   style={{ ...btnBase, borderColor: selectedTemplate ? "var(--green)" : "var(--border)", color: selectedTemplate ? "var(--green)" : "var(--muted)" }}
                   onMouseEnter={e => { if (selectedTemplate) { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; } }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = selectedTemplate ? "var(--green)" : "var(--muted)"; }}
-                >[開啟 Session]</button>
+                >[Open Chat]</button>
               </div>
             </div>
           )}
@@ -365,7 +365,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 <button type="submit" style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
-                >[建立 Session]</button>
+                >[New Chat]</button>
               </div>
             </form>
           )}

@@ -201,7 +201,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
         onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
       >
-        [SETTINGS ⌘,]
+        [Preferences ⌘,]
       </button>
 
       {/* 新增角色按鈕 */}
@@ -223,7 +223,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
         onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
         onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
       >
-        [+ NEW AGENT]
+        [+ New Chat]
       </button>
     </div>
   );
