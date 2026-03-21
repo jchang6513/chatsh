@@ -171,7 +171,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
           {/* CHOOSE */}
           {mode === "choose" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>開啟方式：</div>
+              <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Choose how to open:</div>
               <button onClick={() => setMode("from-template")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px solid var(--border)" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
                 onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
@@ -184,7 +184,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
               >
                 <span style={{ color: "var(--fg)", fontSize: 12 }}>[Custom]</span>
-                <span style={{ color: "var(--muted)", fontSize: 10 }}>自填指令，不存為 Template</span>
+                <span style={{ color: "var(--muted)", fontSize: 10 }}>Enter command directly, not saved as template</span>
               </button>
             </div>
           )}
@@ -195,7 +195,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
               {/* 樣板格子 */}
               {allTemplates.length === 0 ? (
                 <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", padding: "24px 0" }}>
-                  未偵測到可用工具，請用「Custom」
+                  No tools detected. Use Custom instead.
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
@@ -244,10 +244,10 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 <div style={{ border: "1px solid var(--green)", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 10, color: "var(--green)", marginBottom: 2 }}>NEW TEMPLATE</div>
                   {([
-                    { label: "名稱", key: "name", placeholder: "例如：後端助手" },
-                    { label: "指令", key: "command", placeholder: "例如：claude 或 python3" },
-                    { label: "工作目錄", key: "workingDir", placeholder: "~" },
-                    { label: "描述", key: "description", placeholder: "選填" },
+                    { label: "Name", key: "name", placeholder: "e.g. Backend Assistant" },
+                    { label: "Command", key: "command", placeholder: "e.g. claude or python3" },
+                    { label: "Working Dir", key: "workingDir", placeholder: "~" },
+                    { label: "Description", key: "description", placeholder: "Optional" },
                   ] as const).map(({ label, key, placeholder }) => (
                     <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
                       {label}
@@ -261,7 +261,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                       style={{ ...btnBase, fontSize: 10 }}
                       onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
                       onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
-                    >[取消]</button>
+                    >[Cancel]</button>
                     <button onClick={() => {
                       if (!newTpl.name.trim() || !newTpl.command.trim()) return
                       const t: Template = {
@@ -304,9 +304,9 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 </label>
                 {templatePromptInfo && (
                   <label style={labelStyle}>
-                    <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>（存為 {templatePromptInfo.filename}，選填）</span></span>
+                    <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>(saved as {templatePromptInfo.filename}, optional)</span></span>
                     <textarea value={templateSystemPrompt} onChange={e => setTemplateSystemPrompt(e.target.value)} rows={4}
-                      placeholder={`你是一個專注於 ${selectedTemplate.name} 的助手...`}
+                      placeholder={`You are a focused assistant for ${selectedTemplate.name}...`}
                       style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
                       onFocus={onFocusInput} onBlur={onBlurInput} />
                   </label>
@@ -317,7 +317,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 <button onClick={() => setMode("choose")} style={btnBase}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
-                >[上一步]</button>
+                >[Back]</button>
                 <button onClick={handleFromTemplate} disabled={!selectedTemplate}
                   style={{ ...btnBase, borderColor: selectedTemplate ? "var(--green)" : "var(--border)", color: selectedTemplate ? "var(--green)" : "var(--muted)" }}
                   onMouseEnter={e => { if (selectedTemplate) { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; } }}
@@ -333,13 +333,13 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
               <label style={labelStyle}>
                 名稱
                 <input type="text" value={name} onChange={e => setName(e.target.value)}
-                  style={inputStyle} placeholder="例如：後端助手" autoFocus
+                  style={inputStyle} placeholder="e.g. Backend Assistant" autoFocus
                   onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
               <label style={labelStyle}>
                 指令
                 <input type="text" value={command} onChange={e => setCommand(e.target.value)}
-                  style={inputStyle} placeholder="例如：claude 或 /bin/zsh 或 python3"
+                  style={inputStyle} placeholder="e.g. claude or /bin/zsh or python3"
                   onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
               <label style={labelStyle}>
@@ -350,9 +350,9 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
               </label>
               {customPromptInfo && (
                 <label style={labelStyle}>
-                  <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>（存為 {customPromptInfo.filename}，選填）</span></span>
+                  <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>(saved as {customPromptInfo.filename}, optional)</span></span>
                   <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)} rows={4}
-                    placeholder="你是一個專注於後端的工程師..."
+                    placeholder="You are a focused backend engineer..."
                     style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
                     onFocus={onFocusInput} onBlur={onBlurInput} />
                 </label>
@@ -361,7 +361,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 <button type="button" onClick={() => setMode("choose")} style={btnBase}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
-                >[上一步]</button>
+                >[Back]</button>
                 <button type="submit" style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}

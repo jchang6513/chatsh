@@ -247,4 +247,4 @@ export const SCHEMES: Record<string, ColorScheme> = {
   },
 }
 
-export const DEFAULT_SCHEME = "hacker"
+export const DEFAULT_SCHEME = "amber"

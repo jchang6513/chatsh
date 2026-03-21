@@ -74,7 +74,7 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="輸入 agent 名稱..."
+            placeholder="Search sessions..."
             style={{
               width: "100%",
               background: "transparent",
@@ -91,7 +91,7 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
         <div style={{ flex: 1, overflowY: "auto" }}>
           {filtered.length === 0 && (
             <div style={{ padding: "12px 16px", color: "var(--muted)", fontSize: 12 }}>
-              找不到符合的 agent
+              No results
             </div>
           )}
           {filtered.map((agent, idx) => (
@@ -148,9 +148,9 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
           gap: 12,
           letterSpacing: "0.04em",
         }}>
-          <span>↑↓ 選擇</span>
-          <span>Enter 確認</span>
-          <span>Esc 關閉</span>
+          <span>↑↓ navigate</span>
+          <span>↵ select</span>
+          <span>ESC close</span>
         </div>
       </div>
     </div>

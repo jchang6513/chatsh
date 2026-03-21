@@ -127,7 +127,7 @@ export default function ClaudeMdEditor({ agent, onClose }: Props) {
           value={loading ? "// loading..." : content}
           onChange={(e) => setContent(e.target.value)}
           disabled={loading}
-          placeholder={"# System Prompt\n\n你是一個專注於 React 的前端工程師...\n\n在這裡設定 Claude 的角色、工作習慣、注意事項。"}
+          placeholder={"# System Prompt\n\nYou are a focused React frontend engineer...\n\nDefine the role, habits, and constraints here."}
           style={{
             flex: 1,
             background: "var(--bg)",
@@ -163,7 +163,7 @@ export default function ClaudeMdEditor({ agent, onClose }: Props) {
           letterSpacing: "0.05em",
         }}>
           <span>⌘S to save</span>
-          <span>此 CLAUDE.md 為此 agent 專屬，不影響專案目錄</span>
+          <span>This CLAUDE.md is agent-specific and does not affect the project directory</span>
         </div>
       </div>
     </>

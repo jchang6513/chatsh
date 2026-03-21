@@ -170,7 +170,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
         if (!disposed) onStatusChange("online");
       } catch (e) {
         if (!disposed) {
-          xterm.writeln(`\r\n[錯誤] 無法啟動: ${e}`);
+          xterm.writeln(`\r\n[Error] Failed to spawn: ${e}`);
           onStatusChange("offline");
         }
       }

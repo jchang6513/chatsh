@@ -162,11 +162,11 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
           <>
             <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>┌─── SELECT AGENT ───┐</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 16 }}>
-              選擇要新增的 Agent
+              Select Agent Type
             </div>
             {scanning ? (
               <div style={{ fontSize: 12, padding: "32px 0", textAlign: "center", color: "var(--muted)" }}>
-                掃描可用 CLI 中…
+                Scanning available CLIs...
               </div>
             ) : (
               <>
@@ -200,7 +200,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                 </div>
                 {available.length === 0 && (
                   <div style={{ fontSize: 12, padding: "16px 0", textAlign: "center", color: "var(--muted)" }}>
-                    未偵測到可用的 CLI 工具
+                    No CLI tools detected
                   </div>
                 )}
                 <button
@@ -216,7 +216,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   onMouseEnter={btnHover}
                   onMouseLeave={btnLeave}
                 >
-                  [+ 自訂指令]
+                  [+ Custom Command]
                 </button>
               </>
             )}
@@ -228,7 +228,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                 onMouseEnter={btnHover}
                 onMouseLeave={btnLeave}
               >
-                [取消]
+                [Cancel]
               </button>
             </div>
           </>
@@ -238,7 +238,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
               ┌─── {isEditing ? "EDIT AGENT" : "CONFIGURE"} ───┐
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 16 }}>
-              {isEditing ? "編輯角色" : `設定 ${name || "Agent"}`}
+              {isEditing ? "Edit REPL" : `Configure ${name || "REPL"}`}
             </div>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
@@ -255,7 +255,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     onMouseEnter={btnHover}
                     onMouseLeave={btnLeave}
                   >
-                    [上傳]
+                    [Upload]
                   </button>
                   <input
                     ref={fileRef}
@@ -275,7 +275,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       style={inputStyle}
                       onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
                       onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
-                      placeholder="例如：工程助手"
+                      placeholder="e.g. Engineering"
                       autoFocus
                     />
                   </label>
@@ -289,7 +289,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                         style={inputStyle}
                         onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
                         onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
-                        placeholder="例如：claude 或 /bin/zsh"
+                        placeholder="e.g. claude or /bin/zsh"
                       />
                     </label>
                   )}
@@ -309,12 +309,12 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
               </div>
               {command.split(" ")[0] === "claude" && (
                 <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                  <span>CLAUDE.md <span style={{ fontSize: 10 }}>（System prompt，選填）</span></span>
+                  <span>CLAUDE.md <span style={{ fontSize: 10 }}>(System prompt, optional)</span></span>
                   <textarea
                     value={claudeMd}
                     onChange={(e) => setClaudeMd(e.target.value)}
                     rows={5}
-                    placeholder={"你是一個專注於 React 的前端工程師...\n\n可以在這裡設定 Claude 的角色、工作習慣、注意事項等"}
+                    placeholder={"You are a focused React frontend engineer...\n\nDefine role, habits, and constraints for Claude here"}
                     style={{
                       ...inputStyle,
                       resize: "vertical",
@@ -323,7 +323,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
                     onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                   />
-                  <span style={{ fontSize: 10, color: "var(--muted)" }}>存放於 ~/.chatsh/agents/{"{id}"}/CLAUDE.md，不影響專案目錄</span>
+                  <span style={{ fontSize: 10, color: "var(--muted)" }}>Stored at ~/.chatsh/agents/{"{id}"}/CLAUDE.md — project directory is unaffected</span>
                 </label>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
@@ -336,7 +336,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       onMouseEnter={btnHover}
                       onMouseLeave={btnLeave}
                     >
-                      [上一步]
+                      [Back]
                     </button>
                   )}
                 </div>
@@ -348,7 +348,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     onMouseEnter={btnHover}
                     onMouseLeave={btnLeave}
                   >
-                    [取消]
+                    [Cancel]
                   </button>
                   <button
                     type="submit"
@@ -366,7 +366,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       e.currentTarget.style.color = "var(--green)";
                     }}
                   >
-                    [{isEditing ? "儲存" : "確認新增"}]
+                    [{isEditing ? "Save" : "Create"}]
                   </button>
                 </div>
               </div>

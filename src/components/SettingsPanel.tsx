@@ -123,7 +123,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
           }}
           onMouseEnter={e => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "var(--red)" }}
           onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.borderColor = "var(--border)" }}
-          title="還原全域設定"
+          title="Reset to global"
         >
           RESET
         </button>
@@ -164,7 +164,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
         }}>
           <div>
             <div style={{ fontSize: 11, color: "var(--muted)" }}>┌─── PREFERENCES ───┐</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>Terminal 設定</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>Terminal Settings</div>
           </div>
           <button
             onClick={onClose}
@@ -280,7 +280,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
 
             return (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {/* 系統偵測 (read-only) */}
+                {/* Auto-detected (read-only) */}
                 <div>
                   <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em", marginBottom: 8 }}>Auto-detected</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -294,7 +294,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
                   </div>
                 </div>
 
-                {/* 自訂樣板 */}
+                {/* Custom Templates */}
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>Custom Templates</div>
@@ -305,15 +305,15 @@ export default function SettingsPanel({ agents, onClose }: Props) {
                     >[+ New]</button>
                   </div>
 
-                  {/* 新增表單 */}
+                  {/* New template form */}
                   {showNewTemplate && (
                     <div style={{ border: "1px solid var(--green)", padding: 10, marginBottom: 8, display: "flex", flexDirection: "column", gap: 8 }}>
                       <div style={{ fontSize: 10, color: "var(--green)" }}>NEW TEMPLATE</div>
                       {[
-                        { label: "名稱", key: "name" as const, placeholder: "例如：後端助手" },
-                        { label: "指令", key: "command" as const, placeholder: "例如：claude 或 python3" },
-                        { label: "工作目錄", key: "workingDir" as const, placeholder: "~" },
-                        { label: "描述", key: "description" as const, placeholder: "選填" },
+                        { label: "Name", key: "name" as const, placeholder: "e.g. Backend Assistant" },
+                        { label: "Command", key: "command" as const, placeholder: "e.g. claude or python3" },
+                        { label: "Working Dir", key: "workingDir" as const, placeholder: "~" },
+                        { label: "Description", key: "description" as const, placeholder: "Optional" },
                       ].map(({ label, key, placeholder }) => (
                         <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
                           {label}
@@ -324,12 +324,12 @@ export default function SettingsPanel({ agents, onClose }: Props) {
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                         <button onClick={() => setShowNewTemplate(false)}
                           style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}
-                        >[取消]</button>
+                        >[Cancel]</button>
                         <button onClick={saveNewTemplate}
                           style={{ background: "none", border: "1px solid var(--green)", color: "var(--green)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}
                           onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                           onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--green)"; }}
-                        >[儲存]</button>
+                        >[Save]</button>
                       </div>
                     </div>
                   )}
@@ -363,7 +363,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
 
           {mainTab === "terminal" && !isGlobal && (
             <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 12, padding: "4px 8px", border: "1px dashed var(--border)" }}>
-              Agent 設定會覆蓋全域設定。按「RESET」可還原為全域設定。
+              Agent settings override global. Click RESET to revert.
             </div>
           )}
 
@@ -524,7 +524,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--red)"; e.currentTarget.style.color = "var(--red)" }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)" }}
           >
-            [{isGlobal ? "全部重置" : "清除 Agent 設定"}]
+            [{isGlobal ? "Reset All" : "Clear Agent Settings"}]
           </button>
           <button
             onClick={onClose}
@@ -541,7 +541,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
             onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)" }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)" }}
           >
-            [關閉]
+            [Close]
           </button>
         </div>
       </div>

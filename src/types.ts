@@ -9,6 +9,6 @@ export interface Agent {
   workingDir: string;
   llmLabel?: string;
   status: "online" | "offline";
-  /** Agent 別端末設定オーバーライド（全域設定を上書き） */
+  /** Per-agent terminal settings override (overrides global) */
   terminalOverrides?: AgentTerminalOverrides;
 }

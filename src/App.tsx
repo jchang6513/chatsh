@@ -228,7 +228,7 @@ export default function App() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, padding: 4 }}>
           {agents.length === 0 && (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", fontSize: 14 }}>
-              點選 <span style={{ color: "var(--blue)", margin: "0 4px" }}>+</span> 開始使用
+              Click + to start
             </div>
           )}
           {agents.map((agent) => (
@@ -313,7 +313,7 @@ export default function App() {
                     ) : (
                       <span
                         onDoubleClick={e => { e.stopPropagation(); startRename(shellId, idx); }}
-                        title="雙擊重命名"
+                        title="Double-click to rename"
                       >{getShellName(shellId, idx)}</span>
                     )}
                     <span
@@ -335,7 +335,7 @@ export default function App() {
                   }}
                   onMouseEnter={e => (e.currentTarget.style.color = "var(--green)")}
                   onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}
-                  title="新增 Shell"
+                  title="New Shell"
                 >+ shell</button>
 
                 {/* 右側工具按鈕 */}

@@ -72,7 +72,7 @@ export default function SingleShell({ sessionId, isActive, agentId }: SingleShel
       workingDir: "~",
       cols: xterm.cols,
       rows: xterm.rows,
-    }).catch(e => xterm.writeln(`\r\n[錯誤] ${e}`));
+    }).catch(e => xterm.writeln(`\r\n[Error] ${e}`));
 
     // keyboard input
     const disposable = xterm.onData(data => {

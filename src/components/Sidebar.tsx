@@ -140,7 +140,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                     }}
                     onMouseEnter={e => { e.currentTarget.style.color = "var(--green)"; e.currentTarget.style.background = "var(--bg)"; }}
                     onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.background = "var(--surface)"; }}
-                    title="編輯"
+                    title="Edit"
                   >✎</button>
                   <button
                     onMouseDown={(e) => { e.stopPropagation(); e.preventDefault(); onRemove(agent.id); }}
@@ -152,7 +152,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                     }}
                     onMouseEnter={e => { e.currentTarget.style.background = "var(--red)"; e.currentTarget.style.color = "var(--bg)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.color = "var(--red)"; }}
-                    title="刪除"
+                    title="Delete"
                   >×</button>
                 </div>
               )}
