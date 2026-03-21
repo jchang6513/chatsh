@@ -9,7 +9,6 @@ import StatusBar from "./components/StatusBar";
 import AddAgentModal from "./components/AddAgentModal";
 import AddSessionModal from "./components/AddSessionModal";
 import { loadTemplates } from "./templates";
-import ClaudeMdEditor from "./components/ClaudeMdEditor";
 import CommandPalette from "./components/CommandPalette";
 import SettingsPanel from "./components/SettingsPanel";
 import { useSettings } from "./SettingsContext";
@@ -114,7 +113,6 @@ export default function App() {
   const [unreadAgents, setUnreadAgents] = useState<Set<string>>(new Set());
   const [streamingAgents, setStreamingAgents] = useState<Set<string>>(new Set());
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
-  const [showClaudeMd, setShowClaudeMd] = useState(false);
   const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
   const bumpRestart = (id: string) => setRestartKeys(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
 
@@ -466,12 +464,6 @@ export default function App() {
           agents={agents}
           onTemplatesChange={(t) => setTemplates(t)}
           onClose={() => setShowSettings(false)}
-        />
-      )}
-      {showClaudeMd && activeAgent && (
-        <ClaudeMdEditor
-          agent={activeAgent}
-          onClose={() => setShowClaudeMd(false)}
         />
       )}
       {showCommandPalette && (
