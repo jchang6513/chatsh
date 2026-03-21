@@ -16,7 +16,7 @@ import type { Agent } from "./types";
 const DEFAULT_AGENTS: Agent[] = [
   {
     id: "claude",
-    name: "Engineering Chat",
+    name: "Engineering",
     emoji: "🤖",
     command: ["claude"],
     workingDir: "/Users/jcssecondmind/Workspace/chatsh",
