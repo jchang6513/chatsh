@@ -1,5 +1,5 @@
 import { open } from "@tauri-apps/plugin-dialog"
-import { MONO_FONT } from "../../ui"
+import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../../ui"
 
 interface Props {
   onSelect: (path: string) => void
@@ -25,8 +25,8 @@ export default function FolderButton({ onSelect }: Props) {
         cursor: "pointer",
         flexShrink: 0,
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+      onMouseEnter={onHoverGreen}
+      onMouseLeave={onLeaveGreen}
     >
       [...]
     </button>

@@ -55,3 +55,11 @@ export const onFocusInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextArea
 export const onBlurInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
   e.currentTarget.style.borderColor = "var(--border)"
 }
+
+// Border-only hover (no color change)
+export const onHoverBorder = (e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>) => {
+  (e.currentTarget as HTMLElement).style.borderColor = "var(--green)"
+}
+export const onLeaveBorder = (e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>) => {
+  (e.currentTarget as HTMLElement).style.borderColor = "var(--border)"
+}

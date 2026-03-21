@@ -1,11 +1,10 @@
 import FolderButton from "./ui/FolderButton"
+import { MONO_FONT, onHoverGreen, onLeaveGreen, onFocusInput, onBlurInput, onHoverBorder, onLeaveBorder } from "../ui"
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
 import type { Agent } from "../types";
 import type { Template } from "../templates";
 import { KNOWN_TOOLS, addTemplate } from "../templates";
-import { MONO_FONT, INPUT_STYLE, BTN_BASE, onHoverGreen, onLeaveGreen, onFocusInput as onFocusInputUI, onBlurInput as onBlurInputUI } from "../ui";
 
 
 interface Props {
@@ -146,7 +145,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
   const customPromptInfo = getSystemPromptInfo(command)
 
   const onFocusInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    (e.currentTarget.style.borderColor = "var(--green)")
+    e.currentTarget.style.borderColor = "var(--green)"
   const onBlurInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     (e.currentTarget.style.borderColor = "var(--border)")
 
@@ -184,15 +183,15 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Choose how to open:</div>
               <button onClick={() => setMode("from-template")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px solid var(--border)" }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
-                onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                onMouseEnter={onHoverBorder}
+                onMouseLeave={onLeaveBorder}
               >
                 <span style={{ color: "var(--fg)", fontSize: 12 }}>[From Template]</span>
                 <span style={{ color: "var(--muted)", fontSize: 10 }}>Open REPL from template</span>
               </button>
               <button onClick={() => setMode("custom")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px dashed var(--border)" }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
-                onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                onMouseEnter={onHoverBorder}
+                onMouseLeave={onLeaveBorder}
               >
                 <span style={{ color: "var(--fg)", fontSize: 12 }}>[Custom]</span>
                 <span style={{ color: "var(--muted)", fontSize: 10 }}>Enter command directly, not saved as template</span>
@@ -240,8 +239,8 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                       gap: 4, padding: 12, textAlign: "center",
                       border: "1px dashed var(--border)", minHeight: 80,
                     }}
-                      onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
-                      onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                      onMouseEnter={onHoverBorder}
+                      onMouseLeave={onLeaveBorder}
                     >
                       <span style={{ fontSize: 20, color: "var(--muted)" }}>+</span>
                       <span style={{ fontSize: 10, color: "var(--muted)" }}>New Template</span>

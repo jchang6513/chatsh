@@ -1,4 +1,4 @@
-import { onHoverGreen, onLeaveGreen, MONO_FONT } from "../../ui"
+import { MONO_FONT } from "../../ui"
 
 interface Props {
   onClose: () => void

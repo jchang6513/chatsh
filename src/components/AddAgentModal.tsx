@@ -1,4 +1,4 @@
-import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
+import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen, onHoverBorder, onLeaveBorder } from "../ui"
 import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
@@ -184,7 +184,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                         borderRadius: 0,
                         color: "var(--fg)",
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--green)" }}
+                      onMouseEnter={onHoverBorder}
                       onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
                     >
                       <span style={{ fontSize: 12, fontWeight: 600 }}>{a.name}</span>
