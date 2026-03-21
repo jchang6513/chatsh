@@ -1,3 +1,4 @@
+import { useRef } from "react"
 import CloseButton from "./ui/CloseButton"
 import FolderButton from "./ui/FolderButton"
 import { MONO_FONT, onHoverGreen, onLeaveGreen, onFocusInput, onBlurInput, onHoverBorder, onLeaveBorder } from "../ui"
@@ -111,7 +112,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
     setTemplateSystemPrompt("")
   }
 
-  const submittingRef = React.useRef(false)
+  const submittingRef = useRef(false)
   const handleFromTemplate = async () => {
     if (!selectedTemplate) return
     if (submittingRef.current) return
