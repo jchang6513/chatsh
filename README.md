@@ -81,3 +81,29 @@ Requirements: [Rust](https://rustup.rs), [Node.js](https://nodejs.org)
 ## License
 
 MIT
+
+---
+
+## Changelog
+
+### v0.1.3
+- **Unread notifications**: amber dot pulses while streaming, stays amber when idle (unread)
+- **UTF-8 / CJK display** fixed in terminal
+- Working Dir native folder picker `[...]`
+- Lazy REPL spawn (only starts when selected)
+- Code quality: shared `ui.ts` constants, `CloseButton` / `FolderButton` components
+
+### v0.1.2
+- New REPL flow: From Template / Custom
+- System prompts (CLAUDE.md / GEMINI.md / AGENTS.md), per-REPL isolated
+- Keyboard shortcuts (⌘K, ⌘1-9, ⌘T/W, ⌘R, ⌘,)
+- Preferences panel with per-REPL overrides
+- 8 color schemes, Amber default
+
+### v0.1.1
+- Command Palette (⌘K)
+- Preferences panel: font, cursor, terminal settings
+- App icon
+
+### v0.1.0
+- Initial release
