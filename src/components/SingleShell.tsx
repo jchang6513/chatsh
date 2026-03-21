@@ -11,9 +11,10 @@ interface SingleShellProps {
   sessionId: string;
   isActive: boolean;
   agentId: string;
+  workingDir?: string;
 }
 
-export default function SingleShell({ sessionId, isActive, agentId }: SingleShellProps) {
+export default function SingleShell({ sessionId, isActive, agentId, workingDir = "~" }: SingleShellProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
@@ -69,7 +70,7 @@ export default function SingleShell({ sessionId, isActive, agentId }: SingleShel
     invoke("spawn_agent", {
       agentId: sessionId,
       command: ["/bin/zsh"],
-      workingDir: "~",
+      workingDir: workingDir,
       cols: xterm.cols,
       rows: xterm.rows,
     }).catch(e => xterm.writeln(`\r\n[Error] ${e}`));

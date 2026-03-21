@@ -462,7 +462,7 @@ export default function App() {
               {(shellSessions[agent.id] ?? []).map(shellId => (
                 <div key={shellId} style={{ flex: 1, display: getActivePanelTab(agent.id) === shellId ? "flex" : "none", minHeight: 0, position: "relative" }}>
                   <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
-                    <SingleShell sessionId={shellId} agentId={agent.id} isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === shellId} />
+                    <SingleShell sessionId={shellId} agentId={agent.id} workingDir={agent.workingDir} isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === shellId} />
                   </div>
                 </div>
               ))}

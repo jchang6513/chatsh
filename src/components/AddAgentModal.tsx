@@ -68,7 +68,9 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       setWorkingDir(initialValues.workingDir ?? "~");
       setAvatarUrl(initialValues.avatar ?? "");
       // Load existing CLAUDE.md when editing
-      if (initialValues.id && initialValues.command?.[0] === "claude") {
+      const cmd0 = initialValues.command?.[0] ?? ""
+      const SUPPORTED = ["claude","gemini","codex"]
+      if (initialValues.id && SUPPORTED.includes(cmd0)) {
         const path = `~/.chatsh/agents/${initialValues.id}/CLAUDE.md`
         invoke<string>("read_file", { path })
           .then(content => setClaudeMd(content))
@@ -122,9 +124,11 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       status: initialValues?.status ?? "offline",
     };
 
-    const isClaudeCmd = agent.command[0] === "claude";
-    if (isClaudeCmd && claudeMd.trim()) {
-      const path = `~/.chatsh/agents/${agentId}/CLAUDE.md`;
+    const cmd0 = agent.command[0]
+    const PROMPT_FILES: Record<string,string> = { claude: "CLAUDE.md", gemini: "GEMINI.md", codex: "AGENTS.md" }
+    const promptFile = PROMPT_FILES[cmd0]
+    if (promptFile && claudeMd.trim()) {
+      const path = `~/.chatsh/agents/${agentId}/${promptFile}`;
       await invoke("write_file", { path, content: claudeMd }).catch(() => {});
     }
 
@@ -322,7 +326,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   </label>
                 </div>
               </div>
-              {command.split(" ")[0] === "claude" && (
+              {["claude","gemini","codex"].includes(command.split(" ")[0]) && (
                 <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
                   <span>CLAUDE.md <span style={{ fontSize: 10 }}>(System prompt, optional)</span></span>
                   <textarea
