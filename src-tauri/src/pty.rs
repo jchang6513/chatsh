@@ -86,49 +86,6 @@ impl PtyManager {
                     }
                 }
                 (expanded_dir, cmd)  // cwd 是 user 設定的工作目錄
-            } else if command.first().map(|s| s.as_str()) == Some("gemini") {
-                // Gemini reads GEMINI.md from cwd hierarchy
-                // Strategy: copy GEMINI.md into user workingDir as .chatsh-gemini-context.md,
-                // then pass it via cwd. Simplest: put agent_dir GEMINI.md content into
-                // expanded_dir/GEMINI.md temporarily... actually simplest is:
-                // cwd = agent_dir, --include-directories = expanded_dir
-                let home = std::env::var("HOME").unwrap_or_default();
-                let agent_dir = format!("{}/.chatsh/agents/{}", home, agent_id);
-                std::fs::create_dir_all(&agent_dir).ok();
-                let gemini_md = format!("{}/GEMINI.md", agent_dir);
-                let mut cmd = command.to_vec();
-                let has_prompt = std::path::Path::new(&gemini_md).exists()
-                    && std::fs::read_to_string(&gemini_md)
-                        .map(|s| !s.trim().is_empty())
-                        .unwrap_or(false);
-                if has_prompt {
-                    cmd.push("--include-directories".to_string());
-                    cmd.push(expanded_dir.clone());
-                    (agent_dir, cmd) // cwd = agent_dir so GEMINI.md is found
-                } else {
-                    (expanded_dir, cmd)
-                }
-            } else if command.first().map(|s| s.as_str()) == Some("codex") {
-                // Codex reads AGENTS.md from cwd hierarchy (like Gemini)
-                // Same strategy: cwd = agent_dir if AGENTS.md exists, add user workingDir to writable dirs
-                let home = std::env::var("HOME").unwrap_or_default();
-                let agent_dir = format!("{}/.chatsh/agents/{}", home, agent_id);
-                std::fs::create_dir_all(&agent_dir).ok();
-                let agents_md = format!("{}/AGENTS.md", agent_dir);
-                let mut cmd = command.to_vec();
-                let has_prompt = std::path::Path::new(&agents_md).exists()
-                    && std::fs::read_to_string(&agents_md)
-                        .map(|s| !s.trim().is_empty())
-                        .unwrap_or(false);
-                if has_prompt {
-                    // cwd = agent_dir so AGENTS.md is discovered
-                    // Pass user workingDir via -c workspace_writable_addon_directories
-                    cmd.push("-c".to_string());
-                    cmd.push(format!("workspace_writable_addon_directories=[{:?}]", expanded_dir));
-                    (agent_dir, cmd)
-                } else {
-                    (expanded_dir, cmd)
-                }
             } else {
                 (expanded_dir, command.to_vec())
             };
