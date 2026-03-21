@@ -34,68 +34,95 @@ const btnBase: React.CSSProperties = {
   cursor: "pointer",
 };
 
+const labelStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 4,
+  fontSize: 11,
+  color: "var(--muted)",
+};
+
 type Mode = "choose" | "from-template" | "custom";
+
+// 哪些指令支援 system prompt，以及對應的檔名
+const SYSTEM_PROMPT_SUPPORT: Record<string, { label: string; filename: string }> = {
+  claude:  { label: "CLAUDE.md",  filename: "CLAUDE.md" },
+  gemini:  { label: "GEMINI.md",  filename: "GEMINI.md" },
+  codex:   { label: "AGENTS.md",  filename: "AGENTS.md" },
+}
+
+function getSystemPromptInfo(command: string) {
+  const cmd = command.split(" ")[0].split("/").pop() ?? ""
+  return SYSTEM_PROMPT_SUPPORT[cmd] ?? null
+}
+
+async function writeSystemPrompt(agentId: string, command: string, content: string) {
+  const info = getSystemPromptInfo(command)
+  if (!info || !content.trim()) return
+  const path = `~/.chatsh/agents/${agentId}/${info.filename}`
+  await invoke("write_file", { path, content }).catch(() => {})
+}
 
 export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
   const [mode, setMode] = useState<Mode>("choose");
   const [detectedIds, setDetectedIds] = useState<string[]>([]);
 
-  // 自訂模式欄位
+  // 從樣板
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [sessionName, setSessionName] = useState("");
+  const [templateWorkingDir, setTemplateWorkingDir] = useState("~");
+  const [templateSystemPrompt, setTemplateSystemPrompt] = useState("");
+
+  // 自訂
   const [name, setName] = useState("");
   const [command, setCommand] = useState("");
   const [workingDir, setWorkingDir] = useState("~");
-  const [claudeMd, setClaudeMd] = useState("");
-
-  // 從樣板模式
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
-  const [sessionName, setSessionName] = useState("");
+  const [systemPrompt, setSystemPrompt] = useState("");
 
   useEffect(() => {
     invoke<{ name: string; command: string; description: string }[]>("scan_available_agents")
       .then(list => setDetectedIds(
         list.map(a => KNOWN_TOOLS.find(t => t.command === a.command)?.id ?? a.command)
       ))
-      .catch(() => {});
-  }, []);
+      .catch(() => {})
+  }, [])
 
-  const builtinTemplates = KNOWN_TOOLS.filter(t => detectedIds.includes(t.id));
-  const userTemplates = templates.filter(t => !t.isBuiltin);
+  const builtinTemplates = KNOWN_TOOLS.filter(t => detectedIds.includes(t.id))
+  const userTemplates = templates.filter(t => !t.isBuiltin)
   const allTemplates = [
     ...builtinTemplates.map(t => ({
-      id: t.id,
-      name: t.name,
-      command: t.command,
-      workingDir: "~",
-      description: t.description,
-      isBuiltin: true,
+      id: t.id, name: t.name, command: t.command,
+      workingDir: "~", description: t.description, isBuiltin: true,
     } as Template)),
     ...userTemplates,
-  ];
+  ]
 
-  const handleFromTemplate = () => {
-    if (!selectedTemplate) return;
-    const id = Date.now().toString();
+  const handleSelectTemplate = (t: Template) => {
+    setSelectedTemplate(t)
+    setSessionName(t.name)
+    setTemplateWorkingDir(t.workingDir || "~")
+    setTemplateSystemPrompt("")
+  }
+
+  const handleFromTemplate = async () => {
+    if (!selectedTemplate) return
+    const id = Date.now().toString()
     const agent: Agent = {
       id,
       name: sessionName.trim() || selectedTemplate.name,
       emoji: "🤖",
       command: [selectedTemplate.command, ...(selectedTemplate.args ?? [])],
-      workingDir: selectedTemplate.workingDir || "~",
+      workingDir: templateWorkingDir.trim() || "~",
       status: "offline",
-    };
-    if (selectedTemplate.command === "claude" && selectedTemplate.claudeMd) {
-      invoke("write_file", {
-        path: `~/.chatsh/agents/${id}/CLAUDE.md`,
-        content: selectedTemplate.claudeMd,
-      }).catch(() => {});
     }
-    onAdd(agent);
-  };
+    await writeSystemPrompt(id, selectedTemplate.command, templateSystemPrompt)
+    onAdd(agent)
+  }
 
-  const handleCustom = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !command.trim()) return;
-    const id = Date.now().toString();
+  const handleCustom = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!name.trim() || !command.trim()) return
+    const id = Date.now().toString()
     const agent: Agent = {
       id,
       name: name.trim(),
@@ -103,15 +130,18 @@ export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
       command: command.split(" ").filter(Boolean),
       workingDir: workingDir.trim() || "~",
       status: "offline",
-    };
-    if (command.split(" ")[0] === "claude" && claudeMd.trim()) {
-      invoke("write_file", {
-        path: `~/.chatsh/agents/${id}/CLAUDE.md`,
-        content: claudeMd,
-      }).catch(() => {});
     }
-    onAdd(agent);
-  };
+    await writeSystemPrompt(id, command, systemPrompt)
+    onAdd(agent)
+  }
+
+  const templatePromptInfo = selectedTemplate ? getSystemPromptInfo(selectedTemplate.command) : null
+  const customPromptInfo = getSystemPromptInfo(command)
+
+  const onFocusInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (e.currentTarget.style.borderColor = "var(--green)")
+  const onBlurInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    (e.currentTarget.style.borderColor = "var(--border)")
 
   return (
     <div
@@ -119,11 +149,11 @@ export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
       onClick={onClose}
     >
       <div
-        style={{ width: 480, background: "var(--bg)", border: "1px solid var(--border)", borderTop: "2px solid var(--green)", fontFamily: mono }}
+        style={{ width: 520, maxHeight: "85vh", display: "flex", flexDirection: "column", background: "var(--bg)", border: "1px solid var(--border)", borderTop: "2px solid var(--green)", fontFamily: mono }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           <span style={{ fontSize: 10, color: "var(--green)", letterSpacing: "0.1em" }}>
             ─ {mode === "choose" ? "NEW SESSION" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
           </span>
@@ -133,36 +163,20 @@ export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
           >[×]</button>
         </div>
 
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
 
-          {/* CHOOSE MODE */}
+          {/* CHOOSE */}
           {mode === "choose" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>開啟方式：</div>
-
-              <button
-                onClick={() => setMode("from-template")}
-                style={{
-                  ...btnBase,
-                  display: "flex", flexDirection: "column", gap: 4,
-                  padding: 14, textAlign: "left",
-                  border: "1px solid var(--border)",
-                }}
+              <button onClick={() => setMode("from-template")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px solid var(--border)" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
                 onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
               >
                 <span style={{ color: "var(--fg)", fontSize: 12 }}>[從樣板開啟]</span>
                 <span style={{ color: "var(--muted)", fontSize: 10 }}>從已偵測的 CLI 或自訂樣板建立 session</span>
               </button>
-
-              <button
-                onClick={() => setMode("custom")}
-                style={{
-                  ...btnBase,
-                  display: "flex", flexDirection: "column", gap: 4,
-                  padding: 14, textAlign: "left",
-                  border: "1px dashed var(--border)",
-                }}
+              <button onClick={() => setMode("custom")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px dashed var(--border)" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
                 onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
               >
@@ -174,31 +188,29 @@ export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
 
           {/* FROM TEMPLATE */}
           {mode === "from-template" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              {/* 樣板格子 */}
               {allTemplates.length === 0 ? (
                 <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", padding: "24px 0" }}>
                   未偵測到可用工具，請用「直接輸入指令」
                 </div>
               ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {allTemplates.map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => { setSelectedTemplate(t); setSessionName(t.name); }}
-                      style={{
-                        ...btnBase,
-                        display: "flex", flexDirection: "column", gap: 3,
-                        padding: 10, textAlign: "left",
-                        borderColor: selectedTemplate?.id === t.id ? "var(--green)" : "var(--border)",
-                        color: selectedTemplate?.id === t.id ? "var(--green)" : "var(--fg)",
-                      }}
-                      onMouseEnter={e => { if (selectedTemplate?.id !== t.id) e.currentTarget.style.borderColor = "var(--green)"; }}
-                      onMouseLeave={e => { if (selectedTemplate?.id !== t.id) e.currentTarget.style.borderColor = "var(--border)"; }}
+                    <button key={t.id} onClick={() => handleSelectTemplate(t)} style={{
+                      ...btnBase,
+                      display: "flex", flexDirection: "column", gap: 4,
+                      padding: 12, textAlign: "left",
+                      borderColor: selectedTemplate?.id === t.id ? "var(--green)" : "var(--border)",
+                      color: selectedTemplate?.id === t.id ? "var(--green)" : "var(--fg)",
+                    }}
+                      onMouseEnter={e => { if (selectedTemplate?.id !== t.id) e.currentTarget.style.borderColor = "var(--green)" }}
+                      onMouseLeave={e => { if (selectedTemplate?.id !== t.id) e.currentTarget.style.borderColor = "var(--border)" }}
                     >
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 12, fontWeight: 600 }}>{t.name}</span>
                         {t.isBuiltin && (
-                          <span style={{ fontSize: 9, color: "var(--green)", border: "1px solid var(--green)", padding: "0 3px" }}>AUTO</span>
+                          <span style={{ fontSize: 9, color: "var(--green)", border: "1px solid var(--green)", padding: "1px 4px", lineHeight: 1.4, flexShrink: 0 }}>AUTO</span>
                         )}
                       </div>
                       <span style={{ fontSize: 10, color: "var(--muted)" }}>{t.description}</span>
@@ -208,30 +220,37 @@ export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
                 </div>
               )}
 
-              {selectedTemplate && (
-                <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+              {/* 選好之後的設定 */}
+              {selectedTemplate && (<>
+                <label style={labelStyle}>
                   Session 名稱
-                  <input
-                    type="text"
-                    value={sessionName}
-                    onChange={e => setSessionName(e.target.value)}
-                    style={inputStyle}
-                    placeholder={selectedTemplate.name}
-                    autoFocus
-                    onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                    onBlur={e => e.currentTarget.style.borderColor = "var(--border)"}
-                  />
+                  <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
+                    style={inputStyle} placeholder={selectedTemplate.name} autoFocus
+                    onFocus={onFocusInput} onBlur={onBlurInput} />
                 </label>
-              )}
+                <label style={labelStyle}>
+                  工作目錄
+                  <input type="text" value={templateWorkingDir} onChange={e => setTemplateWorkingDir(e.target.value)}
+                    style={inputStyle} placeholder="~"
+                    onFocus={onFocusInput} onBlur={onBlurInput} />
+                </label>
+                {templatePromptInfo && (
+                  <label style={labelStyle}>
+                    <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>（存為 {templatePromptInfo.filename}，選填）</span></span>
+                    <textarea value={templateSystemPrompt} onChange={e => setTemplateSystemPrompt(e.target.value)} rows={4}
+                      placeholder={`你是一個專注於 ${selectedTemplate.name} 的助手...`}
+                      style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                      onFocus={onFocusInput} onBlur={onBlurInput} />
+                  </label>
+                )}
+              </>)}
 
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
                 <button onClick={() => setMode("choose")} style={btnBase}
                   onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
                 >[上一步]</button>
-                <button
-                  onClick={handleFromTemplate}
-                  disabled={!selectedTemplate}
+                <button onClick={handleFromTemplate} disabled={!selectedTemplate}
                   style={{ ...btnBase, borderColor: selectedTemplate ? "var(--green)" : "var(--border)", color: selectedTemplate ? "var(--green)" : "var(--muted)" }}
                   onMouseEnter={e => { if (selectedTemplate) { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; } }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = selectedTemplate ? "var(--green)" : "var(--muted)"; }}
@@ -243,35 +262,31 @@ export default function AddSessionModal({ templates, onAdd, onClose }: Props) {
           {/* CUSTOM */}
           {mode === "custom" && (
             <form onSubmit={handleCustom} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+              <label style={labelStyle}>
                 名稱
                 <input type="text" value={name} onChange={e => setName(e.target.value)}
                   style={inputStyle} placeholder="例如：後端助手" autoFocus
-                  onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                  onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
+                  onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+              <label style={labelStyle}>
                 指令
                 <input type="text" value={command} onChange={e => setCommand(e.target.value)}
                   style={inputStyle} placeholder="例如：claude 或 /bin/zsh 或 python3"
-                  onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                  onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
+                  onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+              <label style={labelStyle}>
                 工作目錄
                 <input type="text" value={workingDir} onChange={e => setWorkingDir(e.target.value)}
                   style={inputStyle} placeholder="~"
-                  onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                  onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
+                  onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
-              {command.split(" ")[0] === "claude" && (
-                <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                  CLAUDE.md <span style={{ fontSize: 10 }}>（system prompt，選填）</span>
-                  <textarea value={claudeMd} onChange={e => setClaudeMd(e.target.value)} rows={4}
+              {customPromptInfo && (
+                <label style={labelStyle}>
+                  <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>（存為 {customPromptInfo.filename}，選填）</span></span>
+                  <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)} rows={4}
                     placeholder="你是一個專注於後端的工程師..."
                     style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
-                    onFocus={e => e.currentTarget.style.borderColor = "var(--green)"}
-                    onBlur={e => e.currentTarget.style.borderColor = "var(--border)"} />
+                    onFocus={onFocusInput} onBlur={onBlurInput} />
                 </label>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
