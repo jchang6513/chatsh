@@ -19,7 +19,7 @@ const DEFAULT_AGENTS: Agent[] = [
     name: "Engineering",
     emoji: "🤖",
     command: ["claude"],
-    workingDir: "/Users/jcssecondmind/Workspace/chatsh",
+    workingDir: "~",
     llmLabel: "Claude",
     status: "offline",
   },
@@ -102,7 +102,7 @@ export default function App() {
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddSession, setShowAddSession] = useState(false);
-  const [templates] = useState(loadTemplates);
+  const [templates, setTemplates] = useState(loadTemplates);
   // 記錄曾被點開過的 agent（lazy mount）
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(
     () => new Set([loadAgents()[0]?.id ?? ""])
@@ -418,6 +418,7 @@ export default function App() {
       {showSettings && (
         <SettingsPanel
           agents={agents}
+          onTemplatesChange={(t) => setTemplates(t)}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -438,6 +439,7 @@ export default function App() {
       {showAddSession && (
         <AddSessionModal
           templates={templates}
+          onAddTemplate={(t) => setTemplates(prev => [...prev, t])}
           onAdd={(agent) => {
             setAgents(prev => [...prev, agent]);
             setActiveAgentId(agent.id);

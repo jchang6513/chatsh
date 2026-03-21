@@ -133,7 +133,7 @@ fn schedule_deletion(agent_id: String) -> Result<(), String> {
     if let Some(parent) = std::path::Path::new(&pending_path).parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
-    std::fs::write(&pending_path, serde_json::to_string_pretty(&pending).unwrap())
+    std::fs::write(&pending_path, serde_json::to_string_pretty(&pending).unwrap_or_default())
         .map_err(|e| e.to_string())
 }
 
@@ -173,7 +173,7 @@ fn cleanup_deleted_agents() -> Result<u32, String> {
         }
     }
 
-    std::fs::write(&pending_path, serde_json::to_string_pretty(&remaining).unwrap())
+    std::fs::write(&pending_path, serde_json::to_string_pretty(&remaining).unwrap_or_default())
         .map_err(|e| e.to_string())?;
 
     Ok(cleaned)
@@ -199,5 +199,5 @@ pub fn run() {
             cleanup_deleted_agents,
         ])
         .run(tauri::generate_context!())
-        .expect("啟動 Tauri 應用程式失敗");
+        .expect("Failed to launch Tauri app");
 }

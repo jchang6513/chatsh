@@ -6,6 +6,7 @@ import type { Agent } from "../types"
 
 interface Props {
   agents: Agent[]
+  onTemplatesChange?: (templates: Template[]) => void
   onClose: () => void
 }
 
@@ -18,7 +19,7 @@ const SYSTEM_PROMPT_FILES: Record<string, string> = {
   claude: "CLAUDE.md", gemini: "GEMINI.md", codex: "AGENTS.md",
 }
 
-export default function SettingsPanel({ agents, onClose }: Props) {
+export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Props) {
   const {
     globalSettings,
     updateGlobalSettings,
@@ -268,6 +269,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
               const next = [...templates, t]
               setTemplates(next)
               saveTemplates(next)
+              onTemplatesChange?.(next)
               setShowNewTemplate(false)
               setNewTpl({ name: "", command: "", workingDir: "~", description: "" })
             }
@@ -276,6 +278,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
               const next = templates.filter(t => t.id !== id)
               setTemplates(next)
               saveTemplates(next)
+              onTemplatesChange?.(next)
             }
 
             return (
