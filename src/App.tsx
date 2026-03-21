@@ -271,7 +271,8 @@ export default function App() {
   useKeyboardShortcuts(keyHandlers)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)", zoom: globalSettings.uiScale }}>
+    <div style={{ position: "relative", height: "100vh", background: "var(--bg)", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", zoom: globalSettings.uiScale }}>
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
         {/* Sidebar */}
@@ -473,7 +474,9 @@ export default function App() {
 
       {/* Status bar */}
       <StatusBar agent={activeAgent} />
+    </div>
 
+      {/* Overlays — outside zoom div so fixed positioning works correctly */}
       {showSettings && (
         <SettingsPanel
           agents={agents}
