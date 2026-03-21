@@ -327,25 +327,35 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   </label>
                 </div>
               </div>
-              {["claude","gemini","codex"].includes(command.split(" ")[0]) && (
-                <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                  <span>CLAUDE.md <span style={{ fontSize: 10 }}>(System prompt, optional)</span></span>
-                  <textarea
-                    value={claudeMd}
-                    onChange={(e) => setClaudeMd(e.target.value)}
-                    rows={5}
-                    placeholder={"You are a focused React frontend engineer...\n\nDefine role, habits, and constraints for Claude here"}
-                    style={{
-                      ...inputStyle,
-                      resize: "vertical",
-                      lineHeight: 1.6,
-                    }}
-                    onFocus={onFocusInput}
-                    onBlur={onBlurInput}
-                  />
-                  <span style={{ fontSize: 10, color: "var(--muted)" }}>Stored at ~/.chatsh/agents/{"{id}"}/CLAUDE.md — project directory is unaffected</span>
-                </label>
-              )}
+              {["claude","gemini","codex"].includes(command.split(" ")[0]) && (() => {
+                const cli = command.split(" ")[0]
+                const PROMPT_FILES: Record<string, string> = { claude: "CLAUDE.md", gemini: "GEMINI.md", codex: "AGENTS.md" }
+                const promptFile = PROMPT_FILES[cli] ?? "CLAUDE.md"
+                const PLACEHOLDERS: Record<string, string> = {
+                  claude: "You are a focused React frontend engineer...\n\nDefine role, habits, and constraints for Claude here",
+                  gemini: "You are a helpful assistant...\n\nDefine role, habits, and constraints for Gemini here",
+                  codex: "You are a coding assistant...\n\nDefine role, habits, and constraints for Codex here",
+                }
+                return (
+                  <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
+                    <span>{promptFile} <span style={{ fontSize: 10 }}>(System prompt, optional)</span></span>
+                    <textarea
+                      value={claudeMd}
+                      onChange={(e) => setClaudeMd(e.target.value)}
+                      rows={5}
+                      placeholder={PLACEHOLDERS[cli] ?? ""}
+                      style={{
+                        ...inputStyle,
+                        resize: "vertical",
+                        lineHeight: 1.6,
+                      }}
+                      onFocus={onFocusInput}
+                      onBlur={onBlurInput}
+                    />
+                    <span style={{ fontSize: 10, color: "var(--muted)" }}>Stored at ~/.chatsh/agents/{"{id}"}/${promptFile} — project directory is unaffected</span>
+                  </label>
+                )
+              })()}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
                 <div>
                   {!isEditing && (
