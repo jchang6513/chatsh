@@ -260,7 +260,6 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                   {([
                     { label: "Name", key: "name", placeholder: "e.g. Backend Assistant" },
                     { label: "Command", key: "command", placeholder: "e.g. claude or python3" },
-                    { label: "Working Dir", key: "workingDir", placeholder: "~" },
                     { label: "Description", key: "description", placeholder: "Optional" },
                   ] as const).map(({ label, key, placeholder }) => (
                     <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
@@ -270,6 +269,19 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                         onFocus={onFocusInput} onBlur={onBlurInput} />
                     </label>
                   ))}
+                  <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
+                    Working Dir
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input value={newTpl.workingDir} onChange={e => setNewTpl(p => ({ ...p, workingDir: e.target.value }))}
+                        style={{ ...inputStyle, flex: 1 }} placeholder="~"
+                        onFocus={onFocusInput} onBlur={onBlurInput} />
+                      <button type="button" onClick={async () => { const f = await pickFolder(); if (f) setNewTpl(p => ({ ...p, workingDir: f })) }}
+                        style={{ ...btnBase, padding: "4px 8px", fontSize: 10, flexShrink: 0 }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                      >[...]</button>
+                    </div>
+                  </label>
                   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 4 }}>
                     <button onClick={() => setShowNewTemplateForm(false)}
                       style={{ ...btnBase, fontSize: 10 }}
