@@ -1,3 +1,4 @@
+import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState } from "react"
 import { useSettings } from "../SettingsContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
@@ -10,7 +11,7 @@ interface Props {
   onClose: () => void
 }
 
-const monoFont = '"SF Mono", "Menlo", "Monaco", "Courier New", monospace'
+const monoFont = MONO_FONT
 
 type MainTab = "terminal" | "templates"
 type TerminalTab = "global" | string // "global" or agentId

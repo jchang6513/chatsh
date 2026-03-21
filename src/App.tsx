@@ -1,3 +1,4 @@
+import { MONO_FONT } from "./ui"
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import Sidebar from "./components/Sidebar";
@@ -255,7 +256,7 @@ export default function App() {
                 alignItems: "stretch",
                 borderBottom: "1px solid var(--border)",
                 flexShrink: 0,
-                fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+                fontFamily: MONO_FONT,
                 fontSize: 10,
                 letterSpacing: "0.06em",
               }}>

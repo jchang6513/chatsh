@@ -1,3 +1,5 @@
+import { MONO_FONT } from "./ui"
+
 export interface TerminalSettings {
   fontFamily: string
   fontSize: number
@@ -12,7 +14,7 @@ export interface TerminalSettings {
 export type AgentTerminalOverrides = Partial<TerminalSettings>
 
 export const DEFAULT_SETTINGS: TerminalSettings = {
-  fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+  fontFamily: MONO_FONT,
   fontSize: 14,
   lineHeight: 1.2,
   cursorStyle: "block",

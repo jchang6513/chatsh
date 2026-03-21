@@ -1,3 +1,4 @@
+import { MONO_FONT } from "../ui"
 // Terminal ANSI color palette (aligned with xterm theme)
 const COLORS = [
   "#00ff9f", // green
@@ -36,7 +37,7 @@ export default function Avatar({ name, imageUrl, size }: AvatarProps) {
   const color = hashColor(name)
   return (
     <span style={{
-      fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+      fontFamily: MONO_FONT,
       fontSize: 11,
       color: color,
       border: `1px solid ${color}`,

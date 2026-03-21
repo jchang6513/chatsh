@@ -1,3 +1,4 @@
+import { MONO_FONT } from "../ui"
 import { useState, useEffect, useRef } from "react"
 import type { Agent } from "../types"
 
@@ -8,7 +9,7 @@ interface Props {
   onClose: () => void
 }
 
-const mono = '"SF Mono", "Menlo", "Monaco", "Courier New", monospace'
+const mono = MONO_FONT
 
 export default function CommandPalette({ agents, activeAgentId, onSelect, onClose }: Props) {
   const [query, setQuery] = useState("")

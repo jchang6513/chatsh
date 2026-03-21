@@ -1,3 +1,4 @@
+import { MONO_FONT } from "../ui"
 import { useState, useRef } from "react";
 import type { Agent } from "../types";
 import { useTheme } from "../ThemeContext";
@@ -77,7 +78,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
       flexDirection: "column",
       background: "var(--bg)",
       borderRight: "1px solid var(--border)",
-      fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+      fontFamily: MONO_FONT,
       height: "100%",
     }}>
       {/* REPL list */}
@@ -193,7 +194,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
           background: "transparent",
           border: "1px solid var(--border)",
           color: "var(--muted)",
-          fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+          fontFamily: MONO_FONT,
           fontSize: 10,
           letterSpacing: "0.08em",
           cursor: "pointer",
@@ -215,7 +216,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
           background: "transparent",
           border: "1px solid var(--border)",
           color: "var(--muted)",
-          fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+          fontFamily: MONO_FONT,
           fontSize: 10,
           letterSpacing: "0.08em",
           cursor: "pointer",

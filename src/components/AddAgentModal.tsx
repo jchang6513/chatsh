@@ -1,3 +1,4 @@
+import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useEffect, useRef } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
@@ -32,7 +33,7 @@ function resizeImage(file: File, size = 64): Promise<string> {
   });
 }
 
-const monoFont = '"SF Mono", "Menlo", "Monaco", "Courier New", monospace';
+const monoFont = MONO_FONT;
 
 const btnStyle: React.CSSProperties = {
   padding: "6px 12px",
@@ -134,14 +135,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
     borderRadius: 0,
   };
 
-  const btnHover = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.borderColor = "var(--green)";
-    e.currentTarget.style.color = "var(--green)";
-  };
-  const btnLeave = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.currentTarget.style.borderColor = "var(--border)";
-    e.currentTarget.style.color = "var(--muted)";
-  };
+  
 
   return (
     <div
@@ -214,8 +208,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     padding: "10px",
                     border: "1px dashed var(--border)",
                   }}
-                  onMouseEnter={btnHover}
-                  onMouseLeave={btnLeave}
+                  onMouseEnter={onHoverGreen}
+                  onMouseLeave={onLeaveGreen}
                 >
                   [+ Custom Command]
                 </button>
@@ -226,8 +220,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                 type="button"
                 onClick={onClose}
                 style={btnStyle}
-                onMouseEnter={btnHover}
-                onMouseLeave={btnLeave}
+                onMouseEnter={onHoverGreen}
+                onMouseLeave={onLeaveGreen}
               >
                 [Cancel]
               </button>
@@ -253,8 +247,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     type="button"
                     onClick={() => fileRef.current?.click()}
                     style={{ ...btnStyle, fontSize: 10, padding: "2px 6px" }}
-                    onMouseEnter={btnHover}
-                    onMouseLeave={btnLeave}
+                    onMouseEnter={onHoverGreen}
+                    onMouseLeave={onLeaveGreen}
                   >
                     [Upload]
                   </button>
@@ -347,8 +341,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       type="button"
                       onClick={() => setStep(1)}
                       style={btnStyle}
-                      onMouseEnter={btnHover}
-                      onMouseLeave={btnLeave}
+                      onMouseEnter={onHoverGreen}
+                      onMouseLeave={onLeaveGreen}
                     >
                       [Back]
                     </button>
@@ -359,8 +353,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     type="button"
                     onClick={onClose}
                     style={btnStyle}
-                    onMouseEnter={btnHover}
-                    onMouseLeave={btnLeave}
+                    onMouseEnter={onHoverGreen}
+                    onMouseLeave={onLeaveGreen}
                   >
                     [Cancel]
                   </button>

@@ -1,3 +1,4 @@
+import { MONO_FONT } from "../ui"
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Agent } from "../types";
@@ -27,7 +28,7 @@ export default function ClaudeMdEditor({ agent, onClose }: Props) {
   };
 
   const mono: React.CSSProperties = {
-    fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+    fontFamily: MONO_FONT,
   };
 
   return (

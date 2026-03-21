@@ -1,3 +1,4 @@
+import { MONO_FONT } from "../ui"
 import { useTheme } from "../ThemeContext";
 import type { Agent } from "../types";
 
@@ -17,7 +18,7 @@ export default function StatusBar({ agent }: Props) {
       padding: "0 12px",
       borderTop: "1px solid var(--border)",
       background: "var(--bg)",
-      fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
+      fontFamily: MONO_FONT,
       fontSize: 10,
       color: "var(--muted)",
       flexShrink: 0,
