@@ -337,8 +337,7 @@ export default function App() {
                 </div>
 
                 {/* Shell tabs — scrollable, + shell always visible */}
-                <div style={{ display: "flex", flex: 1, overflow: "hidden", minWidth: 0 }}>
-                <div style={{ display: "flex", overflowX: "auto", flex: 1, scrollbarWidth: "none" }}>
+                <div style={{ display: "flex", overflowX: "auto", maxWidth: "calc(100% - 120px)", scrollbarWidth: "none" }}>
                 {(shellSessions[agent.id] ?? []).map((shellId, idx) => (
                   <div
                     key={shellId}
@@ -392,7 +391,6 @@ export default function App() {
                   </div>
                 ))}
 
-                </div>
                 </div>
 
                 {/* + add shell — always visible */}
