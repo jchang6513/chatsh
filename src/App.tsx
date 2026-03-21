@@ -133,6 +133,10 @@ export default function App() {
   const activeAgentIdRef = useRef(activeAgentId)
   activeAgentIdRef.current = activeAgentId
 
+  // Track when we last switched AWAY from each agent (grace period for pty-idle)
+  const switchedAwayAt = useRef<Map<string, number>>(new Map())
+  const GRACE_MS = 2000 // ignore pty-idle within 2s of switching away
+
   // Track streaming + unread state via Rust events
   // Only re-subscribe when mountedAgents changes (not activeAgentId — use ref instead)
   useEffect(() => {
@@ -148,8 +152,11 @@ export default function App() {
       }).then(fn => unlisteners.push(fn))
 
       // pty-idle: output stopped → clear streaming, mark unread
+      // But ignore if we just switched away from this agent (grace period)
       listen<void>(`pty-idle-${agentId}`, () => {
         if (agentId === activeAgentIdRef.current) return
+        const switchedAt = switchedAwayAt.current.get(agentId)
+        if (switchedAt && Date.now() - switchedAt < GRACE_MS) return
         setStreamingAgents(prev => { const next = new Set(prev); next.delete(agentId); return next })
         setUnreadAgents(prev => {
           if (prev.has(agentId)) return prev
@@ -167,6 +174,11 @@ export default function App() {
   };
 
   const handleSelectAgent = useCallback((id: string) => {
+    // Record when we switched away from the previous agent
+    const prevId = activeAgentIdRef.current
+    if (prevId && prevId !== id) {
+      switchedAwayAt.current.set(prevId, Date.now())
+    }
     setActiveAgentId(id);
     setMountedAgents(prev => new Set([...prev, id]));
     setUnreadAgents(prev => { const next = new Set(prev); next.delete(id); return next });
