@@ -34,6 +34,14 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
 
   const { schemeKey, setScheme, availableSchemes } = useTheme()
   const [hoveredScheme, setHoveredScheme] = useState<string | null>(null)
+  const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]")) } catch { return new Set() }
+  })
+  const hideBuiltin = (id: string) => {
+    const next = new Set([...hiddenBuiltins, id])
+    setHiddenBuiltins(next)
+    localStorage.setItem("chatsh_hidden_builtins", JSON.stringify([...next]))
+  }
 
   const [mainTab, setMainTab] = useState<MainTab>("terminal")
   const [activeTab, setActiveTab] = useState<TerminalTab>("global")
@@ -275,6 +283,24 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                   ))}
                 </div>
               </div>
+              {/* Sidebar Position */}
+              <div>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>SIDEBAR POSITION</div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {(["left", "right"] as const).map(pos => (
+                    <button key={pos} onClick={() => updateGlobalSettings({ sidebarPosition: pos })}
+                      style={{
+                        background: globalSettings.sidebarPosition === pos ? "var(--green)" : "transparent",
+                        border: "1px solid var(--border)", color: globalSettings.sidebarPosition === pos ? "var(--bg)" : "var(--muted)",
+                        fontFamily: monoFont, fontSize: 10, padding: "4px 16px", cursor: "pointer", letterSpacing: "0.08em",
+                      }}
+                      onMouseEnter={e => { if (globalSettings.sidebarPosition !== pos) { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)" }}}
+                      onMouseLeave={e => { if (globalSettings.sidebarPosition !== pos) { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)" }}}
+                    >{pos.toUpperCase()}</button>
+                  ))}
+                </div>
+              </div>
+
               {/* UI Scale */}
               <div>
                 <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>UI SCALE</div>
@@ -372,12 +398,12 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                 <div>
                   <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em", marginBottom: 8 }}>Auto-detected</div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {KNOWN_TOOLS.map(t => (
+                    {KNOWN_TOOLS.filter(t => !hiddenBuiltins.has(t.id)).map(t => (
                       <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", border: "1px solid var(--border)", fontSize: 11 }}>
                         <span style={{ color: "var(--fg)", flex: 1 }}>{t.name}</span>
                         <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
                         <span style={{ fontSize: 9, color: "var(--green)", border: "1px solid var(--green)", padding: "1px 4px" }}>AUTO</span>
-                        <CloseButton onClose={() => deleteTemplate(t.id)} style={{ fontSize: 10 }} />
+                        <CloseButton onClose={() => hideBuiltin(t.id)} style={{ fontSize: 10 }} />
                       </div>
                     ))}
                   </div>

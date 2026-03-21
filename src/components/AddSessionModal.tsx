@@ -95,7 +95,8 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
       .catch(() => {})
   }, [])
 
-  const builtinTemplates = KNOWN_TOOLS.filter(t => detectedIds.includes(t.id))
+  const hiddenBuiltins = new Set<string>(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]"))
+  const builtinTemplates = KNOWN_TOOLS.filter(t => detectedIds.includes(t.id) && !hiddenBuiltins.has(t.id))
   const userTemplates = templates.filter(t => !t.isBuiltin)
   const allTemplates = [
     ...builtinTemplates.map(t => ({
