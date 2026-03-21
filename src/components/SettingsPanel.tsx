@@ -498,6 +498,23 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
               />
             )}
           </div>
+
+          {/* UI Scale — global only */}
+          {isGlobal && <div style={sectionStyle}>
+            <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>UI SCALE</div>
+            {renderFieldRow(`${Math.round(globalSettings.uiScale * 100)}%`, "uiScale",
+              <input
+                type="range"
+                min={0.5}
+                max={2.0}
+                step={0.05}
+                value={globalSettings.uiScale}
+                onChange={e => updateGlobalSettings({ uiScale: Number(e.target.value) })}
+                style={{ flex: 1, accentColor: "var(--green)" }}
+              />
+            )}
+            <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>⌘= to zoom in · ⌘- to zoom out</div>
+          </div>}
           </div>}
         </div>
 

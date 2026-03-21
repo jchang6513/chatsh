@@ -238,10 +238,10 @@ export default function App() {
     },
     onToggleCommandPalette: () => setShowCommandPalette(prev => !prev),
     onFontIncrease: () => {
-      updateGlobalSettings({ fontSize: Math.min(globalSettings.fontSize + 1, 28) })
+      updateGlobalSettings({ uiScale: Math.min(+(globalSettings.uiScale + 0.05).toFixed(2), 2.0) })
     },
     onFontDecrease: () => {
-      updateGlobalSettings({ fontSize: Math.max(globalSettings.fontSize - 1, 8) })
+      updateGlobalSettings({ uiScale: Math.max(+(globalSettings.uiScale - 0.05).toFixed(2), 0.5) })
     },
     onEscape: () => {
       if (showCommandPalette) { setShowCommandPalette(false); return }
@@ -254,7 +254,7 @@ export default function App() {
   useKeyboardShortcuts(keyHandlers)
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)", zoom: globalSettings.uiScale }}>
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
         {/* Sidebar */}

@@ -9,6 +9,7 @@ export interface TerminalSettings {
   scrollback: number
   backgroundOpacity: number
   padding: number
+  uiScale: number  // 0.7 - 1.5
 }
 
 export type AgentTerminalOverrides = Partial<TerminalSettings>
@@ -22,6 +23,7 @@ export const DEFAULT_SETTINGS: TerminalSettings = {
   scrollback: 10000,
   backgroundOpacity: 1.0,
   padding: 4,
+  uiScale: 1.0,
 }
 
 const GLOBAL_STORAGE_KEY = "chatsh_global_settings"
