@@ -86,6 +86,37 @@ impl PtyManager {
                     }
                 }
                 (expanded_dir, cmd)  // cwd 是 user 設定的工作目錄
+            } else if command.first().map(|s| s.as_str()) == Some("gemini") {
+                // Gemini reads GEMINI.md from cwd hierarchy
+                // Set cwd = agent_dir so GEMINI.md is auto-discovered
+                let home = std::env::var("HOME").unwrap_or_default();
+                let agent_dir = format!("{}/.chatsh/agents/{}", home, agent_id);
+                std::fs::create_dir_all(&agent_dir).ok();
+                let gemini_md = format!("{}/GEMINI.md", agent_dir);
+                let has_prompt = std::path::Path::new(&gemini_md).exists()
+                    && std::fs::read_to_string(&gemini_md)
+                        .map(|s| !s.trim().is_empty())
+                        .unwrap_or(false);
+                if has_prompt {
+                    (agent_dir, command.to_vec()) // cwd = agent_dir, GEMINI.md found automatically
+                } else {
+                    (expanded_dir, command.to_vec())
+                }
+            } else if command.first().map(|s| s.as_str()) == Some("codex") {
+                // Codex reads AGENTS.md from cwd hierarchy
+                let home = std::env::var("HOME").unwrap_or_default();
+                let agent_dir = format!("{}/.chatsh/agents/{}", home, agent_id);
+                std::fs::create_dir_all(&agent_dir).ok();
+                let agents_md = format!("{}/AGENTS.md", agent_dir);
+                let has_prompt = std::path::Path::new(&agents_md).exists()
+                    && std::fs::read_to_string(&agents_md)
+                        .map(|s| !s.trim().is_empty())
+                        .unwrap_or(false);
+                if has_prompt {
+                    (agent_dir, command.to_vec()) // cwd = agent_dir, AGENTS.md found automatically
+                } else {
+                    (expanded_dir, command.to_vec())
+                }
             } else {
                 (expanded_dir, command.to_vec())
             };
