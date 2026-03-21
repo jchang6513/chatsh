@@ -4,6 +4,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import type { Agent } from "../types";
 import type { Template } from "../templates";
 import { KNOWN_TOOLS, addTemplate } from "../templates";
+import { MONO_FONT, INPUT_STYLE, BTN_BASE, onHoverGreen, onLeaveGreen, onFocusInput as onFocusInputUI, onBlurInput as onBlurInputUI } from "../ui";
 
 async function pickFolder(): Promise<string | null> {
   const result = await open({ directory: true, multiple: false });
@@ -18,7 +19,7 @@ interface Props {
   onClose: () => void;
 }
 
-const mono = '"SF Mono", "Menlo", "Monaco", "Courier New", monospace';
+const mono = MONO_FONT;
 
 const inputStyle: React.CSSProperties = {
   background: "var(--bg)",
