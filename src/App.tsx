@@ -15,7 +15,7 @@ import type { Agent } from "./types";
 
 const DEFAULT_AGENTS: Agent[] = [
   {
-    id: "claude",
+    id: "1000000000001",
     name: "Engineering",
     emoji: "🤖",
     command: ["claude"],
@@ -24,7 +24,7 @@ const DEFAULT_AGENTS: Agent[] = [
     status: "offline",
   },
   {
-    id: "shell",
+    id: "1000000000002",
     name: "Shell",
     emoji: "🐚",
     command: ["/bin/zsh"],

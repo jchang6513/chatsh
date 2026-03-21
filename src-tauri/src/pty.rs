@@ -78,7 +78,7 @@ impl PtyManager {
                 if std::path::Path::new(&claude_md).exists() {
                     if let Ok(content) = std::fs::read_to_string(&claude_md) {
                         if !content.trim().is_empty() {
-                            cmd.push("--append-system-prompt-file".to_string());
+                            cmd.push("--system-prompt-file".to_string());
                             cmd.push(claude_md);
                         }
                     }
