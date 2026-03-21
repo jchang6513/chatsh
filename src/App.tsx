@@ -271,8 +271,7 @@ export default function App() {
   useKeyboardShortcuts(keyHandlers)
 
   return (
-    <div style={{ position: "relative", height: "100vh", background: "var(--bg)", overflow: "hidden" }}>
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", zoom: globalSettings.uiScale }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)", zoom: globalSettings.uiScale }}>
 
       <div style={{ display: "flex", flex: 1, minHeight: 0 }}>
         {/* Sidebar */}
@@ -331,20 +330,22 @@ export default function App() {
                     color: getActivePanelTab(agent.id) === "terminal" ? "var(--green)" : "var(--muted)",
                   }}
                 >
-                  <span style={{ border: "1px solid currentColor", padding: "0 2px", fontSize: 9 }}>
+                  <span style={{ border: "1px solid currentColor", padding: "0 2px", fontSize: 9, flexShrink: 0 }}>
                     {agent.name[0].toUpperCase()}
                   </span>
-                  {agent.name}
+                  <span style={{ maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{agent.name}</span>
                 </div>
 
-                {/* Shell tabs */}
+                {/* Shell tabs — scrollable, + shell always visible */}
+                <div style={{ display: "flex", flex: 1, overflow: "hidden", minWidth: 0 }}>
+                <div style={{ display: "flex", overflowX: "auto", flex: 1, scrollbarWidth: "none" }}>
                 {(shellSessions[agent.id] ?? []).map((shellId, idx) => (
                   <div
                     key={shellId}
                     onClick={() => setActivePanelTab(agent.id, shellId)}
                     style={{
                       display: "flex", alignItems: "center", gap: 4, padding: "0 10px",
-                      cursor: "pointer",
+                      cursor: "pointer", flexShrink: 0,
                       borderRight: "1px solid var(--border)",
                       borderBottom: getActivePanelTab(agent.id) === shellId
                         ? "2px solid var(--green)" : "2px solid transparent",
@@ -379,6 +380,7 @@ export default function App() {
                       <span
                         onDoubleClick={e => { e.stopPropagation(); startRename(shellId, idx); }}
                         title="Double-click to rename"
+                      style={{ maxWidth: 72, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                       >{getShellName(shellId, idx)}</span>
                     )}
                     <span
@@ -390,13 +392,16 @@ export default function App() {
                   </div>
                 ))}
 
-                {/* + add shell */}
+                </div>
+                </div>
+
+                {/* + add shell — always visible */}
                 <button
                   onClick={() => addShellToAgent(agent.id)}
                   style={{
                     padding: "0 10px", background: "transparent", border: "none",
                     borderRight: "1px solid var(--border)", color: "var(--muted)",
-                    fontFamily: "monospace", fontSize: 13, cursor: "pointer",
+                    fontFamily: "monospace", fontSize: 13, cursor: "pointer", flexShrink: 0,
                   }}
                   onMouseEnter={e => (e.currentTarget.style.color = "var(--green)")}
                   onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}
@@ -474,9 +479,8 @@ export default function App() {
 
       {/* Status bar */}
       <StatusBar agent={activeAgent} />
-    </div>
 
-      {/* Overlays — outside zoom div so fixed positioning works correctly */}
+      {/* Overlays */}
       {showSettings && (
         <SettingsPanel
           agents={agents}

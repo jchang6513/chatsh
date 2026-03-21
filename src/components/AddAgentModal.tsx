@@ -158,6 +158,8 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       <div
         style={{
           width: 440,
+          maxHeight: "90vh",
+          overflowY: "auto",
           padding: 24,
           background: "var(--bg)",
           border: "1px solid var(--border)",
