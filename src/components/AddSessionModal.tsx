@@ -152,7 +152,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
       onClick={onClose}
     >
       <div
-        style={{ width: 520, maxHeight: "85vh", display: "flex", flexDirection: "column", background: "var(--bg)", border: "1px solid var(--border)", borderTop: "2px solid var(--green)", fontFamily: mono }}
+        style={{ width: 520, maxHeight: "60vh", display: "flex", flexDirection: "column", background: "var(--bg)", border: "1px solid var(--border)", borderTop: "2px solid var(--green)", fontFamily: mono }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
