@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import type { Agent } from "../types";
 import Avatar from "./Avatar";
@@ -295,15 +296,28 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   )}
                   <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
                     Working Dir
-                    <input
-                      type="text"
-                      value={workingDir}
-                      onChange={(e) => setWorkingDir(e.target.value)}
-                      style={inputStyle}
-                      onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
-                      onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
-                      placeholder="~"
-                    />
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <input
+                        type="text"
+                        value={workingDir}
+                        onChange={(e) => setWorkingDir(e.target.value)}
+                        style={{ ...inputStyle, flex: 1 }}
+                        onFocus={(e) => e.currentTarget.style.borderColor = "var(--green)"}
+                        onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                        placeholder="~"
+                      />
+                      <button type="button" onClick={async () => {
+                        const f = await open({ directory: true, multiple: false });
+                        if (typeof f === "string") setWorkingDir(f);
+                      }} style={{
+                        padding: "4px 8px", background: "transparent",
+                        border: "1px solid var(--border)", color: "var(--muted)",
+                        fontFamily: "monospace", fontSize: 10, cursor: "pointer", flexShrink: 0,
+                      }}
+                        onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
+                        onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                      >[...]</button>
+                    </div>
                   </label>
                 </div>
               </div>
