@@ -352,7 +352,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                       onFocus={onFocusInput}
                       onBlur={onBlurInput}
                     />
-                    <span style={{ fontSize: 10, color: "var(--muted)" }}>Stored at ~/.chatsh/agents/{"{id}"}/${promptFile} — project directory is unaffected</span>
+                    <span style={{ fontSize: 10, color: "var(--muted)" }}>Stored at ~/.chatsh/agents/{"{id}"}/{promptFile} — project directory is unaffected</span>
                   </label>
                 )
               })()}
