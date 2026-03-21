@@ -87,6 +87,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
         {agents.map((agent) => {
           const isActive = agent.id === activeAgentId;
           const isHover = hoverId === agent.id;
+          const isUnread = unreadAgents.has(agent.id);
           return (
             <div
               key={agent.id}
@@ -108,7 +109,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
                 height: 32,
                 fontSize: 11,
                 color: isActive ? "var(--green)" : "var(--fg)",
-                background: isActive || isHover ? "var(--surface)" : "transparent",
+                background: isActive || isHover ? "var(--surface)" : isUnread ? "rgba(255,176,0,0.08)" : "transparent",
                 cursor: "pointer",
                 borderLeft: isActive ? "2px solid var(--green)" : "2px solid transparent",
                 position: "relative",
@@ -128,11 +129,11 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
               <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {agent.name}
               </span>
-              {unreadAgents.has(agent.id) ? (
-                <span style={{ fontSize: 8, flexShrink: 0, color: "var(--amber, var(--green))", animation: "pulse 1.5s infinite" }}>●</span>
-              ) : (
-                <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 8, flexShrink: 0 }}>●</span>
-              )}
+              <span style={{
+                color: isUnread ? "#ffb000" : agent.status === "online" ? "var(--green)" : "var(--muted)",
+                fontSize: isUnread ? 10 : 8,
+                flexShrink: 0,
+              }}>●</span>
               {/* Hover buttons */}
               {isHover && (
                 <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, display: "flex", alignItems: "stretch" }}>
