@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 
 interface Handlers {
   onSelectAgent: (index: number) => void      // ⌘1-9
@@ -18,18 +18,22 @@ interface Handlers {
 }
 
 export function useKeyboardShortcuts(handlers: Handlers) {
+  // Always keep a ref to the latest handlers — avoids stale closure
+  const handlersRef = useRef(handlers)
+  handlersRef.current = handlers
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      const meta = e.metaKey // ⌘ on Mac
+      const h = handlersRef.current
+      const meta = e.metaKey
       const shift = e.shiftKey
 
-      // only intercept outside input/textarea (except xterm helper)
       const target = e.target as HTMLElement
       const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA"
-      // do not intercept xterm helper textarea
+
       if (e.key === "Escape") {
         e.preventDefault()
-        handlers.onEscape()
+        h.onEscape()
         return
       }
 
@@ -37,51 +41,50 @@ export function useKeyboardShortcuts(handlers: Handlers) {
 
       if (!meta) return
 
-      // ⌘1-9: switch agent
       if (e.key >= "1" && e.key <= "9" && !shift) {
         e.preventDefault()
-        handlers.onSelectAgent(parseInt(e.key) - 1)
+        h.onSelectAgent(parseInt(e.key) - 1)
         return
       }
 
       switch (e.key) {
         case "[":
-          if (!shift) { e.preventDefault(); handlers.onPrevAgent() }
-          else { e.preventDefault(); handlers.onPrevShell() }
+          if (!shift) { e.preventDefault(); h.onPrevAgent() }
+          else { e.preventDefault(); h.onPrevShell() }
           break
         case "]":
-          if (!shift) { e.preventDefault(); handlers.onNextAgent() }
-          else { e.preventDefault(); handlers.onNextShell() }
+          if (!shift) { e.preventDefault(); h.onNextAgent() }
+          else { e.preventDefault(); h.onNextShell() }
           break
         case "n":
-          if (!shift) { e.preventDefault(); handlers.onNewAgent() }
+          if (!shift) { e.preventDefault(); h.onNewAgent() }
           break
         case "r":
-          if (!shift) { e.preventDefault(); handlers.onRestartAgent() }
+          if (!shift) { e.preventDefault(); h.onRestartAgent() }
           break
         case ",":
-          e.preventDefault(); handlers.onOpenSettings()
+          e.preventDefault(); h.onOpenSettings()
           break
         case "t":
-          if (!shift) { e.preventDefault(); handlers.onNewShell() }
+          if (!shift) { e.preventDefault(); h.onNewShell() }
           break
         case "w":
-          if (!shift) { e.preventDefault(); handlers.onCloseShell() }
+          if (!shift) { e.preventDefault(); h.onCloseShell() }
           break
         case "k":
-          if (!shift) { e.preventDefault(); handlers.onToggleCommandPalette() }
+          if (!shift) { e.preventDefault(); h.onToggleCommandPalette() }
           break
         case "=":
         case "+":
-          e.preventDefault(); handlers.onFontIncrease()
+          e.preventDefault(); h.onFontIncrease()
           break
         case "-":
-          e.preventDefault(); handlers.onFontDecrease()
+          e.preventDefault(); h.onFontDecrease()
           break
       }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [handlers])
+  }, []) // mount once, always reads latest via ref
 }
