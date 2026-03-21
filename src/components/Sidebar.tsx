@@ -1,7 +1,6 @@
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useRef } from "react";
 import type { Agent } from "../types";
-import { useTheme } from "../ThemeContext";
 
 interface Props {
   agents: Agent[];
@@ -18,9 +17,7 @@ interface Props {
 }
 
 export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), streamingAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onRestart, onReorder, onOpenSettings }: Props) {
-  const { schemeKey, setScheme, availableSchemes } = useTheme();
   const [dragId, setDragId] = useState<string | null>(null);
-  const [hoveredScheme, setHoveredScheme] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ agentId: string; x: number; y: number } | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragCounter = useRef<Record<string, number>>({});
@@ -175,38 +172,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
         })}
       </div>
 
-      {/* Theme Switcher */}
-      <div style={{ padding: "6px 10px", borderTop: "1px solid var(--border)" }}>
-        <div style={{ fontSize: 9, color: "var(--muted)", marginBottom: 5, letterSpacing: "0.06em", minHeight: 12 }}>
-          {hoveredScheme
-            ? availableSchemes[hoveredScheme]?.name
-            : availableSchemes[schemeKey]?.name}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
-          {Object.entries(availableSchemes).map(([key, s]) => (
-            <button
-              key={key}
-              onClick={() => setScheme(key)}
-              style={{
-                width: 15,
-                height: 15,
-                borderRadius: "50%",
-                background: s.green,
-                border: key === schemeKey ? `2px solid ${s.green}` : `2px solid transparent`,
-                outline: key === schemeKey ? `1px solid ${s.green}` : `1px solid transparent`,
-                outlineOffset: 2,
-                cursor: "pointer",
-                flexShrink: 0,
-                padding: 0,
-                opacity: key === schemeKey ? 1 : 0.5,
-                transition: "opacity 0.15s",
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = "1"; setHoveredScheme(key) }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = key === schemeKey ? "1" : "0.5"; setHoveredScheme(null) }}
-            />
-          ))}
-        </div>
-      </div>
+
 
       {/* Settings button */}
       <button
