@@ -406,30 +406,12 @@ export default function App() {
                   onMouseEnter={e => (e.currentTarget.style.color = "var(--green)")}
                   onMouseLeave={e => (e.currentTarget.style.color = "var(--muted)")}
                   title="New Shell"
-                >+ shell</button>
+                >+</button>
 
                 {/* Right-side toolbar */}
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, padding: "0 10px", borderLeft: "1px solid var(--border)" }}>
                   <span style={{ color: "var(--muted)", fontSize: 9 }}>{agent.workingDir}</span>
-                  {agent.command[0] === "claude" && (
-                    <button
-                      onClick={() => setShowClaudeMd(true)}
-                      style={{
-                        background: "transparent",
-                        border: "1px solid var(--border)",
-                        color: "var(--muted)",
-                        fontFamily: "monospace",
-                        fontSize: 9,
-                        padding: "1px 6px",
-                        cursor: "pointer",
-                        letterSpacing: "0.05em",
-                      }}
-                      onMouseEnter={onHoverGreen}
-                      onMouseLeave={onLeaveGreen}
-                    >
-                      [CLAUDE.MD]
-                    </button>
-                  )}
+
                   <button
                     onClick={async () => {
                       try { await invoke("kill_agent", { agentId: agent.id }) } catch {}
