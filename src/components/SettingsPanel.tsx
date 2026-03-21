@@ -1,7 +1,6 @@
 import CloseButton from "./ui/CloseButton"
 import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState } from "react"
-import React from "react"
 import { useSettings } from "../SettingsContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
 import { loadTemplates, saveTemplates, type Template, KNOWN_TOOLS } from "../templates"
@@ -34,6 +33,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
 
   const [mainTab, setMainTab] = useState<MainTab>("terminal")
   const [activeTab, setActiveTab] = useState<TerminalTab>("global")
+  const [editingTpl, setEditingTpl] = useState<Template | null>(null)
 
   // Templates state
   const [templates, setTemplates] = useState<Template[]>(loadTemplates)
@@ -283,7 +283,6 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
               onTemplatesChange?.(next)
             }
 
-            const [editingTpl, setEditingTpl] = React.useState<Template | null>(null)
             const saveEditTemplate = () => {
               if (!editingTpl) return
               const next = templates.map(t => t.id === editingTpl.id ? editingTpl : t)
