@@ -38,29 +38,30 @@ export interface ColorScheme {
 }
 
 export const SCHEMES: Record<string, ColorScheme> = {
-  "amber": {
-    name: "Amber",
-    background: "#0a0800",
-    foreground: "#ffb000",
-    cursor: "#ffb000",
-    selection: "#332200",
-    green: "#ffb000",
-    red: "#ff4400",
-    blue: "#ffcc44",
-    yellow: "#ffdd00",
-    cyan: "#ffaa33",
-    magenta: "#ff8800",
-    surface: "#110e00",
-    border: "#332200",
-    muted: "#664400",
+  "kanagawa": {
+    name: "Kanagawa",
+    background: "#1f1f28",
+    foreground: "#dcd7ba",
+    cursor: "#c8c093",
+    selection: "#2d4f67",
+    green: "#76946a",
+    red: "#c34043",
+    blue: "#7e9cd8",
+    yellow: "#c0a36e",
+    cyan: "#6a9589",
+    magenta: "#957fb8",
+    surface: "#2a2a37",
+    border: "#363646",
+    muted: "#54546d",
     ansi: {
-      black: "#0a0800", red: "#ff4400", green: "#ffb000", yellow: "#ffdd00",
-      blue: "#ffcc44", magenta: "#ff8800", cyan: "#ffaa33", white: "#ffe080",
-      brightBlack: "#332200", brightRed: "#ff6633", brightGreen: "#ffcc44",
-      brightYellow: "#ffee66", brightBlue: "#ffdd88", brightMagenta: "#ffaa55",
-      brightCyan: "#ffcc88", brightWhite: "#ffb000",
+      black: "#16161d", red: "#c34043", green: "#76946a", yellow: "#c0a36e",
+      blue: "#7e9cd8", magenta: "#957fb8", cyan: "#6a9589", white: "#c8c093",
+      brightBlack: "#727169", brightRed: "#e82424", brightGreen: "#98bb6c",
+      brightYellow: "#e6c384", brightBlue: "#7fb4ca", brightMagenta: "#938aa9",
+      brightCyan: "#7aa89f", brightWhite: "#dcd7ba",
     },
   },
+
   "default": {
     name: "Default Dark",
     background: "#0d0d0d",
@@ -105,6 +106,29 @@ export const SCHEMES: Record<string, ColorScheme> = {
       brightBlack: "#1a3a2a", brightRed: "#ff6666", brightGreen: "#33ffbb",
       brightYellow: "#ffee44", brightBlue: "#33ddff", brightMagenta: "#ff66ff",
       brightCyan: "#66ffff", brightWhite: "#00ff9f",
+    },
+  },
+  "amber": {
+    name: "Amber",
+    background: "#0a0800",
+    foreground: "#ffb000",
+    cursor: "#ffb000",
+    selection: "#332200",
+    green: "#ffb000",
+    red: "#ff4400",
+    blue: "#ffcc44",
+    yellow: "#ffdd00",
+    cyan: "#ffaa33",
+    magenta: "#ff8800",
+    surface: "#110e00",
+    border: "#332200",
+    muted: "#664400",
+    ansi: {
+      black: "#0a0800", red: "#ff4400", green: "#ffb000", yellow: "#ffdd00",
+      blue: "#ffcc44", magenta: "#ff8800", cyan: "#ffaa33", white: "#ffe080",
+      brightBlack: "#332200", brightRed: "#ff6633", brightGreen: "#ffcc44",
+      brightYellow: "#ffee66", brightBlue: "#ffdd88", brightMagenta: "#ffaa55",
+      brightCyan: "#ffcc88", brightWhite: "#ffb000",
     },
   },
   "nightfly": {
@@ -152,30 +176,6 @@ export const SCHEMES: Record<string, ColorScheme> = {
       brightBlack: "#526176", brightRed: "#d16983", brightGreen: "#8ebda8",
       brightYellow: "#e0c989", brightBlue: "#86abdc", brightMagenta: "#b48de3",
       brightCyan: "#7adfe0", brightWhite: "#d8dee9",
-    },
-  },
-
-  "kanagawa": {
-    name: "Kanagawa",
-    background: "#1f1f28",
-    foreground: "#dcd7ba",
-    cursor: "#c8c093",
-    selection: "#2d4f67",
-    green: "#76946a",
-    red: "#c34043",
-    blue: "#7e9cd8",
-    yellow: "#c0a36e",
-    cyan: "#6a9589",
-    magenta: "#957fb8",
-    surface: "#2a2a37",
-    border: "#363646",
-    muted: "#54546d",
-    ansi: {
-      black: "#16161d", red: "#c34043", green: "#76946a", yellow: "#c0a36e",
-      blue: "#7e9cd8", magenta: "#957fb8", cyan: "#6a9589", white: "#c8c093",
-      brightBlack: "#727169", brightRed: "#e82424", brightGreen: "#98bb6c",
-      brightYellow: "#e6c384", brightBlue: "#7fb4ca", brightMagenta: "#938aa9",
-      brightCyan: "#7aa89f", brightWhite: "#dcd7ba",
     },
   },
 
@@ -275,6 +275,7 @@ export const SCHEMES: Record<string, ColorScheme> = {
     },
   },
 
+
   "iceberg": {
     name: "Iceberg",
     background: "#161821",
@@ -300,4 +301,4 @@ export const SCHEMES: Record<string, ColorScheme> = {
   },
 }
 
-export const DEFAULT_SCHEME = "amber"
+export const DEFAULT_SCHEME = "kanagawa"
