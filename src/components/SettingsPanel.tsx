@@ -2,6 +2,7 @@ import CloseButton from "./ui/CloseButton"
 import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState } from "react"
 import { useSettings } from "../SettingsContext"
+import { useTheme } from "../ThemeContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
 import { loadTemplates, saveTemplates, type Template, KNOWN_TOOLS } from "../templates"
 import type { Agent } from "../types"
@@ -14,7 +15,7 @@ interface Props {
 
 const monoFont = MONO_FONT
 
-type MainTab = "terminal" | "templates"
+type MainTab = "terminal" | "appearance" | "keybindings" | "templates"
 type TerminalTab = "global" | string // "global" or agentId
 
 const SYSTEM_PROMPT_FILES: Record<string, string> = {
@@ -30,6 +31,9 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
     clearAgentOverrides,
     getResolvedSettings,
   } = useSettings()
+
+  const { schemeKey, setScheme, availableSchemes } = useTheme()
+  const [hoveredScheme, setHoveredScheme] = useState<string | null>(null)
 
   const [mainTab, setMainTab] = useState<MainTab>("terminal")
   const [activeTab, setActiveTab] = useState<TerminalTab>("global")
@@ -189,7 +193,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
 
         {/* Main tabs: TERMINAL / TEMPLATES */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", fontSize: 10, letterSpacing: "0.06em", flexShrink: 0 }}>
-          {([["terminal", "Terminal"], ["templates", "Templates"]] as [MainTab, string][]).map(([t, label]) => (
+          {([["terminal", "Terminal"], ["appearance", "Appearance"], ["keybindings", "Keys"], ["templates", "Templates"]] as [MainTab, string][]).map(([t, label]) => (
             <div key={t} onClick={() => setMainTab(t)} style={{
               padding: "7px 16px", cursor: "pointer",
               borderBottom: mainTab === t ? "2px solid var(--green)" : "2px solid transparent",
@@ -244,6 +248,76 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
 
         {/* Settings content */}
         <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
+
+          {/* APPEARANCE tab */}
+          {mainTab === "appearance" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              {/* Color Scheme */}
+              <div>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 12 }}>COLOR SCHEME</div>
+                <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 8 }}>
+                  {hoveredScheme ? availableSchemes[hoveredScheme]?.name : availableSchemes[schemeKey]?.name}
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {Object.entries(availableSchemes).map(([key, s]) => (
+                    <button key={key} onClick={() => setScheme(key)} title={s.name}
+                      style={{
+                        width: 32, height: 32, borderRadius: "50%", background: s.green, padding: 0, cursor: "pointer", flexShrink: 0,
+                        border: key === schemeKey ? `3px solid ${s.green}` : "3px solid transparent",
+                        outline: key === schemeKey ? `2px solid ${s.green}` : "2px solid transparent",
+                        outlineOffset: 2,
+                        opacity: key === schemeKey ? 1 : 0.5,
+                        transition: "opacity 0.15s",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.opacity = "1"; setHoveredScheme(key) }}
+                      onMouseLeave={e => { e.currentTarget.style.opacity = key === schemeKey ? "1" : "0.5"; setHoveredScheme(null) }}
+                    />
+                  ))}
+                </div>
+              </div>
+              {/* UI Scale */}
+              <div>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>UI SCALE</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <input type="range" min={0.5} max={2.0} step={0.05}
+                    value={globalSettings.uiScale}
+                    onChange={e => updateGlobalSettings({ uiScale: Number(e.target.value) })}
+                    style={{ flex: 1, accentColor: "var(--green)" }}
+                  />
+                  <span style={{ fontSize: 11, color: "var(--muted)", width: 36 }}>{Math.round(globalSettings.uiScale * 100)}%</span>
+                </div>
+                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>⌘= zoom in · ⌘- zoom out</div>
+              </div>
+            </div>
+          )}
+
+          {/* KEYBINDINGS tab */}
+          {mainTab === "keybindings" && (
+            <div>
+              <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 16 }}>KEYBOARD SHORTCUTS</div>
+              {[
+                ["⌘1–9", "Switch to REPL"],
+                ["⌘[", "Previous REPL"],
+                ["⌘]", "Next REPL"],
+                ["⌘N", "New REPL"],
+                ["⌘R", "Restart REPL"],
+                ["⌘T", "New Shell tab"],
+                ["⌘W", "Close Shell tab"],
+                ["⌘Shift+[", "Previous Shell tab"],
+                ["⌘Shift+]", "Next Shell tab"],
+                ["⌘K", "Command palette"],
+                ["⌘,", "Preferences"],
+                ["⌘=", "Zoom in"],
+                ["⌘-", "Zoom out"],
+                ["Esc", "Close overlay"],
+              ].map(([key, desc]) => (
+                <div key={key} style={{ display: "flex", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
+                  <code style={{ color: "var(--green)", fontFamily: monoFont, fontSize: 11, width: 140, flexShrink: 0 }}>{key}</code>
+                  <span style={{ color: "var(--muted)", fontSize: 11 }}>{desc}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* TEMPLATES tab */}
           {mainTab === "templates" && (() => {
