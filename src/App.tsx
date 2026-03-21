@@ -198,6 +198,12 @@ export default function App() {
       if (idx < allTabs.length - 1) setActivePanelTab(activeAgentId, allTabs[idx + 1])
     },
     onToggleCommandPalette: () => setShowCommandPalette(prev => !prev),
+    onEscape: () => {
+      if (showCommandPalette) { setShowCommandPalette(false); return }
+      if (showSettings) { setShowSettings(false); return }
+      if (showAddSession) { setShowAddSession(false); return }
+      if (showAddModal) { setShowAddModal(false); return }
+    },
   }), [agents, activeAgentId, activeAgent, shellSessions, activeTabMap])
 
   useKeyboardShortcuts(keyHandlers)

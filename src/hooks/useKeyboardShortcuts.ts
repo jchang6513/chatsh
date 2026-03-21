@@ -6,12 +6,13 @@ interface Handlers {
   onNextAgent: () => void                      // ⌘]
   onNewAgent: () => void                       // ⌘N
   onRestartAgent: () => void                   // ⌘R
-  onOpenSettings: () => void                     // ⌘,
+  onOpenSettings: () => void                   // ⌘,
   onNewShell: () => void                       // ⌘T
   onCloseShell: () => void                     // ⌘W
   onPrevShell: () => void                      // ⌘Shift+[
   onNextShell: () => void                      // ⌘Shift+]
   onToggleCommandPalette: () => void           // ⌘K
+  onEscape: () => void                         // Esc — 關閉任何 overlay
 }
 
 export function useKeyboardShortcuts(handlers: Handlers) {
@@ -24,11 +25,13 @@ export function useKeyboardShortcuts(handlers: Handlers) {
       const target = e.target as HTMLElement
       const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA"
       // xterm 的 helper textarea 不攔截
-      if (inInput && !target.classList.contains("xterm-helper-textarea")) {
-        // 只允許 Escape
-        if (e.key === "Escape") handlers.onToggleCommandPalette()
+      if (e.key === "Escape") {
+        e.preventDefault()
+        handlers.onEscape()
         return
       }
+
+      if (inInput && !target.classList.contains("xterm-helper-textarea")) return
 
       if (!meta) return
 
