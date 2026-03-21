@@ -123,7 +123,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
           }}
           onMouseEnter={e => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "var(--red)" }}
           onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.borderColor = "var(--border)" }}
-          title="全域設定に戻す"
+          title="還原全域設定"
         >
           RESET
         </button>
@@ -164,7 +164,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
         }}>
           <div>
             <div style={{ fontSize: 11, color: "var(--muted)" }}>┌─── PREFERENCES ───┐</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>端末設定</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>Terminal 設定</div>
           </div>
           <button
             onClick={onClose}
@@ -195,7 +195,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
           ))}
         </div>
 
-        {/* タブバー（terminal sub-tabs） */}
+        {/* Terminal sub-tabs */}
         {mainTab === "terminal" && <div style={{
           display: "flex",
           borderBottom: "1px solid var(--border)",
@@ -239,7 +239,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
           })}
         </div>}
 
-        {/* 設定内容 */}
+        {/* 設定內容 */}
         <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
 
           {/* TEMPLATES tab */}
@@ -363,7 +363,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
 
           {mainTab === "terminal" && !isGlobal && (
             <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 12, padding: "4px 8px", border: "1px dashed var(--border)" }}>
-              Agent 別設定は全域設定を上書きします。「RESET」で全域設定に戻ります。
+              Agent 設定會覆蓋全域設定。按「RESET」可還原為全域設定。
             </div>
           )}
 
@@ -501,7 +501,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
           </div>}
         </div>
 
-        {/* フッター */}
+        {/* 底部 */}
         <div style={{
           padding: "8px 16px",
           borderTop: "1px solid var(--border)",
@@ -524,7 +524,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--red)"; e.currentTarget.style.color = "var(--red)" }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)" }}
           >
-            [{isGlobal ? "全てリセット" : "Agent 設定クリア"}]
+            [{isGlobal ? "全部重置" : "清除 Agent 設定"}]
           </button>
           <button
             onClick={onClose}
@@ -541,7 +541,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
             onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)" }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)" }}
           >
-            [閉じる]
+            [關閉]
           </button>
         </div>
       </div>
