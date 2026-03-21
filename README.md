@@ -1,6 +1,4 @@
-<img src="docs/icon.png" width="80" align="left" style="margin-right:12px"/>
-
-# chat.sh
+<table><tr><td><img src="docs/icon.png" width="72"></td><td><h1>chat.sh</h1></td></tr></table>
 
 ![chat.sh](docs/screenshot.png)
 
