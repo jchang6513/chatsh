@@ -86,29 +86,6 @@ impl PtyManager {
                     }
                 }
                 (expanded_dir, cmd)  // cwd 是 user 設定的工作目錄
-            } else if matches!(command.first().map(|s| s.as_str()), Some("gemini") | Some("codex")) {
-                // gemini: reads GEMINI.md from cwd hierarchy → set cwd = agent_dir, add user workingDir via --include-directories
-                // codex:  reads AGENTS.md from cwd hierarchy → same strategy
-                let home = std::env::var("HOME").unwrap_or_default();
-                let agent_dir = format!("{}/.chatsh/agents/{}", home, agent_id);
-                std::fs::create_dir_all(&agent_dir).ok();
-                let cli = command.first().map(|s| s.as_str()).unwrap_or("");
-                let md_file = if cli == "gemini" { "GEMINI.md" } else { "AGENTS.md" };
-                let md_path = format!("{}/{}", agent_dir, md_file);
-                let has_prompt = std::path::Path::new(&md_path).exists()
-                    && std::fs::read_to_string(&md_path)
-                        .map(|s| !s.trim().is_empty())
-                        .unwrap_or(false);
-                let mut cmd = command.to_vec();
-                if has_prompt {
-                    if cli == "gemini" {
-                        cmd.push("--include-directories".to_string());
-                        cmd.push(expanded_dir.clone());
-                    }
-                    (agent_dir, cmd) // cwd = agent_dir so md file is auto-discovered
-                } else {
-                    (expanded_dir, cmd)
-                }
             } else {
                 (expanded_dir, command.to_vec())
             };
