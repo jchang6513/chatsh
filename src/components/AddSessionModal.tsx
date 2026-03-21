@@ -111,8 +111,11 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
     setTemplateSystemPrompt("")
   }
 
+  const submittingRef = React.useRef(false)
   const handleFromTemplate = async () => {
     if (!selectedTemplate) return
+    if (submittingRef.current) return
+    submittingRef.current = true
     const id = Date.now().toString()
     const agent: Agent = {
       id,
@@ -311,7 +314,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                   <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
                     style={inputStyle} placeholder={selectedTemplate.name} autoFocus
                     onFocus={onFocusInput} onBlur={onBlurInput}
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleFromTemplate() } }} />
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); handleFromTemplate() } }} />
                 </label>
                 <label style={labelStyle}>
                   Working Dir
@@ -319,7 +322,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                     <input type="text" value={templateWorkingDir} onChange={e => setTemplateWorkingDir(e.target.value)}
                       style={{ ...inputStyle, flex: 1 }} placeholder="~"
                       onFocus={onFocusInput} onBlur={onBlurInput}
-                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleFromTemplate() } }} />
+                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); handleFromTemplate() } }} />
                     <FolderButton onSelect={setTemplateWorkingDir} />
                   </div>
                 </label>
