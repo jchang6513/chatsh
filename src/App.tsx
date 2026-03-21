@@ -126,21 +126,35 @@ export default function App() {
     invoke("cleanup_deleted_agents").catch(() => {});
   }, []);
 
-  // Listen for output from non-active mounted agents → mark unread
+  // Listen for output from non-active mounted agents → mark unread after silence
+  // Debounced: only mark unread after 2s of no new output (avoid marking while still streaming)
   useEffect(() => {
     const unlisteners: (() => void)[] = []
+    const timers: Map<string, ReturnType<typeof setTimeout>> = new Map()
+
     for (const agentId of mountedAgents) {
       listen<string>(`pty-output-${agentId}`, () => {
-        setUnreadAgents(prev => {
-          if (prev.has(agentId)) return prev
-          if (agentId === activeAgentId) return prev // active, no badge
-          const next = new Set(prev)
-          next.add(agentId)
-          return next
-        })
+        if (agentId === activeAgentId) return // active, skip
+        // Reset debounce timer
+        const existing = timers.get(agentId)
+        if (existing) clearTimeout(existing)
+        const t = setTimeout(() => {
+          setUnreadAgents(prev => {
+            if (prev.has(agentId)) return prev
+            const next = new Set(prev)
+            next.add(agentId)
+            return next
+          })
+          timers.delete(agentId)
+        }, 2000) // 2s silence = response done
+        timers.set(agentId, t)
       }).then(fn => unlisteners.push(fn))
     }
-    return () => unlisteners.forEach(fn => fn())
+
+    return () => {
+      unlisteners.forEach(fn => fn())
+      timers.forEach(t => clearTimeout(t))
+    }
   }, [mountedAgents, activeAgentId]);
 
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
