@@ -7,6 +7,7 @@ interface Props {
   agents: Agent[];
   activeAgentId: string;
   unreadAgents?: Set<string>;
+  streamingAgents?: Set<string>;
   onSelect: (id: string) => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
@@ -15,7 +16,7 @@ interface Props {
   onOpenSettings: () => void;
 }
 
-export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onReorder, onOpenSettings }: Props) {
+export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), streamingAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onReorder, onOpenSettings }: Props) {
   const { schemeKey, setScheme, availableSchemes } = useTheme();
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -88,6 +89,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
           const isActive = agent.id === activeAgentId;
           const isHover = hoverId === agent.id;
           const isUnread = unreadAgents.has(agent.id);
+          const isStreaming = streamingAgents.has(agent.id);
           return (
             <div
               key={agent.id}
@@ -109,7 +111,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
                 height: 32,
                 fontSize: 11,
                 color: isActive ? "var(--green)" : "var(--fg)",
-                background: isActive || isHover ? "var(--surface)" : isUnread ? "rgba(255,176,0,0.08)" : "transparent",
+                background: isActive || isHover ? "var(--surface)" : "transparent",
                 cursor: "pointer",
                 borderLeft: isActive ? "2px solid var(--green)" : "2px solid transparent",
                 position: "relative",
@@ -126,13 +128,14 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
               }}>
                 {agent.name[0].toUpperCase()}
               </span>
-              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: isUnread ? "#ffb000" : undefined }}>
                 {agent.name}
               </span>
               <span style={{
-                color: isUnread ? "#ffb000" : agent.status === "online" ? "var(--green)" : "var(--muted)",
-                fontSize: isUnread ? 10 : 8,
+                color: isStreaming ? "#ffb000" : isUnread ? "#ffb000" : agent.status === "online" ? "var(--green)" : "var(--muted)",
+                fontSize: (isStreaming || isUnread) ? 10 : 8,
                 flexShrink: 0,
+                animation: isStreaming ? "pulse 0.8s infinite" : undefined,
               }}>●</span>
               {/* Hover buttons */}
               {isHover && (
