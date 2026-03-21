@@ -121,6 +121,9 @@ impl PtyManager {
         }
         cmd.env("PATH", path_parts.join(":"));
         cmd.env("TERM", "xterm-256color");
+        cmd.env("LANG", "en_US.UTF-8");
+        cmd.env("LC_ALL", "en_US.UTF-8");
+        cmd.env("LC_CTYPE", "UTF-8");
 
         let child = pair
             .slave
