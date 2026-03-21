@@ -13,6 +13,8 @@ interface Handlers {
   onNextShell: () => void                      // ⌘Shift+]
   onToggleCommandPalette: () => void           // ⌘K
   onEscape: () => void                         // Esc — close any overlay
+  onFontIncrease: () => void                   // ⌘+
+  onFontDecrease: () => void                   // ⌘-
 }
 
 export function useKeyboardShortcuts(handlers: Handlers) {
@@ -68,6 +70,13 @@ export function useKeyboardShortcuts(handlers: Handlers) {
           break
         case "k":
           if (!shift) { e.preventDefault(); handlers.onToggleCommandPalette() }
+          break
+        case "=":
+        case "+":
+          e.preventDefault(); handlers.onFontIncrease()
+          break
+        case "-":
+          e.preventDefault(); handlers.onFontDecrease()
           break
       }
     }

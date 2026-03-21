@@ -179,15 +179,21 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
             title={s.name}
             onClick={() => setScheme(key)}
             style={{
-              width: 10,
-              height: 10,
+              width: 15,
+              height: 15,
               borderRadius: "50%",
-              background: s.background,
-              border: key === schemeKey ? `2px solid ${s.green}` : `2px solid ${s.border}`,
+              background: s.green,
+              border: key === schemeKey ? `2px solid ${s.green}` : `2px solid transparent`,
+              outline: key === schemeKey ? `1px solid ${s.green}` : `1px solid transparent`,
+              outlineOffset: 2,
               cursor: "pointer",
               flexShrink: 0,
               padding: 0,
+              opacity: key === schemeKey ? 1 : 0.5,
+              transition: "opacity 0.15s, outline 0.15s",
             }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = "1")}
+            onMouseLeave={e => (e.currentTarget.style.opacity = key === schemeKey ? "1" : "0.5")}
           />
         ))}
       </div>

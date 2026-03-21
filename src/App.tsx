@@ -12,6 +12,7 @@ import { loadTemplates } from "./templates";
 import ClaudeMdEditor from "./components/ClaudeMdEditor";
 import CommandPalette from "./components/CommandPalette";
 import SettingsPanel from "./components/SettingsPanel";
+import { useSettings } from "./SettingsContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import type { Agent } from "./types";
 
@@ -48,6 +49,7 @@ function loadAgents(): Agent[] {
 }
 
 export default function App() {
+  const { globalSettings, updateGlobalSettings } = useSettings();
   const [agents, setAgents] = useState<Agent[]>(loadAgents);
   const [activeAgentId, setActiveAgentId] = useState<string>(
     () => loadAgents()[0]?.id ?? ""
@@ -235,6 +237,12 @@ export default function App() {
       if (idx < allTabs.length - 1) setActivePanelTab(activeAgentId, allTabs[idx + 1])
     },
     onToggleCommandPalette: () => setShowCommandPalette(prev => !prev),
+    onFontIncrease: () => {
+      updateGlobalSettings({ fontSize: Math.min(globalSettings.fontSize + 1, 28) })
+    },
+    onFontDecrease: () => {
+      updateGlobalSettings({ fontSize: Math.max(globalSettings.fontSize - 1, 8) })
+    },
     onEscape: () => {
       if (showCommandPalette) { setShowCommandPalette(false); return }
       if (showSettings) { setShowSettings(false); return }
