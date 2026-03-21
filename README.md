@@ -60,7 +60,7 @@ Or [download the DMG](https://github.com/jchang6513/chatsh/releases/latest) dire
 - Font family, size, line height
 - Cursor style (block / bar / underline) + blink
 - Scrollback lines, padding
-- 8 color schemes (Amber, Hacker, Dracula, Phosphor...) + background opacity
+- 11 color schemes (Nightfox, Kanagawa, Gruvbox...) + UI zoom
 - Per-REPL terminal overrides
 
 ---
@@ -87,7 +87,7 @@ MIT
 ## Changelog
 
 ### v0.1.3
-- **Unread notifications**: amber dot pulses while streaming, stays amber when idle (unread)
+- **Unread notifications**: dot pulses while streaming, stays lit when idle (unread)
 - **UTF-8 / CJK display** fixed in terminal
 - Working Dir native folder picker `[...]`
 - Lazy REPL spawn (only starts when selected)
@@ -98,7 +98,7 @@ MIT
 - System prompts (CLAUDE.md / GEMINI.md / AGENTS.md), per-REPL isolated
 - Keyboard shortcuts (⌘K, ⌘1-9, ⌘T/W, ⌘R, ⌘,)
 - Preferences panel with per-REPL overrides
-- 8 color schemes, Amber default
+- 11 color schemes, Nightfox default
 
 ### v0.1.1
 - Command Palette (⌘K)
