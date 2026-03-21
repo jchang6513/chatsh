@@ -64,16 +64,25 @@ impl PtyManager {
             working_dir.to_string()
         };
 
-        // 若是 claude：cwd = user 的 workingDir，--add-dir 指向 agent 專屬目錄
-        // 這樣每個 agent 的 CLAUDE.md 完全隔離，不互相干擾
+        // 若是 claude：cwd = user 的 workingDir
+        // 用 --append-system-prompt-file 直接注入 agent 的 CLAUDE.md
+        // 這樣保證 per-agent system prompt 一定套用，且各 agent 完全隔離
         let (effective_working_dir, effective_command) =
             if command.first().map(|s| s.as_str()) == Some("claude") {
                 let home = std::env::var("HOME").unwrap_or_default();
                 let agent_dir = format!("{}/.chatsh/agents/{}", home, agent_id);
                 std::fs::create_dir_all(&agent_dir).ok();
+                let claude_md = format!("{}/CLAUDE.md", agent_dir);
                 let mut cmd = command.to_vec();
-                cmd.push("--add-dir".to_string());
-                cmd.push(agent_dir); // 只加 agent 自己的目錄，Claude 讀這裡的 CLAUDE.md
+                // 只有 CLAUDE.md 存在且有內容才加 flag
+                if std::path::Path::new(&claude_md).exists() {
+                    if let Ok(content) = std::fs::read_to_string(&claude_md) {
+                        if !content.trim().is_empty() {
+                            cmd.push("--append-system-prompt-file".to_string());
+                            cmd.push(claude_md);
+                        }
+                    }
+                }
                 (expanded_dir, cmd)  // cwd 是 user 設定的工作目錄
             } else {
                 (expanded_dir, command.to_vec())
