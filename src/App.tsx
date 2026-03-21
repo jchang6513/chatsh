@@ -103,6 +103,10 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddSession, setShowAddSession] = useState(false);
   const [templates] = useState(loadTemplates);
+  // 記錄曾被點開過的 agent（lazy mount）
+  const [mountedAgents, setMountedAgents] = useState<Set<string>>(
+    () => new Set([loadAgents()[0]?.id ?? ""])
+  );
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
   const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
@@ -127,6 +131,7 @@ export default function App() {
 
   const handleSelectAgent = useCallback((id: string) => {
     setActiveAgentId(id);
+    setMountedAgents(prev => new Set([...prev, id]));
   }, []);
 
   const handleRemoveAgent = useCallback((id: string) => {
@@ -383,14 +388,16 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              {/* Terminal（visibility 切換，不銷毀） */}
+              {/* Terminal：只有點開過的才 mount，visibility 切換不銷毀 */}
               <div style={{ flex: 1, display: getActivePanelTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0 }}>
-                <Terminal
-                  agent={agent}
-                  isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === "terminal"}
-                  onStatusChange={(status) => updateAgentStatus(agent.id, status)}
-                  restartKey={restartKeys[agent.id] ?? 0}
-                />
+                {mountedAgents.has(agent.id) && (
+                  <Terminal
+                    agent={agent}
+                    isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === "terminal"}
+                    onStatusChange={(status) => updateAgentStatus(agent.id, status)}
+                    restartKey={restartKeys[agent.id] ?? 0}
+                  />
+                )}
               </div>
               {/* Shell tabs（各自獨立，visibility 切換） */}
               {(shellSessions[agent.id] ?? []).map(shellId => (
@@ -434,6 +441,7 @@ export default function App() {
           onAdd={(agent) => {
             setAgents(prev => [...prev, agent]);
             setActiveAgentId(agent.id);
+            setMountedAgents(prev => new Set([...prev, agent.id]));
             setShowAddSession(false);
           }}
           onClose={() => setShowAddSession(false)}
@@ -451,6 +459,7 @@ export default function App() {
             } else {
               setAgents((prev) => [...prev, agent]);
               setActiveAgentId(agent.id);
+              setMountedAgents(prev => new Set([...prev, agent.id]));
               setShowAddModal(false);
             }
           }}
