@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { useSettings } from "../SettingsContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
+import { loadTemplates, saveTemplates, type Template, KNOWN_TOOLS } from "../templates"
 import type { Agent } from "../types"
 
 interface Props {
@@ -10,7 +11,12 @@ interface Props {
 
 const monoFont = '"SF Mono", "Menlo", "Monaco", "Courier New", monospace'
 
-type Tab = "global" | string // "global" or agentId
+type MainTab = "terminal" | "templates"
+type TerminalTab = "global" | string // "global" or agentId
+
+const SYSTEM_PROMPT_FILES: Record<string, string> = {
+  claude: "CLAUDE.md", gemini: "GEMINI.md", codex: "AGENTS.md",
+}
 
 export default function SettingsPanel({ agents, onClose }: Props) {
   const {
@@ -22,7 +28,14 @@ export default function SettingsPanel({ agents, onClose }: Props) {
     getResolvedSettings,
   } = useSettings()
 
-  const [activeTab, setActiveTab] = useState<Tab>("global")
+  const [mainTab, setMainTab] = useState<MainTab>("terminal")
+  const [activeTab, setActiveTab] = useState<TerminalTab>("global")
+
+  // Templates state
+  const [templates, setTemplates] = useState<Template[]>(loadTemplates)
+  const [editingTemplate, setEditingTemplate] = useState<Template | null>(null)
+  const [showNewTemplate, setShowNewTemplate] = useState(false)
+  const [newTpl, setNewTpl] = useState({ name: "", command: "", workingDir: "~", description: "" })
 
   const isGlobal = activeTab === "global"
   const currentAgent = agents.find(a => a.id === activeTab)
@@ -171,8 +184,19 @@ export default function SettingsPanel({ agents, onClose }: Props) {
           </button>
         </div>
 
-        {/* タブバー */}
-        <div style={{
+        {/* 主 Tab：TERMINAL / TEMPLATES */}
+        <div style={{ display: "flex", borderBottom: "1px solid var(--border)", fontSize: 10, letterSpacing: "0.06em", flexShrink: 0 }}>
+          {(["terminal", "templates"] as MainTab[]).map(t => (
+            <div key={t} onClick={() => setMainTab(t)} style={{
+              padding: "7px 16px", cursor: "pointer",
+              borderBottom: mainTab === t ? "2px solid var(--green)" : "2px solid transparent",
+              color: mainTab === t ? "var(--green)" : "var(--muted)",
+            }}>{t.toUpperCase()}</div>
+          ))}
+        </div>
+
+        {/* タブバー（terminal sub-tabs） */}
+        {mainTab === "terminal" && <div style={{
           display: "flex",
           borderBottom: "1px solid var(--border)",
           fontSize: 10,
@@ -213,17 +237,137 @@ export default function SettingsPanel({ agents, onClose }: Props) {
               </div>
             )
           })}
-        </div>
+        </div>}
 
         {/* 設定内容 */}
         <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
-          {!isGlobal && (
+
+          {/* TEMPLATES tab */}
+          {mainTab === "templates" && (() => {
+            const builtinIds = KNOWN_TOOLS.map(t => t.id)
+            const userTemplates = templates.filter(t => !builtinIds.includes(t.id))
+            const mono = monoFont
+            const inputSt: React.CSSProperties = {
+              background: "var(--bg)", border: "1px solid var(--border)",
+              color: "var(--fg)", fontFamily: mono, fontSize: 11,
+              padding: "5px 8px", outline: "none", width: "100%", boxSizing: "border-box" as const,
+            }
+            const onFocus = (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.style.borderColor = "var(--green)"
+            const onBlur = (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.style.borderColor = "var(--border)"
+
+            const saveNewTemplate = () => {
+              if (!newTpl.name.trim() || !newTpl.command.trim()) return
+              const t: Template = {
+                id: Date.now().toString(),
+                name: newTpl.name.trim(),
+                command: newTpl.command.trim(),
+                workingDir: newTpl.workingDir.trim() || "~",
+                description: newTpl.description.trim(),
+                isBuiltin: false,
+              }
+              const next = [...templates, t]
+              setTemplates(next)
+              saveTemplates(next)
+              setShowNewTemplate(false)
+              setNewTpl({ name: "", command: "", workingDir: "~", description: "" })
+            }
+
+            const deleteTemplate = (id: string) => {
+              const next = templates.filter(t => t.id !== id)
+              setTemplates(next)
+              saveTemplates(next)
+            }
+
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {/* 系統偵測 (read-only) */}
+                <div>
+                  <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em", marginBottom: 8 }}>AUTO-DETECTED</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {KNOWN_TOOLS.map(t => (
+                      <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", border: "1px solid var(--border)", fontSize: 11 }}>
+                        <span style={{ color: "var(--fg)", flex: 1 }}>{t.name}</span>
+                        <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
+                        <span style={{ fontSize: 9, color: "var(--green)", border: "1px solid var(--green)", padding: "1px 4px" }}>AUTO</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 自訂樣板 */}
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>CUSTOM TEMPLATES</div>
+                    <button onClick={() => setShowNewTemplate(v => !v)}
+                      style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "2px 6px", cursor: "pointer" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                    >[+ NEW]</button>
+                  </div>
+
+                  {/* 新增表單 */}
+                  {showNewTemplate && (
+                    <div style={{ border: "1px solid var(--green)", padding: 10, marginBottom: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ fontSize: 10, color: "var(--green)" }}>NEW TEMPLATE</div>
+                      {[
+                        { label: "名稱", key: "name" as const, placeholder: "例如：後端助手" },
+                        { label: "指令", key: "command" as const, placeholder: "例如：claude 或 python3" },
+                        { label: "工作目錄", key: "workingDir" as const, placeholder: "~" },
+                        { label: "描述", key: "description" as const, placeholder: "選填" },
+                      ].map(({ label, key, placeholder }) => (
+                        <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
+                          {label}
+                          <input value={newTpl[key]} onChange={e => setNewTpl(p => ({ ...p, [key]: e.target.value }))}
+                            style={inputSt} placeholder={placeholder} onFocus={onFocus} onBlur={onBlur} />
+                        </label>
+                      ))}
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                        <button onClick={() => setShowNewTemplate(false)}
+                          style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}
+                        >[取消]</button>
+                        <button onClick={saveNewTemplate}
+                          style={{ background: "none", border: "1px solid var(--green)", color: "var(--green)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--green)"; }}
+                        >[儲存]</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {userTemplates.length === 0 && !showNewTemplate && (
+                    <div style={{ fontSize: 11, color: "var(--muted)", padding: "12px 0", textAlign: "center" }}>
+                      尚無自訂樣板
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    {userTemplates.map(t => (
+                      <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", border: "1px solid var(--border)", fontSize: 11 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span style={{ color: "var(--fg)" }}>{t.name}</span>
+                          {t.description && <span style={{ color: "var(--muted)", fontSize: 10, marginLeft: 8 }}>{t.description}</span>}
+                        </div>
+                        <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
+                        <button onClick={() => deleteTemplate(t.id)}
+                          style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontFamily: mono, fontSize: 10, padding: "0 4px" }}
+                          onMouseEnter={e => e.currentTarget.style.color = "var(--red)"}
+                          onMouseLeave={e => e.currentTarget.style.color = "var(--muted)"}
+                        >[×]</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
+          {mainTab === "terminal" && !isGlobal && (
             <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 12, padding: "4px 8px", border: "1px dashed var(--border)" }}>
               Agent 別設定は全域設定を上書きします。「RESET」で全域設定に戻ります。
             </div>
           )}
 
-          {/* Text */}
+          {mainTab === "terminal" && <div id="terminal-settings">
           <div style={sectionStyle}>
             <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>TEXT</div>
             {renderFieldRow("Font Family", "fontFamily",
@@ -354,6 +498,7 @@ export default function SettingsPanel({ agents, onClose }: Props) {
               />
             )}
           </div>
+          </div>}
         </div>
 
         {/* フッター */}
