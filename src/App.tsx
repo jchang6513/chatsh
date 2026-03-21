@@ -5,6 +5,8 @@ import Terminal from "./components/Terminal";
 import SingleShell from "./components/SingleShell";
 import StatusBar from "./components/StatusBar";
 import AddAgentModal from "./components/AddAgentModal";
+import AddSessionModal from "./components/AddSessionModal";
+import { loadTemplates } from "./templates";
 import ClaudeMdEditor from "./components/ClaudeMdEditor";
 import CommandPalette from "./components/CommandPalette";
 import SettingsPanel from "./components/SettingsPanel";
@@ -99,6 +101,8 @@ export default function App() {
   };
 
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddSession, setShowAddSession] = useState(false);
+  const [templates] = useState(loadTemplates);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
   const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
@@ -163,7 +167,7 @@ export default function App() {
       const idx = agents.findIndex(a => a.id === activeAgentId)
       if (idx < agents.length - 1) setActiveAgentId(agents[idx + 1].id)
     },
-    onNewAgent: () => setShowAddModal(true),
+    onNewAgent: () => setShowAddSession(true),
     onRestartAgent: async () => {
       if (!activeAgentId) return
       try { await invoke("kill_agent", { agentId: activeAgentId }) } catch {}
@@ -207,7 +211,7 @@ export default function App() {
           agents={agents}
           activeAgentId={activeAgentId}
           onSelect={handleSelectAgent}
-          onAdd={() => setShowAddModal(true)}
+          onAdd={() => setShowAddSession(true)}
           onRemove={handleRemoveAgent}
           onEdit={handleEditAgent}
           onReorder={handleReorder}
@@ -416,6 +420,17 @@ export default function App() {
           activeAgentId={activeAgentId}
           onSelect={handleSelectAgent}
           onClose={() => setShowCommandPalette(false)}
+        />
+      )}
+      {showAddSession && (
+        <AddSessionModal
+          templates={templates}
+          onAdd={(agent) => {
+            setAgents(prev => [...prev, agent]);
+            setActiveAgentId(agent.id);
+            setShowAddSession(false);
+          }}
+          onClose={() => setShowAddSession(false)}
         />
       )}
       {showModal && (
