@@ -120,7 +120,10 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(agents));
+    // Deduplicate by id before saving
+    const seen = new Set<string>()
+    const deduped = agents.filter(a => seen.has(a.id) ? false : (seen.add(a.id), true))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
   }, [agents]);
 
   useEffect(() => {
