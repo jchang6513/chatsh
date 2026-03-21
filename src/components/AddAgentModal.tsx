@@ -267,7 +267,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                 </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
                   <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                    名稱
+                    Name
                     <input
                       type="text"
                       value={name}
@@ -281,7 +281,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                   </label>
                   {isEditing && (
                     <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                      指令
+                      Command
                       <input
                         type="text"
                         value={command}
@@ -294,7 +294,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
                     </label>
                   )}
                   <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
-                    工作目錄
+                    Working Dir
                     <input
                       type="text"
                       value={workingDir}

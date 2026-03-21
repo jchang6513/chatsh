@@ -12,7 +12,7 @@ interface Handlers {
   onPrevShell: () => void                      // ⌘Shift+[
   onNextShell: () => void                      // ⌘Shift+]
   onToggleCommandPalette: () => void           // ⌘K
-  onEscape: () => void                         // Esc — 關閉任何 overlay
+  onEscape: () => void                         // Esc — close any overlay
 }
 
 export function useKeyboardShortcuts(handlers: Handlers) {
@@ -21,10 +21,10 @@ export function useKeyboardShortcuts(handlers: Handlers) {
       const meta = e.metaKey // ⌘ on Mac
       const shift = e.shiftKey
 
-      // 不在 input/textarea 裡才攔截（ClaudeMdEditor 除外）
+      // only intercept outside input/textarea (except xterm helper)
       const target = e.target as HTMLElement
       const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA"
-      // xterm 的 helper textarea 不攔截
+      // do not intercept xterm helper textarea
       if (e.key === "Escape") {
         e.preventDefault()
         handlers.onEscape()
@@ -35,7 +35,7 @@ export function useKeyboardShortcuts(handlers: Handlers) {
 
       if (!meta) return
 
-      // ⌘1-9：切換 agent
+      // ⌘1-9: switch agent
       if (e.key >= "1" && e.key <= "9" && !shift) {
         e.preventDefault()
         handlers.onSelectAgent(parseInt(e.key) - 1)

@@ -1,22 +1,22 @@
 export interface ColorScheme {
   name: string
-  // Terminal 核心色
-  background: string   // UI 背景、xterm background
-  foreground: string   // 主文字、xterm foreground
+  // Terminal core colors
+  background: string   // UI background + xterm background
+  foreground: string   // primary text + xterm foreground
   cursor: string       // xterm cursor
   selection: string    // xterm selection、UI active highlight
-  // ANSI semantic 色（UI 和 xterm 共用）
-  green: string    // 狀態燈 online、success
-  red: string      // 狀態燈 offline、error
+  // ANSI semantic colors (shared by UI and xterm)
+  green: string    // status online/success
+  red: string      // status offline/error
   blue: string     // accent、focus、link
   yellow: string   // warning
   cyan: string     // info
   magenta: string  // special
-  // UI 結構色（從 background 衍生）
-  surface: string  // 比 background 稍亮（按鈕、卡片）
-  border: string   // 分割線
-  muted: string    // 次要文字
-  // ANSI 16-color palette（xterm 直接套用）
+  // UI structural colors (derived from background)
+  surface: string  // slightly brighter than bg (buttons, cards)
+  border: string   // divider
+  muted: string    // secondary text
+  // ANSI 16-color palette (applied directly to xterm)
   ansi: {
     black: string        // 0
     red: string          // 1

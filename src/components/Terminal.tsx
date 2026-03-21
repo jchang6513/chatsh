@@ -23,7 +23,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
 
-  // 設定変更時にリアルタイム反映
+  // apply settings changes in real-time
   useEffect(() => {
     if (!xtermRef.current) return;
     const xterm = xtermRef.current;
@@ -36,7 +36,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     if (fitAddonRef.current) fitAddonRef.current.fit();
   }, [settings]);
 
-  // scheme 變化時動態更新 xterm theme
+  // dynamically update xterm theme when scheme changes
   useEffect(() => {
     if (!xtermRef.current) return;
     xtermRef.current.options.theme = {
@@ -65,7 +65,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     xtermRef.current.refresh(0, xtermRef.current.rows - 1);
   }, [scheme]);
 
-  // isActive 變化時 fit + focus
+  // fit + focus when isActive changes
   useEffect(() => {
     if (isActive && xtermRef.current && fitAddonRef.current) {
       setTimeout(() => {
@@ -75,7 +75,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     }
   }, [isActive]);
 
-  // agent.id 變化時重建 xterm + spawn PTY
+  // rebuild xterm + spawn PTY when agent.id changes
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -189,7 +189,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* xterm 容器 */}
+      {/* xterm container */}
       <div
         ref={containerRef}
         className="flex-1 min-h-0"

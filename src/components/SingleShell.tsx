@@ -21,7 +21,7 @@ export default function SingleShell({ sessionId, isActive, agentId }: SingleShel
   const { getResolvedSettings } = useSettings();
   const settings = getResolvedSettings(agentId);
 
-  // xterm 生命週期：mount 時建立，unmount 時清除
+  // xterm lifecycle: create on mount, cleanup on unmount
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
@@ -97,7 +97,7 @@ export default function SingleShell({ sessionId, isActive, agentId }: SingleShel
     };
   }, [sessionId]);
 
-  // scheme 變化時更新 theme
+  // update theme when scheme changes
   useEffect(() => {
     const xterm = xtermRef.current;
     if (!xterm) return;
@@ -116,7 +116,7 @@ export default function SingleShell({ sessionId, isActive, agentId }: SingleShel
     xterm.refresh(0, xterm.rows - 1);
   }, [scheme]);
 
-  // 設定変更時にリアルタイム反映
+  // apply settings changes in real-time
   useEffect(() => {
     const xterm = xtermRef.current;
     if (!xterm) return;
@@ -129,7 +129,7 @@ export default function SingleShell({ sessionId, isActive, agentId }: SingleShel
     if (fitRef.current) fitRef.current.fit();
   }, [settings]);
 
-  // active 時 focus
+  // focus when active
   useEffect(() => {
     if (isActive) {
       const xterm = xtermRef.current;

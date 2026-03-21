@@ -24,7 +24,7 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
 
   const [selectedIdx, setSelectedIdx] = useState(0)
 
-  // query 改變時 reset 選擇
+  // reset selection when query changes
   useEffect(() => {
     setSelectedIdx(0)
   }, [query])
@@ -67,7 +67,7 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
           overflow: "hidden",
         }}
       >
-        {/* 搜尋框 */}
+        {/* Search input */}
         <div style={{ padding: "8px 12px", borderBottom: "1px solid var(--border)" }}>
           <input
             ref={inputRef}
@@ -87,7 +87,7 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
             }}
           />
         </div>
-        {/* 結果列表 */}
+        {/* Results list */}
         <div style={{ flex: 1, overflowY: "auto" }}>
           {filtered.length === 0 && (
             <div style={{ padding: "12px 16px", color: "var(--muted)", fontSize: 12 }}>
@@ -129,7 +129,7 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
               }}>
                 {agent.status === "online" ? "RUNNING" : "STOPPED"}
               </span>
-              {/* ⌘ 數字提示 */}
+              {/* ⌘ number hint */}
               {agents.indexOf(agent) < 9 && (
                 <span style={{ fontSize: 9, color: "var(--muted)", opacity: 0.6 }}>
                   ⌘{agents.indexOf(agent) + 1}
@@ -138,7 +138,7 @@ export default function CommandPalette({ agents, activeAgentId, onSelect, onClos
             </div>
           ))}
         </div>
-        {/* 底部快捷鍵提示 */}
+        {/* Bottom shortcut hints */}
         <div style={{
           padding: "6px 12px",
           borderTop: "1px solid var(--border)",

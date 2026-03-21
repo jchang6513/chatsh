@@ -45,7 +45,7 @@ const labelStyle: React.CSSProperties = {
 
 type Mode = "choose" | "from-template" | "custom";
 
-// 哪些指令支援 system prompt，以及對應的檔名
+// which commands support system prompt and their filenames
 const SYSTEM_PROMPT_SUPPORT: Record<string, { label: string; filename: string }> = {
   claude:  { label: "CLAUDE.md",  filename: "CLAUDE.md" },
   gemini:  { label: "GEMINI.md",  filename: "GEMINI.md" },
@@ -68,7 +68,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
   const [mode, setMode] = useState<Mode>("choose");
   const [detectedIds, setDetectedIds] = useState<string[]>([]);
 
-  // 從樣板
+  // from template
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [sessionName, setSessionName] = useState("");
   const [templateWorkingDir, setTemplateWorkingDir] = useState("~");
@@ -76,7 +76,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
   const [showNewTemplatForm, setShowNewTemplateForm] = useState(false);
   const [newTpl, setNewTpl] = useState({ name: "", command: "", workingDir: "~", description: "" });
 
-  // 自訂
+  // custom
   const [name, setName] = useState("");
   const [command, setCommand] = useState("");
   const [workingDir, setWorkingDir] = useState("~");
@@ -192,7 +192,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
           {/* FROM TEMPLATE */}
           {mode === "from-template" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {/* 樣板格子 */}
+              {/* Template grid */}
               {allTemplates.length === 0 ? (
                 <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", padding: "24px 0" }}>
                   No tools detected. Use Custom instead.
@@ -221,7 +221,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                     </button>
                   ))}
 
-                  {/* + New Template格子 */}
+                  {/* + New Template cell */}
                   {!showNewTemplatForm && (
                     <button onClick={() => setShowNewTemplateForm(true)} style={{
                       ...btnBase,
@@ -239,7 +239,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 </div>
               )}
 
-              {/* 新增樣板表單 */}
+              {/* New template form */}
               {showNewTemplatForm && (
                 <div style={{ border: "1px solid var(--green)", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 10, color: "var(--green)", marginBottom: 2 }}>NEW TEMPLATE</div>
@@ -288,7 +288,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 </div>
               )}
 
-              {/* 選好之後的設定 */}
+              {/* Settings after selection */}
               {selectedTemplate && (<>
                 <label style={labelStyle}>
                   REPL Name
@@ -297,7 +297,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                     onFocus={onFocusInput} onBlur={onBlurInput} />
                 </label>
                 <label style={labelStyle}>
-                  工作目錄
+                  Working Dir
                   <input type="text" value={templateWorkingDir} onChange={e => setTemplateWorkingDir(e.target.value)}
                     style={inputStyle} placeholder="~"
                     onFocus={onFocusInput} onBlur={onBlurInput} />
@@ -331,19 +331,19 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
           {mode === "custom" && (
             <form onSubmit={handleCustom} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <label style={labelStyle}>
-                名稱
+                Name
                 <input type="text" value={name} onChange={e => setName(e.target.value)}
                   style={inputStyle} placeholder="e.g. Backend Assistant" autoFocus
                   onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
               <label style={labelStyle}>
-                指令
+                Command
                 <input type="text" value={command} onChange={e => setCommand(e.target.value)}
                   style={inputStyle} placeholder="e.g. claude or /bin/zsh or python3"
                   onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
               <label style={labelStyle}>
-                工作目錄
+                Working Dir
                 <input type="text" value={workingDir} onChange={e => setWorkingDir(e.target.value)}
                   style={inputStyle} placeholder="~"
                   onFocus={onFocusInput} onBlur={onBlurInput} />

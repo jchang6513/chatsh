@@ -38,7 +38,7 @@ export default function ClaudeMdEditor({ agent, onClose }: Props) {
         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 100 }}
       />
 
-      {/* Panel — 從右側滑入 */}
+      {/* Panel — slides in from right */}
       <div style={{
         position: "fixed",
         top: 0,

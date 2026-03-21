@@ -5,8 +5,8 @@ export interface Template {
   args?: string[]        // extra args
   workingDir: string
   description: string
-  isBuiltin: boolean     // 系統偵測到的
-  claudeMd?: string      // 只對 claude 有效
+  isBuiltin: boolean     // auto-detected by system
+  claudeMd?: string      // only for claude
 }
 
 const STORAGE_KEY = "chatsh_templates"

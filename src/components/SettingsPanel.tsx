@@ -61,7 +61,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
     const next = { ...currentOverrides }
     delete next[key]
     updateAgentOverrides(activeTab, next)
-    // 完全置き換え
+    // full replacement
     clearAgentOverrides(activeTab)
     if (Object.keys(next).length > 0) {
       updateAgentOverrides(activeTab, next)
@@ -131,7 +131,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
       )}
       {!isGlobal && !isOverridden(key) && (
         <span style={{ fontSize: 9, color: "var(--muted)", opacity: 0.5, flexShrink: 0, width: 40, textAlign: "center" }}>
-          全域
+          Global
         </span>
       )}
     </div>
@@ -155,7 +155,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* ヘッダー */}
+        {/* Header */}
         <div style={{
           padding: "12px 16px",
           borderBottom: "1px solid var(--border)",
@@ -185,7 +185,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
           </button>
         </div>
 
-        {/* 主 Tab：TERMINAL / TEMPLATES */}
+        {/* Main tabs: TERMINAL / TEMPLATES */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", fontSize: 10, letterSpacing: "0.06em", flexShrink: 0 }}>
           {([["terminal", "Terminal"], ["templates", "Templates"]] as [MainTab, string][]).map(([t, label]) => (
             <div key={t} onClick={() => setMainTab(t)} style={{
@@ -240,7 +240,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
           })}
         </div>}
 
-        {/* 設定內容 */}
+        {/* Settings content */}
         <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
 
           {/* TEMPLATES tab */}
@@ -504,7 +504,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
           </div>}
         </div>
 
-        {/* 底部 */}
+        {/* Footer */}
         <div style={{
           padding: "8px 16px",
           borderTop: "1px solid var(--border)",

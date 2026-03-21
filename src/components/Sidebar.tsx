@@ -80,7 +80,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
       fontFamily: '"SF Mono", "Menlo", "Monaco", "Courier New", monospace',
       height: "100%",
     }}>
-      {/* Agent 列表 */}
+      {/* REPL list */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {agents.map((agent) => {
           const isActive = agent.id === activeAgentId;
@@ -127,7 +127,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
                 {agent.name}
               </span>
               <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 8, flexShrink: 0 }}>●</span>
-              {/* Hover 按鈕 */}
+              {/* Hover buttons */}
               {isHover && (
                 <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, display: "flex", alignItems: "stretch" }}>
                   <button
@@ -182,7 +182,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
         ))}
       </div>
 
-      {/* 設定ボタン */}
+      {/* Settings button */}
       <button
         onClick={onOpenSettings}
         style={{
@@ -204,7 +204,7 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
         [Preferences ⌘,]
       </button>
 
-      {/* 新增角色按鈕 */}
+      {/* New REPL button */}
       <button
         onClick={onAdd}
         style={{

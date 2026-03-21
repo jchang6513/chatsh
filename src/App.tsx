@@ -63,7 +63,7 @@ export default function App() {
     const n = shellCounters.current[agentId];
     const shellId = `__shell_${agentId}_${n}__`;
     setShellSessions(prev => ({ ...prev, [agentId]: [...(prev[agentId] ?? []), shellId] }));
-    // 預設名稱帶上 stable 編號
+    // default name with stable counter
     setShellNames(prev => ({ ...prev, [shellId]: `Shell ${n}` }));
     setActivePanelTab(agentId, shellId);
   };
@@ -72,7 +72,7 @@ export default function App() {
     setShellSessions(prev => {
       const sessions = prev[agentId] ?? [];
       const next = sessions.filter(id => id !== shellId);
-      // 只有關掉的是當前分頁才切換
+      // only switch tab if closing the active one
       if (getActivePanelTab(agentId) === shellId) {
         const idx = sessions.indexOf(shellId);
         const prevTab = idx > 0 ? sessions[idx - 1] : "terminal";
@@ -82,7 +82,7 @@ export default function App() {
     });
   };
 
-  // Shell 分頁名稱（自訂）
+  // shell tab names (custom)
   const [shellNames, setShellNames] = useState<Record<string, string>>({});
   const [editingShellId, setEditingShellId] = useState<string | null>(null);
   const [editingShellName, setEditingShellName] = useState("");
@@ -103,7 +103,7 @@ export default function App() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddSession, setShowAddSession] = useState(false);
   const [templates, setTemplates] = useState(loadTemplates);
-  // 記錄曾被點開過的 agent（lazy mount）
+  // track which agents have been opened (lazy mount)
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(
     () => new Set([loadAgents()[0]?.id ?? ""])
   );
@@ -135,7 +135,7 @@ export default function App() {
   }, []);
 
   const handleRemoveAgent = useCallback((id: string) => {
-    // 先同步更新 UI
+    // sync UI first
     setAgents((prev) => {
       const next = prev.filter((a) => a.id !== id);
       setActiveAgentId((currentId) =>
@@ -143,7 +143,7 @@ export default function App() {
       );
       return next;
     });
-    // 背景清理，不阻塞 UI
+    // cleanup in background, non-blocking
     invoke("kill_agent", { agentId: id }).catch(() => {});
     invoke("schedule_deletion", { agentId: id }).catch(() => {});
   }, []);
@@ -159,7 +159,7 @@ export default function App() {
   const activeAgent = agents.find(a => a.id === activeAgentId);
   const showModal = showAddModal || editingAgent !== null;
 
-  // 全域鍵盤快捷鍵
+  // global keyboard shortcuts
   const keyHandlers = useMemo(() => ({
     onSelectAgent: (index: number) => {
       if (index < agents.length) setActiveAgentId(agents[index].id)
@@ -343,7 +343,7 @@ export default function App() {
                   title="New Shell"
                 >+ shell</button>
 
-                {/* 右側工具按鈕 */}
+                {/* Right-side toolbar */}
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, padding: "0 10px", borderLeft: "1px solid var(--border)" }}>
                   <span style={{ color: "var(--muted)", fontSize: 9 }}>{agent.workingDir}</span>
                   {agent.command[0] === "claude" && (
@@ -388,7 +388,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-              {/* Terminal：只有點開過的才 mount，visibility 切換不銷毀 */}
+              {/* Terminal: lazy mount, visibility toggle */}
               <div style={{ flex: 1, display: getActivePanelTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0 }}>
                 {mountedAgents.has(agent.id) && (
                   <Terminal
@@ -399,7 +399,7 @@ export default function App() {
                   />
                 )}
               </div>
-              {/* Shell tabs（各自獨立，visibility 切換） */}
+              {/* Shell tabs: independent, visibility toggle */}
               {(shellSessions[agent.id] ?? []).map(shellId => (
                 <div key={shellId} style={{ flex: 1, display: getActivePanelTab(agent.id) === shellId ? "flex" : "none", minHeight: 0, position: "relative" }}>
                   <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>

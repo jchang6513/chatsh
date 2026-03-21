@@ -1,4 +1,4 @@
-// Terminal ANSI 色系 palette（對齊 xterm theme）
+// Terminal ANSI color palette (aligned with xterm theme)
 const COLORS = [
   "#00ff9f", // green
   "#00ccff", // blue
