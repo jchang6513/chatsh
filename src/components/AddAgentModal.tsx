@@ -67,6 +67,13 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       setCommand(initialValues.command?.join(" ") ?? "");
       setWorkingDir(initialValues.workingDir ?? "~");
       setAvatarUrl(initialValues.avatar ?? "");
+      // Load existing CLAUDE.md when editing
+      if (initialValues.id && initialValues.command?.[0] === "claude") {
+        const path = `~/.chatsh/agents/${initialValues.id}/CLAUDE.md`
+        invoke<string>("read_file", { path })
+          .then(content => setClaudeMd(content))
+          .catch(() => setClaudeMd(""))
+      }
     }
   }, [initialValues]);
 
