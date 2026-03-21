@@ -77,9 +77,11 @@ impl PtyManager {
                 // 只有 CLAUDE.md 存在且有內容才加 flag
                 if std::path::Path::new(&claude_md).exists() {
                     if let Ok(content) = std::fs::read_to_string(&claude_md) {
-                        if !content.trim().is_empty() {
-                            cmd.push("--system-prompt-file".to_string());
-                            cmd.push(claude_md);
+                        let trimmed = content.trim().to_string();
+                        if !trimmed.is_empty() {
+                            // --append-system-prompt 追加在專案 CLAUDE.md 後面，不覆蓋
+                            cmd.push("--append-system-prompt".to_string());
+                            cmd.push(trimmed);
                         }
                     }
                 }
