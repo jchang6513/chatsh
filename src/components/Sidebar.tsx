@@ -12,14 +12,16 @@ interface Props {
   onAdd: () => void;
   onRemove: (id: string) => void;
   onEdit: (agent: Agent) => void;
+  onRestart?: (id: string) => void;
   onReorder: (agents: Agent[]) => void;
   onOpenSettings: () => void;
 }
 
-export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), streamingAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onReorder, onOpenSettings }: Props) {
+export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), streamingAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onRestart, onReorder, onOpenSettings }: Props) {
   const { schemeKey, setScheme, availableSchemes } = useTheme();
   const [dragId, setDragId] = useState<string | null>(null);
   const [hoveredScheme, setHoveredScheme] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ agentId: string; x: number; y: number } | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const dragCounter = useRef<Record<string, number>>({});
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -101,7 +103,8 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
               onDragLeave={(e) => handleDragLeave(e, agent.id)}
               onDrop={(e) => handleDrop(e, agent.id)}
               onDragEnd={handleDragEnd}
-              onClick={() => onSelect(agent.id)}
+              onClick={() => { setContextMenu(null); onSelect(agent.id); }}
+              onContextMenu={e => { e.preventDefault(); setContextMenu({ agentId: agent.id, x: e.clientX, y: e.clientY }) }}
               onMouseEnter={() => setHoverId(agent.id)}
               onMouseLeave={() => setHoverId(null)}
               style={{
@@ -248,6 +251,36 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
       >
         [+ New REPL]
       </button>
+
+      {/* Context Menu */}
+      {contextMenu && (() => {
+        const agent = agents.find(a => a.id === contextMenu.agentId)
+        if (!agent) return null
+        const menuItems = [
+          { label: "Edit", action: () => { onEdit(agent); setContextMenu(null) } },
+          { label: "Restart", action: () => { onRestart?.(agent.id); setContextMenu(null) } },
+          { label: "Delete", action: () => { onRemove(agent.id); setContextMenu(null) }, danger: true },
+        ]
+        return (
+          <>
+            <div style={{ position: "fixed", inset: 0, zIndex: 999 }} onClick={() => setContextMenu(null)} />
+            <div style={{
+              position: "fixed", left: contextMenu.x, top: contextMenu.y, zIndex: 1000,
+              background: "var(--surface)", border: "1px solid var(--border)",
+              fontFamily: MONO_FONT, fontSize: 11, minWidth: 120,
+            }}>
+              {menuItems.map(item => (
+                <div key={item.label}
+                  onClick={item.action}
+                  style={{ padding: "6px 14px", cursor: "pointer", color: item.danger ? "var(--red)" : "var(--fg)" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "var(--border)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                >{item.label}</div>
+              ))}
+            </div>
+          </>
+        )
+      })()}
     </div>
   );
 }

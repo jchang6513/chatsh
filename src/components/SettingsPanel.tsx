@@ -1,6 +1,7 @@
 import CloseButton from "./ui/CloseButton"
 import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState } from "react"
+import React from "react"
 import { useSettings } from "../SettingsContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
 import { loadTemplates, saveTemplates, type Template, KNOWN_TOOLS } from "../templates"
@@ -282,6 +283,16 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
               onTemplatesChange?.(next)
             }
 
+            const [editingTpl, setEditingTpl] = React.useState<Template | null>(null)
+            const saveEditTemplate = () => {
+              if (!editingTpl) return
+              const next = templates.map(t => t.id === editingTpl.id ? editingTpl : t)
+              setTemplates(next)
+              saveTemplates(next)
+              onTemplatesChange?.(next)
+              setEditingTpl(null)
+            }
+
             return (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 {/* Auto-detected (read-only) */}
@@ -293,6 +304,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
                         <span style={{ color: "var(--fg)", flex: 1 }}>{t.name}</span>
                         <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
                         <span style={{ fontSize: 9, color: "var(--green)", border: "1px solid var(--green)", padding: "1px 4px" }}>AUTO</span>
+                        <CloseButton onClose={() => deleteTemplate(t.id)} style={{ fontSize: 10 }} />
                       </div>
                     ))}
                   </div>
@@ -346,13 +358,37 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
 
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                     {userTemplates.map(t => (
-                      <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", border: "1px solid var(--border)", fontSize: 11 }}>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <span style={{ color: "var(--fg)" }}>{t.name}</span>
-                          {t.description && <span style={{ color: "var(--muted)", fontSize: 10, marginLeft: 8 }}>{t.description}</span>}
-                        </div>
-                        <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
-                        <CloseButton onClose={() => deleteTemplate(t.id)} style={{ fontSize: 10 }} />
+                      <div key={t.id}>
+                        {editingTpl?.id === t.id ? (
+                          <div style={{ border: "1px solid var(--green)", padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                            <div style={{ fontSize: 10, color: "var(--green)" }}>EDIT TEMPLATE</div>
+                            {([["Name", "name"], ["Command", "command"], ["Working Dir", "workingDir"], ["Description", "description"]] as const).map(([label, key]) => (
+                              <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
+                                {label}
+                                <input value={(editingTpl as any)[key] ?? ""} onChange={e => setEditingTpl(p => p ? ({ ...p, [key]: e.target.value }) : p)}
+                                  style={inputSt} onFocus={onFocusInput} onBlur={onBlur} />
+                              </label>
+                            ))}
+                            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                              <button onClick={() => setEditingTpl(null)} style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}>[Cancel]</button>
+                              <button onClick={saveEditTemplate} style={{ background: "none", border: "1px solid var(--green)", color: "var(--green)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--green)"; }}
+                              >[Save]</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", border: "1px solid var(--border)", fontSize: 11 }}>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <span style={{ color: "var(--fg)" }}>{t.name}</span>
+                              {t.description && <span style={{ color: "var(--muted)", fontSize: 10, marginLeft: 8 }}>{t.description}</span>}
+                            </div>
+                            <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
+                            <button onClick={() => setEditingTpl(t)} style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "1px 5px", cursor: "pointer" }}
+                              onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Edit]</button>
+                            <CloseButton onClose={() => deleteTemplate(t.id)} style={{ fontSize: 10 }} />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

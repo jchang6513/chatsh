@@ -285,6 +285,11 @@ export default function App() {
           onAdd={() => setShowAddSession(true)}
           onRemove={handleRemoveAgent}
           onEdit={handleEditAgent}
+          onRestart={async (id) => {
+            try { await invoke("kill_agent", { agentId: id }) } catch {}
+            updateAgentStatus(id, "offline")
+            bumpRestart(id)
+          }}
           onReorder={handleReorder}
           onOpenSettings={() => setShowSettings(true)}
         />
