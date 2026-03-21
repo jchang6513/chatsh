@@ -154,6 +154,13 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
       <div
         style={{ width: 520, maxHeight: "60vh", display: "flex", flexDirection: "column", background: "var(--bg)", border: "1px solid var(--border)", borderTop: "2px solid var(--green)", fontFamily: mono }}
         onClick={e => e.stopPropagation()}
+        onKeyDown={e => {
+          if (e.key === "Escape") { onClose(); return }
+          if (e.key === "Enter" && mode === "from-template" && selectedTemplate && !showNewTemplatForm) {
+            e.preventDefault()
+            handleFromTemplate()
+          }
+        }}
       >
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
@@ -294,13 +301,15 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                   REPL Name
                   <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
                     style={inputStyle} placeholder={selectedTemplate.name} autoFocus
-                    onFocus={onFocusInput} onBlur={onBlurInput} />
+                    onFocus={onFocusInput} onBlur={onBlurInput}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleFromTemplate() } }} />
                 </label>
                 <label style={labelStyle}>
                   Working Dir
                   <input type="text" value={templateWorkingDir} onChange={e => setTemplateWorkingDir(e.target.value)}
                     style={inputStyle} placeholder="~"
-                    onFocus={onFocusInput} onBlur={onBlurInput} />
+                    onFocus={onFocusInput} onBlur={onBlurInput}
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); handleFromTemplate() } }} />
                 </label>
                 {templatePromptInfo && (
                   <label style={labelStyle}>
