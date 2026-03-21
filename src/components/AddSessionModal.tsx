@@ -158,7 +158,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           <span style={{ fontSize: 10, color: "var(--green)", letterSpacing: "0.1em" }}>
-            ─ {mode === "choose" ? "NEW SESSION" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
+            ─ {mode === "choose" ? "NEW REPL" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
           </span>
           <button onClick={onClose} style={{ background: "none", border: "none", color: "var(--muted)", cursor: "pointer", fontFamily: mono, fontSize: 12 }}
             onMouseEnter={e => e.currentTarget.style.color = "var(--red)"}
@@ -177,7 +177,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
               >
                 <span style={{ color: "var(--fg)", fontSize: 12 }}>[From Template]</span>
-                <span style={{ color: "var(--muted)", fontSize: 10 }}>Open session from template</span>
+                <span style={{ color: "var(--muted)", fontSize: 10 }}>Open REPL from template</span>
               </button>
               <button onClick={() => setMode("custom")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px dashed var(--border)" }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = "var(--green)"}
@@ -291,7 +291,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
               {/* 選好之後的設定 */}
               {selectedTemplate && (<>
                 <label style={labelStyle}>
-                  Session Name
+                  REPL Name
                   <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
                     style={inputStyle} placeholder={selectedTemplate.name} autoFocus
                     onFocus={onFocusInput} onBlur={onBlurInput} />
@@ -322,7 +322,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                   style={{ ...btnBase, borderColor: selectedTemplate ? "var(--green)" : "var(--border)", color: selectedTemplate ? "var(--green)" : "var(--muted)" }}
                   onMouseEnter={e => { if (selectedTemplate) { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; } }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = selectedTemplate ? "var(--green)" : "var(--muted)"; }}
-                >[Open Session]</button>
+                >[Open REPL]</button>
               </div>
             </div>
           )}
@@ -365,7 +365,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 <button type="submit" style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
-                >[New Session]</button>
+                >[New REPL]</button>
               </div>
             </form>
           )}
