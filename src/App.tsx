@@ -129,13 +129,18 @@ export default function App() {
     invoke("cleanup_deleted_agents").catch(() => {});
   }, []);
 
+  // Keep a ref to latest activeAgentId to avoid stale closure in listeners
+  const activeAgentIdRef = useRef(activeAgentId)
+  activeAgentIdRef.current = activeAgentId
+
   // Track streaming + unread state via Rust events
+  // Only re-subscribe when mountedAgents changes (not activeAgentId — use ref instead)
   useEffect(() => {
     const unlisteners: (() => void)[] = []
     for (const agentId of mountedAgents) {
       // pty-output: mark as streaming (if not active)
       listen<string>(`pty-output-${agentId}`, () => {
-        if (agentId === activeAgentId) return
+        if (agentId === activeAgentIdRef.current) return
         setStreamingAgents(prev => {
           if (prev.has(agentId)) return prev
           return new Set([...prev, agentId])
@@ -144,7 +149,7 @@ export default function App() {
 
       // pty-idle: output stopped → clear streaming, mark unread
       listen<void>(`pty-idle-${agentId}`, () => {
-        if (agentId === activeAgentId) return
+        if (agentId === activeAgentIdRef.current) return
         setStreamingAgents(prev => { const next = new Set(prev); next.delete(agentId); return next })
         setUnreadAgents(prev => {
           if (prev.has(agentId)) return prev
@@ -153,7 +158,7 @@ export default function App() {
       }).then(fn => unlisteners.push(fn))
     }
     return () => unlisteners.forEach(fn => fn())
-  }, [mountedAgents, activeAgentId]);
+  }, [mountedAgents]);
 
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
     setAgents((prev) =>
