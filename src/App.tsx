@@ -238,10 +238,10 @@ export default function App() {
     },
     onToggleCommandPalette: () => setShowCommandPalette(prev => !prev),
     onFontIncrease: () => {
-      updateGlobalSettings({ uiScale: Math.min(+(globalSettings.uiScale + 0.05).toFixed(2), 2.0) })
+      updateGlobalSettings(prev => ({ uiScale: Math.min(+((prev.uiScale ?? 1.0) + 0.05).toFixed(2), 2.0) }))
     },
     onFontDecrease: () => {
-      updateGlobalSettings({ uiScale: Math.max(+(globalSettings.uiScale - 0.05).toFixed(2), 0.5) })
+      updateGlobalSettings(prev => ({ uiScale: Math.max(+((prev.uiScale ?? 1.0) - 0.05).toFixed(2), 0.5) }))
     },
     onEscape: () => {
       if (showCommandPalette) { setShowCommandPalette(false); return }

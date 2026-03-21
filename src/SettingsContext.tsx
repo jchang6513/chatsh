@@ -10,7 +10,7 @@ import {
 
 interface SettingsContextValue {
   globalSettings: TerminalSettings
-  updateGlobalSettings: (patch: Partial<TerminalSettings>) => void
+  updateGlobalSettings: (patch: Partial<TerminalSettings> | ((prev: TerminalSettings) => Partial<TerminalSettings>)) => void
   agentOverrides: Record<string, AgentTerminalOverrides>
   updateAgentOverrides: (agentId: string, overrides: AgentTerminalOverrides) => void
   clearAgentOverrides: (agentId: string) => void
@@ -23,9 +23,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [globalSettings, setGlobalSettings] = useState<TerminalSettings>(loadGlobalSettings)
   const [agentOverrides, setAgentOverrides] = useState<Record<string, AgentTerminalOverrides>>(loadAgentOverrides)
 
-  const updateGlobalSettings = (patch: Partial<TerminalSettings>) => {
+  const updateGlobalSettings = (patch: Partial<TerminalSettings> | ((prev: TerminalSettings) => Partial<TerminalSettings>)) => {
     setGlobalSettings(prev => {
-      const next = { ...prev, ...patch }
+      const resolved = typeof patch === 'function' ? patch(prev) : patch
+      const next = { ...prev, ...resolved }
       saveGlobalSettings(next)
       return next
     })
