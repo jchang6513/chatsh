@@ -159,6 +159,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     setTimeout(async () => {
       if (disposed) return;
       fitAddon.fit();
+      onStatusChange("online"); // optimistic: assume it'll work
       try {
         await invoke("spawn_agent", {
           agentId: agent.id,
@@ -167,7 +168,6 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
           cols: xterm.cols,
           rows: xterm.rows,
         });
-        if (!disposed) onStatusChange("online");
       } catch (e) {
         if (!disposed) {
           xterm.writeln(`\r\n[Error] Failed to spawn: ${e}`);
