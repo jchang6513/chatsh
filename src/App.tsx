@@ -1,6 +1,7 @@
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "./ui"
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
 import SingleShell from "./components/SingleShell";
@@ -108,6 +109,7 @@ export default function App() {
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(
     () => new Set([loadAgents()[0]?.id ?? ""])
   );
+  const [unreadAgents, setUnreadAgents] = useState<Set<string>>(new Set());
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [showClaudeMd, setShowClaudeMd] = useState(false);
   const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
@@ -124,6 +126,23 @@ export default function App() {
     invoke("cleanup_deleted_agents").catch(() => {});
   }, []);
 
+  // Listen for output from non-active mounted agents → mark unread
+  useEffect(() => {
+    const unlisteners: (() => void)[] = []
+    for (const agentId of mountedAgents) {
+      listen<string>(`pty-output-${agentId}`, () => {
+        setUnreadAgents(prev => {
+          if (prev.has(agentId)) return prev
+          if (agentId === activeAgentId) return prev // active, no badge
+          const next = new Set(prev)
+          next.add(agentId)
+          return next
+        })
+      }).then(fn => unlisteners.push(fn))
+    }
+    return () => unlisteners.forEach(fn => fn())
+  }, [mountedAgents, activeAgentId]);
+
   const updateAgentStatus = (id: string, status: Agent["status"]) => {
     setAgents((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status } : a))
@@ -133,6 +152,7 @@ export default function App() {
   const handleSelectAgent = useCallback((id: string) => {
     setActiveAgentId(id);
     setMountedAgents(prev => new Set([...prev, id]));
+    setUnreadAgents(prev => { const next = new Set(prev); next.delete(id); return next });
   }, []);
 
   const handleRemoveAgent = useCallback((id: string) => {
@@ -222,6 +242,7 @@ export default function App() {
         <Sidebar
           agents={agents}
           activeAgentId={activeAgentId}
+          unreadAgents={unreadAgents}
           onSelect={handleSelectAgent}
           onAdd={() => setShowAddSession(true)}
           onRemove={handleRemoveAgent}

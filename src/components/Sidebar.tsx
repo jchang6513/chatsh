@@ -6,6 +6,7 @@ import { useTheme } from "../ThemeContext";
 interface Props {
   agents: Agent[];
   activeAgentId: string;
+  unreadAgents?: Set<string>;
   onSelect: (id: string) => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
@@ -14,7 +15,7 @@ interface Props {
   onOpenSettings: () => void;
 }
 
-export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemove, onEdit, onReorder, onOpenSettings }: Props) {
+export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onReorder, onOpenSettings }: Props) {
   const { schemeKey, setScheme, availableSchemes } = useTheme();
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -127,7 +128,11 @@ export default function Sidebar({ agents, activeAgentId, onSelect, onAdd, onRemo
               <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {agent.name}
               </span>
-              <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 8, flexShrink: 0 }}>●</span>
+              {unreadAgents.has(agent.id) ? (
+                <span style={{ fontSize: 8, flexShrink: 0, color: "var(--amber, var(--green))", animation: "pulse 1.5s infinite" }}>●</span>
+              ) : (
+                <span style={{ color: agent.status === "online" ? "var(--green)" : "var(--muted)", fontSize: 8, flexShrink: 0 }}>●</span>
+              )}
               {/* Hover buttons */}
               {isHover && (
                 <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, display: "flex", alignItems: "stretch" }}>
