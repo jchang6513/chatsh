@@ -67,11 +67,12 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
       setCommand(initialValues.command?.join(" ") ?? "");
       setWorkingDir(initialValues.workingDir ?? "~");
       setAvatarUrl(initialValues.avatar ?? "");
-      // Load existing CLAUDE.md when editing
+      // Load existing system prompt file when editing
       const cmd0 = initialValues.command?.[0] ?? ""
-      const SUPPORTED = ["claude","gemini","codex"]
-      if (initialValues.id && SUPPORTED.includes(cmd0)) {
-        const path = `~/.chatsh/agents/${initialValues.id}/CLAUDE.md`
+      const PROMPT_FILES: Record<string, string> = { claude: "CLAUDE.md", gemini: "GEMINI.md", codex: "AGENTS.md" }
+      const promptFile = PROMPT_FILES[cmd0]
+      if (initialValues.id && promptFile) {
+        const path = `~/.chatsh/agents/${initialValues.id}/${promptFile}`
         invoke<string>("read_file", { path })
           .then(content => setClaudeMd(content))
           .catch(() => setClaudeMd(""))
