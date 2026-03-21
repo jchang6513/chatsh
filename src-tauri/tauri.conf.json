@@ -1,6 +1,6 @@
 {
   "productName": "chat.sh",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "identifier": "sh.chat.app",
   "build": {
     "frontendDist": "../dist",
