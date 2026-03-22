@@ -2,7 +2,7 @@ import { useRef } from "react"
 import CloseButton from "./ui/CloseButton"
 import Modal from "./ui/Modal"
 import FolderButton from "./ui/FolderButton"
-import { MONO_FONT, onHoverGreen, onLeaveGreen, onFocusInput, onBlurInput, onHoverBorder, onLeaveBorder } from "../ui"
+import { MONO_FONT, INPUT_STYLE, BTN_BASE, LABEL_STYLE, onHoverGreen, onLeaveGreen, onFocusInput, onBlurInput, onHoverBorder, onLeaveBorder } from "../ui"
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Agent } from "../types";
@@ -19,36 +19,6 @@ interface Props {
 }
 
 const mono = MONO_FONT;
-
-const inputStyle: React.CSSProperties = {
-  background: "var(--bg)",
-  border: "1px solid var(--border)",
-  padding: "8px 12px",
-  fontSize: 12,
-  color: "var(--fg)",
-  outline: "none",
-  fontFamily: mono,
-  width: "100%",
-  boxSizing: "border-box",
-};
-
-const btnBase: React.CSSProperties = {
-  padding: "6px 12px",
-  background: "transparent",
-  border: "1px solid var(--border)",
-  color: "var(--muted)",
-  fontFamily: mono,
-  fontSize: 11,
-  cursor: "pointer",
-};
-
-const labelStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 4,
-  fontSize: 11,
-  color: "var(--muted)",
-};
 
 type Mode = "choose" | "from-template" | "custom";
 
@@ -176,14 +146,14 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
           {mode === "choose" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Choose how to open:</div>
-              <button onClick={() => { setMode("from-template"); setTemplateStep(1); }} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px solid var(--border)" }}
+              <button onClick={() => { setMode("from-template"); setTemplateStep(1); }} style={{ ...BTN_BASE, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px solid var(--border)" }}
                 onMouseEnter={onHoverBorder}
                 onMouseLeave={onLeaveBorder}
               >
                 <span style={{ color: "var(--fg)", fontSize: 12 }}>[From Template]</span>
                 <span style={{ color: "var(--muted)", fontSize: 10 }}>Open Pane from template</span>
               </button>
-              <button onClick={() => setMode("custom")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px dashed var(--border)" }}
+              <button onClick={() => setMode("custom")} style={{ ...BTN_BASE, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px dashed var(--border)" }}
                 onMouseEnter={onHoverBorder}
                 onMouseLeave={onLeaveBorder}
               >
@@ -204,7 +174,7 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {allTemplates.map(t => (
                     <button key={t.id} onClick={() => { handleSelectTemplate(t); setTemplateStep(2); }} style={{
-                      ...btnBase,
+                      ...BTN_BASE,
                       display: "flex", flexDirection: "column", gap: 4,
                       padding: 12, textAlign: "left",
                       borderColor: "var(--border)", color: "var(--fg)",
@@ -224,7 +194,7 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
                   ))}
                   {!showNewTemplatForm && (
                     <button onClick={() => setShowNewTemplateForm(true)} style={{
-                      ...btnBase,
+                      ...BTN_BASE,
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                       gap: 4, padding: 12, border: "1px dashed var(--border)", minHeight: 80,
                     }}
@@ -249,11 +219,11 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
                     <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
                       {label}
                       <input value={newTpl[key]} onChange={e => setNewTpl(p => ({ ...p, [key]: e.target.value }))}
-                        style={inputStyle} placeholder={placeholder} onFocus={onFocusInput} onBlur={onBlurInput} />
+                        style={INPUT_STYLE} placeholder={placeholder} onFocus={onFocusInput} onBlur={onBlurInput} />
                     </label>
                   ))}
                   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 4 }}>
-                    <button onClick={() => setShowNewTemplateForm(false)} style={{ ...btnBase, fontSize: 10 }}
+                    <button onClick={() => setShowNewTemplateForm(false)} style={{ ...BTN_BASE, fontSize: 10 }}
                       onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Cancel]</button>
                     <button onClick={() => {
                       if (!newTpl.name.trim() || !newTpl.command.trim()) return
@@ -263,7 +233,7 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
                       setShowNewTemplateForm(false)
                       handleSelectTemplate(t); setTemplateStep(2)
                     }}
-                      style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)", fontSize: 10 }}
+                      style={{ ...BTN_BASE, borderColor: "var(--green)", color: "var(--green)", fontSize: 10 }}
                       onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                       onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
                     >[Save Template]</button>
@@ -272,7 +242,7 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
               )}
 
               <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 4 }}>
-                <button onClick={() => setMode("choose")} style={btnBase} onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Back]</button>
+                <button onClick={() => setMode("choose")} style={BTN_BASE} onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Back]</button>
               </div>
             </div>
           )}
@@ -284,36 +254,36 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
                 Template: <span style={{ color: "var(--green)" }}>{selectedTemplate.name}</span>
                 <code style={{ marginLeft: 8, opacity: 0.6, fontSize: 10 }}>{selectedTemplate.command}</code>
               </div>
-              <label style={labelStyle}>
+              <label style={LABEL_STYLE}>
                 Pane Name
                 <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
-                  style={inputStyle} placeholder={selectedTemplate.name} autoFocus
+                  style={INPUT_STYLE} placeholder={selectedTemplate.name} autoFocus
                   onFocus={onFocusInput} onBlur={onBlurInput}
                   onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); handleFromTemplate() } }} />
               </label>
-              <label style={labelStyle}>
+              <label style={LABEL_STYLE}>
                 Working Dir
                 <div style={{ display: "flex", gap: 6 }}>
                   <input type="text" value={templateWorkingDir} onChange={e => setTemplateWorkingDir(e.target.value)}
-                    style={{ ...inputStyle, flex: 1 }} placeholder="~"
+                    style={{ ...INPUT_STYLE, flex: 1 }} placeholder="~"
                     onFocus={onFocusInput} onBlur={onBlurInput}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); handleFromTemplate() } }} />
                   <FolderButton onSelect={setTemplateWorkingDir} />
                 </div>
               </label>
               {templatePromptInfo && (
-                <label style={labelStyle}>
+                <label style={LABEL_STYLE}>
                   <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>(saved as {templatePromptInfo.filename}, optional)</span></span>
                   <textarea value={templateSystemPrompt} onChange={e => setTemplateSystemPrompt(e.target.value)} rows={4}
                     placeholder={`You are a focused assistant for ${selectedTemplate.name}...`}
-                    style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                    style={{ ...INPUT_STYLE, resize: "vertical", lineHeight: 1.6 }}
                     onFocus={onFocusInput} onBlur={onBlurInput} />
                 </label>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                <button onClick={() => setTemplateStep(1)} style={btnBase} onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Back]</button>
+                <button onClick={() => setTemplateStep(1)} style={BTN_BASE} onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Back]</button>
                 <button onClick={handleFromTemplate}
-                  style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)" }}
+                  style={{ ...BTN_BASE, borderColor: "var(--green)", color: "var(--green)" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
                 >[Open Pane]</button>
@@ -324,42 +294,42 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
           {/* CUSTOM */}
           {mode === "custom" && (
             <form onSubmit={handleCustom} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <label style={labelStyle}>
+              <label style={LABEL_STYLE}>
                 Name
                 <input type="text" value={name} onChange={e => setName(e.target.value)}
-                  style={inputStyle} placeholder="e.g. Backend Assistant" autoFocus
+                  style={INPUT_STYLE} placeholder="e.g. Backend Assistant" autoFocus
                   onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
-              <label style={labelStyle}>
+              <label style={LABEL_STYLE}>
                 Command
                 <input type="text" value={command} onChange={e => setCommand(e.target.value)}
-                  style={inputStyle} placeholder="e.g. claude or /bin/zsh or python3"
+                  style={INPUT_STYLE} placeholder="e.g. claude or /bin/zsh or python3"
                   onFocus={onFocusInput} onBlur={onBlurInput} />
               </label>
-              <label style={labelStyle}>
+              <label style={LABEL_STYLE}>
                 Working Dir
                 <div style={{ display: "flex", gap: 6 }}>
                   <input type="text" value={workingDir} onChange={e => setWorkingDir(e.target.value)}
-                    style={{ ...inputStyle, flex: 1 }} placeholder="~"
+                    style={{ ...INPUT_STYLE, flex: 1 }} placeholder="~"
                     onFocus={onFocusInput} onBlur={onBlurInput} />
                   <FolderButton onSelect={setWorkingDir} />
                 </div>
               </label>
               {customPromptInfo && (
-                <label style={labelStyle}>
+                <label style={LABEL_STYLE}>
                   <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>(saved as {customPromptInfo.filename}, optional)</span></span>
                   <textarea value={systemPrompt} onChange={e => setSystemPrompt(e.target.value)} rows={4}
                     placeholder="You are a focused backend engineer..."
-                    style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                    style={{ ...INPUT_STYLE, resize: "vertical", lineHeight: 1.6 }}
                     onFocus={onFocusInput} onBlur={onBlurInput} />
                 </label>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                <button type="button" onClick={() => setMode("choose")} style={btnBase}
+                <button type="button" onClick={() => setMode("choose")} style={BTN_BASE}
                   onMouseEnter={onHoverGreen}
                   onMouseLeave={onLeaveGreen}
                 >[Back]</button>
-                <button type="submit" style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)" }}
+                <button type="submit" style={{ ...BTN_BASE, borderColor: "var(--green)", color: "var(--green)" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
                 >[New Pane]</button>

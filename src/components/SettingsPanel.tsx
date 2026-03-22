@@ -1,6 +1,6 @@
 import CloseButton from "./ui/CloseButton"
 import Modal from "./ui/Modal"
-import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
+import { MONO_FONT, INPUT_STYLE, LABEL_STYLE, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { useSettings } from "../SettingsContext"
@@ -103,25 +103,6 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
     }
   }
 
-  const inputStyle: React.CSSProperties = {
-    background: "var(--bg)",
-    border: "1px solid var(--border)",
-    padding: "4px 8px",
-    fontSize: 11,
-    color: "var(--fg)",
-    outline: "none",
-    fontFamily: monoFont,
-    borderRadius: 0,
-    width: "100%",
-  }
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: 10,
-    color: "var(--muted)",
-    letterSpacing: "0.06em",
-    textTransform: "uppercase" as const,
-  }
-
   const sectionStyle: React.CSSProperties = {
     marginBottom: 16,
     padding: "0 0 12px 0",
@@ -134,7 +115,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
     input: React.ReactNode,
   ) => (
     <div key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-      <span style={{ ...labelStyle, width: 120, flexShrink: 0 }}>{label}</span>
+      <span style={{ ...LABEL_STYLE, width: 120, flexShrink: 0 }}>{label}</span>
       <div style={{ flex: 1 }}>{input}</div>
       {!isGlobal && isOverridden(key) && (
         <button
@@ -319,11 +300,6 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
             const builtinIds = KNOWN_TOOLS.map(t => t.id)
             const userTemplates = templates.filter(t => !builtinIds.includes(t.id))
             const mono = monoFont
-            const inputSt: React.CSSProperties = {
-              background: "var(--bg)", border: "1px solid var(--border)",
-              color: "var(--fg)", fontFamily: mono, fontSize: 11,
-              padding: "5px 8px", outline: "none", width: "100%", boxSizing: "border-box" as const,
-            }
             // onFocus → use imported onFocusInput from ui.ts
             const onBlur = (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.style.borderColor = "var(--border)"
 
@@ -402,7 +378,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                         <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
                           {label}
                           <input value={newTpl[key]} onChange={e => setNewTpl(p => ({ ...p, [key]: e.target.value }))}
-                            style={inputSt} placeholder={placeholder} onFocus={onFocusInput} onBlur={onBlur} />
+                            style={INPUT_STYLE} placeholder={placeholder} onFocus={onFocusInput} onBlur={onBlur} />
                         </label>
                       ))}
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
@@ -434,7 +410,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                               <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
                                 {label}
                                 <input value={(editingTpl as any)[key] ?? ""} onChange={e => setEditingTpl(p => p ? ({ ...p, [key]: e.target.value }) : p)}
-                                  style={inputSt} onFocus={onFocusInput} onBlur={onBlur} />
+                                  style={INPUT_STYLE} onFocus={onFocusInput} onBlur={onBlur} />
                               </label>
                             ))}
                             <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
@@ -480,7 +456,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                   list="system-fonts-list"
                   value={isGlobal ? resolved.fontFamily : (isOverridden("fontFamily") ? (currentOverrides.fontFamily ?? "") : resolved.fontFamily)}
                   onChange={e => updateField("fontFamily", e.target.value)}
-                  style={inputStyle}
+                  style={INPUT_STYLE}
                   onFocus={onFocusInput}
                   onBlur={onBlurInput}
                   placeholder="e.g. SF Mono"
@@ -497,7 +473,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                 max={32}
                 value={resolved.fontSize}
                 onChange={e => updateField("fontSize", Number(e.target.value))}
-                style={{ ...inputStyle, width: 80 }}
+                style={{ ...INPUT_STYLE, width: 80 }}
                 onFocus={onFocusInput}
                 onBlur={onBlurInput}
               />
@@ -510,7 +486,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                 step={0.1}
                 value={resolved.lineHeight}
                 onChange={e => updateField("lineHeight", Number(e.target.value))}
-                style={{ ...inputStyle, width: 80 }}
+                style={{ ...INPUT_STYLE, width: 80 }}
                 onFocus={onFocusInput}
                 onBlur={onBlurInput}
               />
@@ -527,7 +503,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                     key={style}
                     onClick={() => updateField("cursorStyle", style)}
                     style={{
-                      ...inputStyle,
+                      ...INPUT_STYLE,
                       width: "auto",
                       padding: "3px 10px",
                       cursor: "pointer",
@@ -546,7 +522,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
               <button
                 onClick={() => updateField("cursorBlink", !resolved.cursorBlink)}
                 style={{
-                  ...inputStyle,
+                  ...INPUT_STYLE,
                   width: "auto",
                   padding: "3px 10px",
                   cursor: "pointer",
@@ -570,7 +546,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                 step={500}
                 value={resolved.scrollback}
                 onChange={e => updateField("scrollback", Number(e.target.value))}
-                style={{ ...inputStyle, width: 100 }}
+                style={{ ...INPUT_STYLE, width: 100 }}
                 onFocus={onFocusInput}
                 onBlur={onBlurInput}
               />
@@ -603,7 +579,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                 max={32}
                 value={resolved.padding}
                 onChange={e => updateField("padding", Number(e.target.value))}
-                style={{ ...inputStyle, width: 80 }}
+                style={{ ...INPUT_STYLE, width: 80 }}
                 onFocus={onFocusInput}
                 onBlur={onBlurInput}
               />

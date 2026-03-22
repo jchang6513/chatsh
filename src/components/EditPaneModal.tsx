@@ -1,4 +1,4 @@
-import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen, onHoverBorder, onLeaveBorder } from "../ui"
+import { MONO_FONT, INPUT_STYLE, BTN_BASE, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen, onHoverBorder, onLeaveBorder } from "../ui"
 import Modal from "./ui/Modal"
 import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -19,18 +19,6 @@ interface Props {
 
 
 const monoFont = MONO_FONT;
-
-const btnStyle: React.CSSProperties = {
-  padding: "6px 12px",
-  background: "transparent",
-  border: "1px solid var(--border)",
-  color: "var(--muted)",
-  fontFamily: monoFont,
-  fontSize: 11,
-  letterSpacing: "0.05em",
-  cursor: "pointer",
-  borderRadius: 0,
-};
 
 export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) {
   const isEditing = !!initialValues?.id;
@@ -109,7 +97,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
     onAdd(agent);
   };
 
-  const inputStyle: React.CSSProperties = {
+  const INPUT_STYLE: React.CSSProperties = {
     background: "var(--bg)",
     border: "1px solid var(--border)",
     padding: "8px 12px",
@@ -174,7 +162,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                   type="button"
                   onClick={goCustom}
                   style={{
-                    ...btnStyle,
+                    ...BTN_BASE,
                     display: "block",
                     width: "100%",
                     padding: "10px",
@@ -191,7 +179,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
               <button
                 type="button"
                 onClick={onClose}
-                style={btnStyle}
+                style={BTN_BASE}
                 onMouseEnter={onHoverGreen}
                 onMouseLeave={onLeaveGreen}
               >
@@ -211,7 +199,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                       type="text"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      style={inputStyle}
+                      style={INPUT_STYLE}
                       onFocus={onFocusInput}
                       onBlur={onBlurInput}
                       placeholder="e.g. Engineering"
@@ -225,7 +213,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                         type="text"
                         value={command}
                         onChange={(e) => setCommand(e.target.value)}
-                        style={inputStyle}
+                        style={INPUT_STYLE}
                         onFocus={onFocusInput}
                         onBlur={onBlurInput}
                         placeholder="e.g. claude or /bin/zsh"
@@ -239,7 +227,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                         type="text"
                         value={workingDir}
                         onChange={(e) => setWorkingDir(e.target.value)}
-                        style={{ ...inputStyle, flex: 1 }}
+                        style={{ ...INPUT_STYLE, flex: 1 }}
                         onFocus={onFocusInput}
                         onBlur={onBlurInput}
                         placeholder="~"
@@ -277,7 +265,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                       rows={5}
                       placeholder={PLACEHOLDERS[cli] ?? ""}
                       style={{
-                        ...inputStyle,
+                        ...INPUT_STYLE,
                         resize: "vertical",
                         lineHeight: 1.6,
                       }}
@@ -294,7 +282,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                     <button
                       type="button"
                       onClick={() => setStep(1)}
-                      style={btnStyle}
+                      style={BTN_BASE}
                       onMouseEnter={onHoverGreen}
                       onMouseLeave={onLeaveGreen}
                     >
@@ -306,7 +294,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                   <button
                     type="button"
                     onClick={onClose}
-                    style={btnStyle}
+                    style={BTN_BASE}
                     onMouseEnter={onHoverGreen}
                     onMouseLeave={onLeaveGreen}
                   >
@@ -315,7 +303,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                   <button
                     type="submit"
                     style={{
-                      ...btnStyle,
+                      ...BTN_BASE,
                       border: "1px solid var(--green)",
                       color: "var(--green)",
                     }}
