@@ -207,17 +207,19 @@ impl PtyManager {
         let idle_aid = aid.clone();
         let idle_app = app_handle.clone();
 
-        // Idle watcher thread: fires pty-idle when 500ms without output
+        // Idle watcher thread: fires pty-idle when PTY_IDLE_MS without output
+        const PTY_IDLE_MS: u64 = 500; // ms of silence before marking as idle
+        const PTY_IDLE_POLL_MS: u64 = 100; // polling interval
         std::thread::spawn(move || {
             loop {
-                std::thread::sleep(std::time::Duration::from_millis(100));
+                std::thread::sleep(std::time::Duration::from_millis(PTY_IDLE_POLL_MS));
                 let ts = last_output_idle.load(std::sync::atomic::Ordering::Relaxed);
                 if ts == 0 { continue; }
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
                     .as_millis() as u64;
-                if now.saturating_sub(ts) >= 500 {
+                if now.saturating_sub(ts) >= PTY_IDLE_MS {
                     idle_app.emit(&format!("pty-idle-{idle_aid}"), ()).ok();
                     last_output_idle.store(0, std::sync::atomic::Ordering::Relaxed);
                 }
