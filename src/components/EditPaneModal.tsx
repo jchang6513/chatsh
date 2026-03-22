@@ -1,9 +1,8 @@
 import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen, onHoverBorder, onLeaveBorder } from "../ui"
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import type { Agent } from "../types";
-import Avatar from "./Avatar";
 
 interface AvailableAgent {
   name: string;
@@ -17,21 +16,6 @@ interface Props {
   initialValues?: Partial<Agent>;
 }
 
-function resizeImage(file: File, size = 64): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = canvas.height = size;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(img, 0, 0, size, size);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL("image/jpeg", 0.85));
-    };
-    img.src = url;
-  });
-}
 
 const monoFont = MONO_FONT;
 
@@ -57,16 +41,13 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
   const [name, setName] = useState(initialValues?.name ?? "");
   const [command, setCommand] = useState(initialValues?.command?.join(" ") ?? "");
   const [workingDir, setWorkingDir] = useState(initialValues?.workingDir ?? "~");
-  const [avatarUrl, setAvatarUrl] = useState(initialValues?.avatar ?? "");
   const [claudeMd, setClaudeMd] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialValues) {
       setName(initialValues.name ?? "");
       setCommand(initialValues.command?.join(" ") ?? "");
       setWorkingDir(initialValues.workingDir ?? "~");
-      setAvatarUrl(initialValues.avatar ?? "");
       // Load existing system prompt file when editing
       const cmd0 = initialValues.command?.[0] ?? ""
       const PROMPT_FILES: Record<string, string> = { claude: "CLAUDE.md", gemini: "GEMINI.md", codex: "AGENTS.md" }
@@ -102,14 +83,6 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
     setStep(2);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const base64 = await resizeImage(file);
-      setAvatarUrl(base64);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !command.trim()) return;
@@ -119,7 +92,6 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
       id: agentId,
       name: name.trim(),
       emoji: "🤖",
-      avatar: avatarUrl || undefined,
       command: command.split(" ").filter(Boolean),
       workingDir: workingDir.trim() || "~",
       status: initialValues?.status ?? "offline",
@@ -154,6 +126,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{ background: "rgba(0, 0, 0, 0.8)" }}
       onClick={onClose}
+      onKeyDown={e => { if (e.key === "Escape") onClose() }}
     >
       <div
         style={{
@@ -244,36 +217,13 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
         ) : (
           <>
             <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
-              ┌─── {isEditing ? "EDIT AGENT" : "CONFIGURE"} ───┐
+              ┌─── {isEditing ? "EDIT PANE" : "NEW PANE"} ───┐
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 16 }}>
-              {isEditing ? "Edit Pane" : `Configure ${name || "Pane"}`}
+              {isEditing ? "Edit Pane" : "New Pane"}
             </div>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-                  <Avatar
-                    name={name || "?"}
-                    imageUrl={avatarUrl || undefined}
-                    size={56}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    style={{ ...btnStyle, fontSize: 10, padding: "2px 6px" }}
-                    onMouseEnter={onHoverGreen}
-                    onMouseLeave={onLeaveGreen}
-                  >
-                    [Upload]
-                  </button>
-                  <input
-                    ref={fileRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
-                </div>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
                   <label style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 11, color: "var(--muted)" }}>
                     Name

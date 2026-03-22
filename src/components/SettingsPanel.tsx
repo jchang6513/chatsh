@@ -156,6 +156,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
     <div
       style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0, 0, 0, 0.8)" }}
       onClick={onClose}
+      onKeyDown={e => { if (e.key === "Escape") onClose() }}
     >
       <div
         style={{

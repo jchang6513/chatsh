@@ -71,6 +71,7 @@ async function writeSystemPrompt(agentId: string, command: string, content: stri
 
 export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose }: Props) {
   const [mode, setMode] = useState<Mode>("choose");
+  const [templateStep, setTemplateStep] = useState<1 | 2>(1);
   const [detectedIds, setDetectedIds] = useState<string[]>([]);
 
   // from template
@@ -174,7 +175,7 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           <span style={{ fontSize: 10, color: "var(--green)", letterSpacing: "0.1em" }}>
-            ─ {mode === "choose" ? "NEW PANE" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
+            ─ {mode === "choose" ? "NEW PANE" : mode === "from-template" ? (templateStep === 1 ? "FROM TEMPLATE" : "CONFIGURE PANE") : "CUSTOM"} ─
           </span>
           <CloseButton onClose={onClose} />
         </div>
@@ -185,7 +186,7 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
           {mode === "choose" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>Choose how to open:</div>
-              <button onClick={() => setMode("from-template")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px solid var(--border)" }}
+              <button onClick={() => { setMode("from-template"); setTemplateStep(1); }} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px solid var(--border)" }}
                 onMouseEnter={onHoverBorder}
                 onMouseLeave={onLeaveBorder}
               >
@@ -202,10 +203,9 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
             </div>
           )}
 
-          {/* FROM TEMPLATE */}
-          {mode === "from-template" && (
+          {/* FROM TEMPLATE — Step 1: pick template */}
+          {mode === "from-template" && templateStep === 1 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              {/* Template grid */}
               {allTemplates.length === 0 ? (
                 <div style={{ fontSize: 12, color: "var(--muted)", textAlign: "center", padding: "24px 0" }}>
                   No tools detected. Use Custom instead.
@@ -213,15 +213,14 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {allTemplates.map(t => (
-                    <button key={t.id} onClick={() => handleSelectTemplate(t)} style={{
+                    <button key={t.id} onClick={() => { handleSelectTemplate(t); setTemplateStep(2); }} style={{
                       ...btnBase,
                       display: "flex", flexDirection: "column", gap: 4,
                       padding: 12, textAlign: "left",
-                      borderColor: selectedTemplate?.id === t.id ? "var(--green)" : "var(--border)",
-                      color: selectedTemplate?.id === t.id ? "var(--green)" : "var(--fg)",
+                      borderColor: "var(--border)", color: "var(--fg)",
                     }}
-                      onMouseEnter={e => { if (selectedTemplate?.id !== t.id) e.currentTarget.style.borderColor = "var(--green)" }}
-                      onMouseLeave={e => { if (selectedTemplate?.id !== t.id) e.currentTarget.style.borderColor = "var(--border)" }}
+                      onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--green)"; e.currentTarget.style.color = "var(--green)" }}
+                      onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--fg)" }}
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{ fontSize: 12, fontWeight: 600 }}>{t.name}</span>
@@ -233,17 +232,13 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
                       <code style={{ fontSize: 10, color: "var(--muted)", opacity: 0.6 }}>{t.command}</code>
                     </button>
                   ))}
-
-                  {/* + New Template cell */}
                   {!showNewTemplatForm && (
                     <button onClick={() => setShowNewTemplateForm(true)} style={{
                       ...btnBase,
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                      gap: 4, padding: 12, textAlign: "center",
-                      border: "1px dashed var(--border)", minHeight: 80,
+                      gap: 4, padding: 12, border: "1px dashed var(--border)", minHeight: 80,
                     }}
-                      onMouseEnter={onHoverBorder}
-                      onMouseLeave={onLeaveBorder}
+                      onMouseEnter={onHoverBorder} onMouseLeave={onLeaveBorder}
                     >
                       <span style={{ fontSize: 20, color: "var(--muted)" }}>+</span>
                       <span style={{ fontSize: 10, color: "var(--muted)" }}>New Template</span>
@@ -252,7 +247,7 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
                 </div>
               )}
 
-              {/* New template form */}
+              {/* New template inline form */}
               {showNewTemplatForm && (
                 <div style={{ border: "1px solid var(--green)", padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
                   <div style={{ fontSize: 10, color: "var(--green)", marginBottom: 2 }}>NEW TEMPLATE</div>
@@ -264,42 +259,19 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
                     <label key={key} style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
                       {label}
                       <input value={newTpl[key]} onChange={e => setNewTpl(p => ({ ...p, [key]: e.target.value }))}
-                        style={inputStyle} placeholder={placeholder}
-                        onFocus={onFocusInput} onBlur={onBlurInput} />
+                        style={inputStyle} placeholder={placeholder} onFocus={onFocusInput} onBlur={onBlurInput} />
                     </label>
                   ))}
-                  <label style={{ display: "flex", flexDirection: "column", gap: 3, fontSize: 10, color: "var(--muted)" }}>
-                    Working Dir
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <input value={newTpl.workingDir} onChange={e => setNewTpl(p => ({ ...p, workingDir: e.target.value }))}
-                        style={{ ...inputStyle, flex: 1 }} placeholder="~"
-                        onFocus={onFocusInput} onBlur={onBlurInput} />
-                      <FolderButton onSelect={f => setNewTpl(p => ({ ...p, workingDir: f }))} />
-                    </div>
-                  </label>
                   <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", marginTop: 4 }}>
-                    <button onClick={() => setShowNewTemplateForm(false)}
-                      style={{ ...btnBase, fontSize: 10 }}
-                      onMouseEnter={onHoverGreen}
-                      onMouseLeave={onLeaveGreen}
-                    >[Cancel]</button>
+                    <button onClick={() => setShowNewTemplateForm(false)} style={{ ...btnBase, fontSize: 10 }}
+                      onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Cancel]</button>
                     <button onClick={() => {
                       if (!newTpl.name.trim() || !newTpl.command.trim()) return
-                      const t: Template = {
-                        id: Date.now().toString(),
-                        name: newTpl.name.trim(),
-                        command: newTpl.command.trim(),
-                        workingDir: newTpl.workingDir.trim() || "~",
-                        description: newTpl.description.trim(),
-                        isBuiltin: false,
-                      }
-                      const next = addTemplate(templates, t)
-                      onAddTemplate?.(t)
+                      const t: Template = { id: Date.now().toString(), name: newTpl.name.trim(), command: newTpl.command.trim(), workingDir: "~", description: newTpl.description.trim(), isBuiltin: false }
+                      addTemplate(templates, t); onAddTemplate?.(t)
                       setNewTpl({ name: "", command: "", workingDir: "~", description: "" })
                       setShowNewTemplateForm(false)
-                      setSelectedTemplate(t)
-                      setSessionName(t.name)
-                      setTemplateWorkingDir(t.workingDir)
+                      handleSelectTemplate(t); setTemplateStep(2)
                     }}
                       style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)", fontSize: 10 }}
                       onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
@@ -309,45 +281,51 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
                 </div>
               )}
 
-              {/* Settings after selection */}
-              {selectedTemplate && (<>
-                <label style={labelStyle}>
-                  Pane Name
-                  <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
-                    style={inputStyle} placeholder={selectedTemplate.name} autoFocus
+              <div style={{ display: "flex", justifyContent: "flex-start", marginTop: 4 }}>
+                <button onClick={() => setMode("choose")} style={btnBase} onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Back]</button>
+              </div>
+            </div>
+          )}
+
+          {/* FROM TEMPLATE — Step 2: configure pane */}
+          {mode === "from-template" && templateStep === 2 && selectedTemplate && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={{ fontSize: 10, color: "var(--muted)" }}>
+                Template: <span style={{ color: "var(--green)" }}>{selectedTemplate.name}</span>
+                <code style={{ marginLeft: 8, opacity: 0.6, fontSize: 10 }}>{selectedTemplate.command}</code>
+              </div>
+              <label style={labelStyle}>
+                Pane Name
+                <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
+                  style={inputStyle} placeholder={selectedTemplate.name} autoFocus
+                  onFocus={onFocusInput} onBlur={onBlurInput}
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); handleFromTemplate() } }} />
+              </label>
+              <label style={labelStyle}>
+                Working Dir
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input type="text" value={templateWorkingDir} onChange={e => setTemplateWorkingDir(e.target.value)}
+                    style={{ ...inputStyle, flex: 1 }} placeholder="~"
                     onFocus={onFocusInput} onBlur={onBlurInput}
                     onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); handleFromTemplate() } }} />
-                </label>
+                  <FolderButton onSelect={setTemplateWorkingDir} />
+                </div>
+              </label>
+              {templatePromptInfo && (
                 <label style={labelStyle}>
-                  Working Dir
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <input type="text" value={templateWorkingDir} onChange={e => setTemplateWorkingDir(e.target.value)}
-                      style={{ ...inputStyle, flex: 1 }} placeholder="~"
-                      onFocus={onFocusInput} onBlur={onBlurInput}
-                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); handleFromTemplate() } }} />
-                    <FolderButton onSelect={setTemplateWorkingDir} />
-                  </div>
+                  <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>(saved as {templatePromptInfo.filename}, optional)</span></span>
+                  <textarea value={templateSystemPrompt} onChange={e => setTemplateSystemPrompt(e.target.value)} rows={4}
+                    placeholder={`You are a focused assistant for ${selectedTemplate.name}...`}
+                    style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
+                    onFocus={onFocusInput} onBlur={onBlurInput} />
                 </label>
-                {templatePromptInfo && (
-                  <label style={labelStyle}>
-                    <span>System Prompt <span style={{ fontSize: 10, opacity: 0.7 }}>(saved as {templatePromptInfo.filename}, optional)</span></span>
-                    <textarea value={templateSystemPrompt} onChange={e => setTemplateSystemPrompt(e.target.value)} rows={4}
-                      placeholder={`You are a focused assistant for ${selectedTemplate.name}...`}
-                      style={{ ...inputStyle, resize: "vertical", lineHeight: 1.6 }}
-                      onFocus={onFocusInput} onBlur={onBlurInput} />
-                  </label>
-                )}
-              </>)}
-
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-                <button onClick={() => setMode("choose")} style={btnBase}
-                  onMouseEnter={onHoverGreen}
-                  onMouseLeave={onLeaveGreen}
-                >[Back]</button>
-                <button onClick={handleFromTemplate} disabled={!selectedTemplate}
-                  style={{ ...btnBase, borderColor: selectedTemplate ? "var(--green)" : "var(--border)", color: selectedTemplate ? "var(--green)" : "var(--muted)" }}
-                  onMouseEnter={e => { if (selectedTemplate) { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; } }}
-                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = selectedTemplate ? "var(--green)" : "var(--muted)"; }}
+                <button onClick={() => setTemplateStep(1)} style={btnBase} onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Back]</button>
+                <button onClick={handleFromTemplate}
+                  style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
                 >[Open Pane]</button>
               </div>
             </div>
