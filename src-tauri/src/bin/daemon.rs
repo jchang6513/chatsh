@@ -623,12 +623,11 @@ async fn handle_client(stream: tokio::net::UnixStream, daemon: Arc<Daemon>) {
 
                 match daemon.attach_pane(&id) {
                     Some((scrollback_data, status, rx)) => {
-                        // Send scrollback (prefixed with terminal reset to clear stale color state)
+                        // Send scrollback (append SGR reset to clear stale color state)
                         if !scrollback_data.is_empty() {
-                            // \x1b[0m resets SGR attributes before replaying scrollback
-                            let reset = b"\x1b[0m\x1b[?1049l";
-                            let mut payload = reset.to_vec();
-                            payload.extend_from_slice(&scrollback_data);
+                            let mut payload = scrollback_data.clone();
+                            // Append reset to neutralize any trailing color/background state from TUI
+                            payload.extend_from_slice(b"\x1b[0m");
                             let data = base64::engine::general_purpose::STANDARD
                                 .encode(&payload);
                             let _ = msg_tx.send(ServerMessage::Scrollback {
