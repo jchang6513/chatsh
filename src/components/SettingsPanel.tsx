@@ -6,7 +6,7 @@ import { invoke } from "@tauri-apps/api/core"
 import { useSettings } from "../SettingsContext"
 import { useTheme } from "../ThemeContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
-import { loadTemplates, saveTemplates, type Template, KNOWN_TOOLS } from "../templates"
+import { loadTemplates, saveTemplates, type Template } from "../templates"
 import type { Agent } from "../types"
 
 interface Props {
@@ -297,10 +297,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
 
           {/* TEMPLATES tab */}
           {mainTab === "templates" && (() => {
-            const builtinIds = KNOWN_TOOLS.map(t => t.id)
-            const userTemplates = templates.filter(t => !builtinIds.includes(t.id))
             const mono = monoFont
-            // onFocus → use imported onFocusInput from ui.ts
             const onBlur = (e: React.FocusEvent<HTMLInputElement>) => e.currentTarget.style.borderColor = "var(--border)"
 
             const saveNewTemplate = () => {
@@ -339,25 +336,10 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
 
             return (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {/* Auto-detected (read-only) */}
-                <div>
-                  <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em", marginBottom: 8 }}>Auto-detected</div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {KNOWN_TOOLS.filter(t => !hiddenBuiltins.has(t.id)).map(t => (
-                      <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", border: "1px solid var(--border)", fontSize: 11 }}>
-                        <span style={{ color: "var(--fg)", flex: 1 }}>{t.name}</span>
-                        <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
-                        <span style={{ fontSize: 9, color: "var(--green)", border: "1px solid var(--green)", padding: "1px 4px" }}>AUTO</span>
-                        <CloseButton onClose={() => hideBuiltin(t.id)} style={{ fontSize: 10 }} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Custom Templates */}
+                {/* All Templates */}
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>Custom Templates</div>
+                    <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>Templates</div>
                     <button onClick={() => setShowNewTemplate(v => !v)}
                       style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "2px 6px", cursor: "pointer" }}
                       onMouseEnter={onHoverGreen}
@@ -394,14 +376,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                     </div>
                   )}
 
-                  {userTemplates.length === 0 && !showNewTemplate && (
-                    <div style={{ fontSize: 11, color: "var(--muted)", padding: "12px 0", textAlign: "center" }}>
-                      No custom templates yet
-                    </div>
-                  )}
-
                   <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    {userTemplates.map(t => (
+                    {templates.map(t => (
                       <div key={t.id}>
                         {editingTpl?.id === t.id ? (
                           <div style={{ border: "1px solid var(--green)", padding: 10, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -428,14 +404,30 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                               {t.description && <span style={{ color: "var(--muted)", fontSize: 10, marginLeft: 8 }}>{t.description}</span>}
                             </div>
                             <code style={{ color: "var(--muted)", fontSize: 10 }}>{t.command}</code>
-                            <button onClick={() => setEditingTpl(t)} style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "1px 5px", cursor: "pointer" }}
-                              onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Edit]</button>
-                            <CloseButton onClose={() => deleteTemplate(t.id)} style={{ fontSize: 10 }} />
+                            {t.isBuiltin ? (
+                              <>
+                                <span style={{ fontSize: 9, color: "var(--green)", border: "1px solid var(--green)", padding: "1px 4px" }}>DEFAULT</span>
+                                <button onClick={() => hideBuiltin(t.id)} style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "1px 5px", cursor: "pointer" }}
+                                  onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Hide]</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={() => setEditingTpl(t)} style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "1px 5px", cursor: "pointer" }}
+                                  onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}>[Edit]</button>
+                                <CloseButton onClose={() => deleteTemplate(t.id)} style={{ fontSize: 10 }} />
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
+
+                  {templates.length === 0 && (
+                    <div style={{ fontSize: 11, color: "var(--muted)", padding: "12px 0", textAlign: "center" }}>
+                      No templates
+                    </div>
+                  )}
                 </div>
               </div>
             )

@@ -5,36 +5,30 @@ export interface Template {
   args?: string[]        // extra args
   workingDir: string
   description: string
-  isBuiltin: boolean     // auto-detected by system
+  isBuiltin: boolean     // true = default template (cannot delete, only hide)
   claudeMd?: string      // only for claude
 }
 
 const STORAGE_KEY = "chatsh_templates"
 
-export const BUILTIN_TEMPLATE_IDS = ["claude", "codex", "gemini", "aider", "zsh", "bash", "node", "python3"]
-
-export const KNOWN_TOOLS: Array<{
-  id: string
-  name: string
-  command: string
-  description: string
-}> = [
-  { id: "claude",  name: "Claude Code",   command: "claude",  description: "Anthropic AI coding assistant" },
-  { id: "codex",   name: "OpenAI Codex",  command: "codex",   description: "OpenAI coding agent" },
-  { id: "gemini",  name: "Gemini CLI",    command: "gemini",  description: "Google Gemini CLI" },
-  { id: "aider",   name: "Aider",         command: "aider",   description: "AI pair programmer" },
-  { id: "zsh",     name: "Zsh",           command: "/bin/zsh",description: "Z shell" },
-  { id: "bash",    name: "Bash",          command: "/bin/bash",description: "Bash shell" },
-  { id: "node",    name: "Node.js Pane",  command: "node",    description: "Node.js interactive Pane" },
-  { id: "python3", name: "Python 3",      command: "python3", description: "Python 3 interactive Pane" },
+export const DEFAULT_TEMPLATES: Template[] = [
+  { id: "shell", name: "Zsh", command: "/bin/zsh", workingDir: "~", description: "Interactive shell", isBuiltin: true },
+  { id: "claude", name: "Claude Code", command: "claude", workingDir: "~", description: "Anthropic AI coding assistant", isBuiltin: true },
+  { id: "gemini", name: "Gemini CLI", command: "gemini", workingDir: "~", description: "Google Gemini CLI", isBuiltin: true },
+  { id: "codex", name: "Codex", command: "codex", workingDir: "~", description: "OpenAI Codex agent", isBuiltin: true },
 ]
 
 export function loadTemplates(): Template[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) return JSON.parse(saved)
+    if (saved) {
+      const parsed: Template[] = JSON.parse(saved)
+      if (parsed.length > 0) return parsed
+    }
   } catch {}
-  return []
+  // First launch or empty: seed with defaults
+  saveTemplates(DEFAULT_TEMPLATES)
+  return [...DEFAULT_TEMPLATES]
 }
 
 export function saveTemplates(templates: Template[]) {

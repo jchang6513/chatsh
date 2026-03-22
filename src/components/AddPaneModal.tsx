@@ -3,11 +3,11 @@ import CloseButton from "./ui/CloseButton"
 import Modal from "./ui/Modal"
 import FolderButton from "./ui/FolderButton"
 import { MONO_FONT, INPUT_STYLE, BTN_BASE, LABEL_STYLE, onHoverGreen, onLeaveGreen, onFocusInput, onBlurInput, onHoverBorder, onLeaveBorder } from "../ui"
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type { Agent } from "../types";
 import type { Template } from "../templates";
-import { KNOWN_TOOLS, addTemplate } from "../templates";
+import { addTemplate } from "../templates";
 
 
 interface Props {
@@ -44,7 +44,6 @@ async function writeSystemPrompt(agentId: string, command: string, content: stri
 export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltinsProp, onAdd, onAddTemplate, onClose }: Props) {
   const [mode, setMode] = useState<Mode>("choose");
   const [templateStep, setTemplateStep] = useState<1 | 2>(1);
-  const [detectedIds, setDetectedIds] = useState<string[]>([]);
 
   // from template
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
@@ -60,24 +59,8 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
   const [workingDir, setWorkingDir] = useState("~");
   const [systemPrompt, setSystemPrompt] = useState("");
 
-  useEffect(() => {
-    invoke<{ name: string; command: string; description: string }[]>("scan_available_agents")
-      .then(list => setDetectedIds(
-        list.map(a => KNOWN_TOOLS.find(t => t.command === a.command)?.id ?? a.command)
-      ))
-      .catch(() => {})
-  }, [])
-
   const hiddenBuiltins = hiddenBuiltinsProp ?? new Set<string>()
-  const builtinTemplates = KNOWN_TOOLS.filter(t => detectedIds.includes(t.id) && !hiddenBuiltins.has(t.id))
-  const userTemplates = templates.filter(t => !t.isBuiltin)
-  const allTemplates = [
-    ...builtinTemplates.map(t => ({
-      id: t.id, name: t.name, command: t.command,
-      workingDir: "~", description: t.description, isBuiltin: true,
-    } as Template)),
-    ...userTemplates,
-  ]
+  const allTemplates = templates.filter(t => !hiddenBuiltins.has(t.id))
 
   const handleSelectTemplate = (t: Template) => {
     setSelectedTemplate(t)

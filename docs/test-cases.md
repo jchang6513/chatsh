@@ -275,9 +275,9 @@ cd ~/Workspace/chatsh && npm run tauri dev
 
 | # | 問題 | 修法 | 狀態 |
 |---|------|------|------|
-| 1 | Template 不同步（Preference vs New Pane modal） | 移除 auto-detect，固定預設（zsh/bash 擇一 + claude + gemini + codex），統一儲存 | 待修 v0.1.7 |
-| 2 | 系統通知去重（同內容只彈一次） | body 加時間戳 | 待修 v0.1.7 |
-| 3 | ⌘[ / ⌘] 切換 pane 未讀不清除 | 改走 handleSelectAgent | 待修 v0.1.7 |
+| 1 | Template 不同步（Preference vs New Pane modal） | 移除 auto-detect，固定預設（zsh/bash 擇一 + claude + gemini + codex），統一儲存 | ✅ v0.1.7 |
+| 2 | 系統通知去重（同內容只彈一次） | body 加時間戳 | ✅ v0.1.7 |
+| 3 | ⌘[ / ⌘] 切換 pane 未讀不清除 | 改走 handleSelectAgent | ✅ v0.1.7 |
 | 4 | Daemon 重啟後 scrollback 消失 | Phase 4：scrollback 寫入 `~/.chatsh/scrollback/{id}` | 待修 Phase 4 |
 
 ---
