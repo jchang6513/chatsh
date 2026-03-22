@@ -312,7 +312,10 @@ export default function App() {
           const agent = agentsRef.current.find(a => a.id === agentId)
           const name = agent?.name ?? "Pane"
           isPermissionGranted().then(granted => {
-            if (granted) sendNotification({ title: name, body: "Finished", sound: "default" })
+            if (granted) {
+              const t = new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" })
+              sendNotification({ title: name, body: `完成 ${t}`, sound: "default" })
+            }
           }).catch(() => {})
         }
       }).then(fn => unlisteners.push(fn))
@@ -370,11 +373,11 @@ export default function App() {
     },
     onPrevAgent: () => {
       const idx = agents.findIndex(a => a.id === activeAgentId)
-      if (idx > 0) setActiveAgentId(agents[idx - 1].id)
+      if (idx > 0) handleSelectAgent(agents[idx - 1].id)
     },
     onNextAgent: () => {
       const idx = agents.findIndex(a => a.id === activeAgentId)
-      if (idx < agents.length - 1) setActiveAgentId(agents[idx + 1].id)
+      if (idx < agents.length - 1) handleSelectAgent(agents[idx + 1].id)
     },
     onNewAgent: () => setShowAddPane(true),
     onRestartAgent: async () => {
