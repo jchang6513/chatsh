@@ -319,10 +319,6 @@ export default function App() {
   showCommandPaletteRef.current = showCommandPalette
   activeAgentIdRef.current = activeAgentId
 
-  // Track active tab per agent (for unread/notification logic)
-  const activeTabMapRef = useRef(activeTabMap)
-  activeTabMapRef.current = activeTabMap
-
   // Track when we last switched AWAY from each agent (grace period for pty-idle)
   const switchedAwayAt = useRef<Map<string, number>>(new Map())
   const GRACE_MS = 2000 // ignore pty-idle within 2s of switching away
@@ -335,11 +331,7 @@ export default function App() {
       // pty-idle: output stopped → mark unread (works for both LLM and shell)
       // Ignore if active or within grace period after switching away
       listen<void>(`pty-idle-${agentId}`, () => {
-        // Only skip if pane is active AND terminal tab is visible
-        const isActivePane = agentId === activeAgentIdRef.current
-        const activeTab = activeTabMapRef.current[agentId] ?? "terminal"
-        const isTerminalVisible = activeTab === "terminal"
-        if (isActivePane && isTerminalVisible) return
+        if (agentId === activeAgentIdRef.current) return
         const switchedAt = switchedAwayAt.current.get(agentId)
         if (switchedAt && Date.now() - switchedAt < GRACE_MS) return
         setUnreadAgents(prev => {
