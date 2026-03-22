@@ -172,6 +172,7 @@ export default function App() {
       let usedDaemon = false;
       try {
         const panes = await invoke<Array<{ id: string; command: string[]; cwd: string; status: string; parent_pane_id: string | null; pane_type: string }>>("list_panes");
+        console.log("[App] list_panes result:", JSON.stringify(panes));
         if (panes && panes.length > 0) {
           usedDaemon = true;
 
@@ -247,6 +248,7 @@ export default function App() {
           // Re-attach running panes (spawn_agent handles attach if already running)
           for (const pane of panes) {
             if (pane.status === "running") {
+              console.log("[App] re-attach spawn_agent BEFORE:", pane.id, pane.pane_type);
               invoke("spawn_agent", {
                 agentId: pane.id,
                 command: pane.command,
@@ -255,7 +257,11 @@ export default function App() {
                 rows: 24,
                 parentPaneId: pane.parent_pane_id ?? null,
                 paneType: pane.pane_type,
-              }).catch(() => {});
+              }).then(() => {
+                console.log("[App] re-attach spawn_agent DONE:", pane.id);
+              }).catch((e) => {
+                console.log("[App] re-attach spawn_agent FAILED:", pane.id, e);
+              });
             }
           }
         }

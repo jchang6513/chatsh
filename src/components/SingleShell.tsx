@@ -26,6 +26,7 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    let disposed = false;
 
     const xterm = new XTerm({
       cursorBlink: settings.cursorBlink,
@@ -58,24 +59,27 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     xterm.open(container);
     setTimeout(() => fitAddon.fit(), 50);
 
-    // listen PTY output
+    // Wait for listener to register before spawning,
+    // so scrollback from daemon is not missed.
     let unlisten: (() => void) | null = null;
     listen<string>(`pty-output-${sessionId}`, (event) => {
       const bytes = Uint8Array.from(atob(event.payload), c => c.charCodeAt(0));
       xterm.write(bytes);
-    }).then(fn => { unlisten = fn; });
-
-    // spawn PTY
-    fitAddon.fit();
-    invoke("spawn_agent", {
-      agentId: sessionId,
-      command: ["/bin/zsh"],
-      workingDir: workingDir,
-      cols: xterm.cols,
-      rows: xterm.rows,
-      parentPaneId: agentId,
-      paneType: "shell",
-    }).catch(e => xterm.writeln(`\r\n[Error] ${e}`));
+    }).then(fn => {
+      unlisten = fn;
+      if (disposed) return;
+      // spawn PTY after listener is ready
+      fitAddon.fit();
+      invoke("spawn_agent", {
+        agentId: sessionId,
+        command: ["/bin/zsh"],
+        workingDir: workingDir,
+        cols: xterm.cols,
+        rows: xterm.rows,
+        parentPaneId: agentId,
+        paneType: "shell",
+      }).catch(e => xterm.writeln(`\r\n[Error] ${e}`));
+    });
 
     // keyboard input
     const disposable = xterm.onData(data => {
@@ -90,6 +94,7 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     obs.observe(container);
 
     return () => {
+      disposed = true;
       disposable.dispose();
       obs.disconnect();
       unlisten?.();

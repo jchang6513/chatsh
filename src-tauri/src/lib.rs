@@ -257,6 +257,7 @@ async fn write_to_agent(
 ) -> Result<(), String> {
     // daemon expects base64-encoded data
     let encoded = base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
+    eprintln!("[write_to_agent] id={agent_id} encoded_len={}", encoded.len());
     send_fire_and_forget(
         &state.sock_path,
         &ClientMessage::WritePane {

@@ -140,41 +140,49 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     resizeObs.observe(container);
 
     xterm.onData((data) => {
+      console.log("[Terminal] onData:", data.length, "bytes");
+      console.log("[Terminal] write_to_agent:", agent.id, data.length, "bytes");
       invoke("write_to_agent", { agentId: agent.id, data });
     });
 
     let unlisten: (() => void) | null = null;
-    listen<string>(`pty-output-${agent.id}`, (event) => {
-      if (disposed) return;
-      const bytes = Uint8Array.from(atob(event.payload), (c) => c.charCodeAt(0));
-      xterm.write(bytes);
-    }).then((fn) => { unlisten = fn; });
-
     let unlistenExit: (() => void) | null = null;
-    listen<void>(`pty-exit-${agent.id}`, () => {
-      if (disposed) return;
-      onStatusChange("offline");
-    }).then((fn) => { unlistenExit = fn; });
 
-    setTimeout(async () => {
+    // Wait for both listeners to be registered before spawning,
+    // so scrollback from daemon is not missed.
+    Promise.all([
+      listen<string>(`pty-output-${agent.id}`, (event) => {
+        if (disposed) return;
+        console.log("[Terminal] pty-output received", event.payload.length, "chars");
+        const bytes = Uint8Array.from(atob(event.payload), (c) => c.charCodeAt(0));
+        xterm.write(bytes);
+      }),
+      listen<void>(`pty-exit-${agent.id}`, () => {
+        if (disposed) return;
+        onStatusChange("offline");
+      }),
+    ]).then(([fn1, fn2]) => {
+      unlisten = fn1;
+      unlistenExit = fn2;
+
       if (disposed) return;
       fitAddon.fit();
-      onStatusChange("online"); // optimistic: assume it'll work
-      try {
-        await invoke("spawn_agent", {
-          agentId: agent.id,
-          command: agent.command,
-          workingDir: agent.workingDir,
-          cols: xterm.cols,
-          rows: xterm.rows,
-        });
-      } catch (e) {
+      onStatusChange("online");
+      invoke("spawn_agent", {
+        agentId: agent.id,
+        command: agent.command,
+        workingDir: agent.workingDir,
+        cols: xterm.cols,
+        rows: xterm.rows,
+      }).then(() => {
+        console.log("[Terminal] spawn_agent done for", agent.id);
+      }).catch((e) => {
         if (!disposed) {
           xterm.writeln(`\r\n[Error] Failed to spawn: ${e}`);
           onStatusChange("offline");
         }
-      }
-    }, 200);
+      });
+    });
 
     return () => {
       disposed = true;
