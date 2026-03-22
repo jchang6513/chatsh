@@ -326,8 +326,8 @@ export default function App() {
       listen<void>(`pty-idle-${agentId}`, () => {
         // Only skip if pane is active AND terminal tab is visible
         const isActivePane = agentId === activeAgentIdRef.current
-        const activeTab = activeTabMapRef.current[agentId] ?? "terminal"
-        const isTerminalVisible = activeTab === "terminal"
+        const activeTab = activeTabMapRef.current[agentId] ?? REPL_TAB
+        const isTerminalVisible = activeTab === REPL_TAB
         if (isActivePane && isTerminalVisible) return
         const switchedAt = switchedAwayAt.current.get(agentId)
         if (switchedAt && Date.now() - switchedAt < GRACE_MS) return
