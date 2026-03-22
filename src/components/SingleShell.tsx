@@ -73,6 +73,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
       workingDir: workingDir,
       cols: xterm.cols,
       rows: xterm.rows,
+      parentPaneId: agentId,
+      paneType: "shell",
     }).catch(e => xterm.writeln(`\r\n[Error] ${e}`));
 
     // keyboard input

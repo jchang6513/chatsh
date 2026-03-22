@@ -44,6 +44,14 @@ struct PersistedPane {
     cwd: String,
     status: String,
     pid: Option<u32>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    parent_pane_id: Option<String>,
+    #[serde(default = "default_pane_type")]
+    pane_type: String,
+}
+
+fn default_pane_type() -> String {
+    "agent".to_string()
 }
 
 // ── Pane ──
@@ -59,6 +67,8 @@ struct Pane {
     output_tx: broadcast::Sender<ServerMessage>,
     shutdown: Arc<AtomicBool>,
     child_pid: Option<u32>,
+    parent_pane_id: Option<String>,
+    pane_type: String,
 }
 
 // ── Daemon ──
@@ -82,6 +92,8 @@ impl Daemon {
         _env: HashMap<String, String>,
         cols: u16,
         rows: u16,
+        parent_pane_id: Option<String>,
+        pane_type: Option<String>,
     ) -> Result<bool, String> {
         if command.is_empty() {
             return Err("command 不能為空".into());
@@ -182,6 +194,7 @@ impl Daemon {
         let scrollback: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
         let shutdown = Arc::new(AtomicBool::new(false));
 
+        let resolved_pane_type = pane_type.unwrap_or_else(|| "agent".to_string());
         let pane = Pane {
             id: id.clone(),
             command: command.clone(),
@@ -193,6 +206,8 @@ impl Daemon {
             output_tx: output_tx.clone(),
             shutdown: Arc::clone(&shutdown),
             child_pid,
+            parent_pane_id: parent_pane_id.clone(),
+            pane_type: resolved_pane_type,
         };
 
         self.panes.lock().unwrap().insert(id.clone(), pane);
@@ -344,10 +359,10 @@ impl Daemon {
     }
 
     fn restart_pane(&self, id: &str) -> Result<(), String> {
-        let (command, cwd, child_pid) = {
+        let (command, cwd, child_pid, parent_pane_id, pane_type) = {
             let panes = self.panes.lock().unwrap();
             if let Some(pane) = panes.get(id) {
-                (pane.command.clone(), pane.cwd.clone(), pane.child_pid)
+                (pane.command.clone(), pane.cwd.clone(), pane.child_pid, pane.parent_pane_id.clone(), pane.pane_type.clone())
             } else {
                 return Err(format!("pane {} 不存在", id));
             }
@@ -372,7 +387,7 @@ impl Daemon {
         std::thread::sleep(std::time::Duration::from_millis(50));
 
         // Respawn with same id
-        self.spawn_pane(id.to_string(), command, cwd, HashMap::new(), 80, 24)
+        self.spawn_pane(id.to_string(), command, cwd, HashMap::new(), 80, 24, parent_pane_id, Some(pane_type))
             .map(|_| ())
     }
 
@@ -385,6 +400,8 @@ impl Daemon {
                 command: p.command.clone(),
                 cwd: p.cwd.clone(),
                 status: p.status.clone(),
+                parent_pane_id: p.parent_pane_id.clone(),
+                pane_type: p.pane_type.clone(),
             })
             .collect()
     }
@@ -440,6 +457,8 @@ impl Daemon {
                 output_tx,
                 shutdown: Arc::new(AtomicBool::new(false)),
                 child_pid: pp.pid,
+                parent_pane_id: pp.parent_pane_id,
+                pane_type: pp.pane_type,
             };
             panes.insert(pp.id, pane);
         }
@@ -516,6 +535,8 @@ fn save_state_from_panes(panes: &Arc<Mutex<HashMap<String, Pane>>>) {
                 cwd: p.cwd.clone(),
                 status: p.status.clone(),
                 pid: p.child_pid,
+                parent_pane_id: p.parent_pane_id.clone(),
+                pane_type: p.pane_type.clone(),
             })
             .collect(),
     };
@@ -571,7 +592,9 @@ async fn handle_client(stream: tokio::net::UnixStream, daemon: Arc<Daemon>) {
                 env,
                 cols,
                 rows,
-            } => match daemon.spawn_pane(id.clone(), command, cwd, env, cols, rows) {
+                parent_pane_id,
+                pane_type,
+            } => match daemon.spawn_pane(id.clone(), command, cwd, env, cols, rows, parent_pane_id, pane_type) {
                 Ok(newly_spawned) => {
                     let _ = msg_tx.send(ServerMessage::SpawnResult {
                         id,

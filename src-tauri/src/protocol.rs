@@ -17,6 +17,10 @@ pub enum ClientMessage {
         cols: u16,
         #[serde(default = "default_rows")]
         rows: u16,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        parent_pane_id: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pane_type: Option<String>,
     },
     #[serde(rename = "attach_pane")]
     AttachPane { id: String },
@@ -71,4 +75,7 @@ pub struct PaneInfo {
     pub command: Vec<String>,
     pub cwd: String,
     pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_pane_id: Option<String>,
+    pub pane_type: String,
 }

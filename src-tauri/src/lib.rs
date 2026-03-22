@@ -197,6 +197,8 @@ async fn spawn_agent(
     working_dir: String,
     cols: u16,
     rows: u16,
+    parent_pane_id: Option<String>,
+    pane_type: Option<String>,
     state: State<'_, AppState>,
     app_handle: AppHandle,
 ) -> Result<(), String> {
@@ -210,6 +212,8 @@ async fn spawn_agent(
         env: HashMap::new(),
         cols,
         rows,
+        parent_pane_id,
+        pane_type,
     }, |msg| {
         match msg {
             ServerMessage::SpawnResult { ref id, success, ref error } if *id == agent_id => {

@@ -174,13 +174,17 @@ export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        const panes = await invoke<Array<{ id: string; command: string[]; cwd: string; status: string }>>("list_panes");
+        const panes = await invoke<Array<{ id: string; command: string[]; cwd: string; status: string; parent_pane_id: string | null; pane_type: string }>>("list_panes");
         if (!panes || panes.length === 0) return;
+
+        // Separate agent panes and shell panes
+        const agentPanes = panes.filter(p => p.pane_type !== "shell");
+        const shellPanes = panes.filter(p => p.pane_type === "shell");
 
         setAgents(prev => {
           const existingIds = new Set(prev.map(a => a.id));
           const newAgents: Agent[] = [];
-          for (const pane of panes) {
+          for (const pane of agentPanes) {
             if (!existingIds.has(pane.id)) {
               newAgents.push({
                 id: pane.id,
@@ -196,6 +200,43 @@ export default function App() {
           return [...prev, ...newAgents];
         });
 
+        // Restore shell sessions from daemon
+        if (shellPanes.length > 0) {
+          setShellSessions(prev => {
+            const next = { ...prev };
+            for (const sp of shellPanes) {
+              const parentId = sp.parent_pane_id;
+              if (!parentId) continue;
+              if (!next[parentId]) next[parentId] = [];
+              if (!next[parentId].includes(sp.id)) {
+                next[parentId] = [...next[parentId], sp.id];
+              }
+            }
+            return next;
+          });
+          // Update shell counters to avoid ID collisions
+          for (const sp of shellPanes) {
+            const m = sp.id.match(/__shell_.*_(\d+)__$/);
+            if (m && sp.parent_pane_id) {
+              const n = parseInt(m[1], 10);
+              shellCounters.current[sp.parent_pane_id] = Math.max(
+                shellCounters.current[sp.parent_pane_id] ?? 0, n
+              );
+            }
+          }
+          // Set default shell names for restored shells that don't have names
+          setShellNames(prev => {
+            const next = { ...prev };
+            for (const sp of shellPanes) {
+              if (!next[sp.id]) {
+                const m = sp.id.match(/__shell_.*_(\d+)__$/);
+                next[sp.id] = m ? `Shell ${m[1]}` : "Shell";
+              }
+            }
+            return next;
+          });
+        }
+
         // Re-attach running panes (spawn_agent handles attach if already running)
         for (const pane of panes) {
           if (pane.status === "running") {
@@ -205,6 +246,8 @@ export default function App() {
               workingDir: pane.cwd,
               cols: 80,
               rows: 24,
+              parentPaneId: pane.parent_pane_id ?? null,
+              paneType: pane.pane_type,
             }).catch(() => {});
           }
         }
