@@ -1,6 +1,6 @@
 <table><tr><td><img src="docs/icon.png" width="72"></td><td><h1>chat.sh</h1></td></tr></table>
 
-A terminal-native desktop app for managing multiple AI coding assistants — Claude Code, OpenAI Codex, Gemini CLI, and more — in a single window.
+A terminal-native desktop app for managing AI coding assistants — Claude Code, OpenAI Codex, Gemini CLI, and more — in a single window.
 
 Built with Tauri v2 + React + xterm.js. ~4MB, no Electron.
 
@@ -27,45 +27,59 @@ Or [download the DMG](https://github.com/jchang6513/chatsh/releases/latest) dire
 
 ## Features
 
-### Multi-REPL Management
-- Open multiple REPLs in one window (Claude Code, Codex, Gemini, Zsh, Python, Node...)
+### Multi-Pane Management
+- Open multiple Panes in one window (Claude Code, Codex, Gemini, Zsh, Python, Node...)
 - Sidebar with live status indicators (RUNNING / STOPPED)
-- Lazy spawn — REPLs only start when first selected
+- Lazy spawn — Panes only start when first selected
+- Right-click Pane for Edit / Duplicate / Restart / Delete
 
 ### Templates
 - Auto-detects installed CLIs on startup
 - Save custom templates (command + working dir + system prompt)
-- Open REPLs from templates or with a custom one-off command
+- Open Panes from templates in two steps, or with a custom one-off command
 
 ### System Prompts
-- Per-REPL system prompts, completely isolated from each other
-- Supports `CLAUDE.md`, `GEMINI.md`, `AGENTS.md` — appended on top of your project's CLAUDE.md
-- Edit anytime via the `[System Prompt]` button
+- Per-Pane system prompts, completely isolated
+- Supports `CLAUDE.md`, `GEMINI.md`, `AGENTS.md`
+- Edit anytime via Edit Pane modal
 
 ### Shell Tabs
-- Add multiple shell tabs per REPL panel
-- Rename (double-click), close, stable numbering
+- Add multiple shell tabs per Pane
+- Rename (double-click), close, auto-scroll to active tab
+
+### Status Bar
+- Working dir, CLI name, color scheme, RUNNING/STOPPED
+- Live clock · Battery level on laptops
+
+### System Notifications
+- macOS banner + sound when a background Pane finishes
+- Toggle in Preferences
 
 ### Keyboard Shortcuts
 | Shortcut | Action |
 |---|---|
-| `⌘1`–`⌘9` | Switch to REPL |
-| `⌘[` / `⌘]` | Previous / Next REPL |
+| `⌘1`–`⌘9` | Switch to Pane |
+| `⌘[` / `⌘]` | Previous / Next Pane |
 | `⌘K` | Command Palette |
-| `⌘N` | New REPL |
-| `⌘R` | Restart REPL |
+| `⌘N` | New Pane |
+| `⌘R` | Restart Pane |
 | `⌘T` | New shell tab |
 | `⌘W` | Close shell tab |
 | `⌘Shift+[` / `⌘Shift+]` | Switch shell tab |
 | `⌘,` | Preferences |
+| `⌘=` | Zoom in |
+| `⌘-` | Zoom out |
 | `Esc` | Close overlay |
 
 ### Preferences
-- Font family, size, line height
+- Font family (system font picker), size, line height
 - Cursor style (block / bar / underline) + blink
-- Scrollback lines, padding
-- 11 color schemes (Nightfox, Kanagawa, Gruvbox...) + UI zoom
-- Per-REPL terminal overrides
+- Scrollback lines
+- 11 color schemes (Nightfox, Kanagawa, Gruvbox...) — Nightfox default
+- UI Scale (0.5x – 2.0x), Sidebar position (left / right)
+- Notifications toggle
+- Per-Pane terminal overrides
+- Template management (create / edit / delete)
 
 ---
 
@@ -90,24 +104,34 @@ MIT
 
 ## Changelog
 
+### v0.1.6
+- **Terminology**: Agent/REPL → **Pane** throughout the UI
+- **Unified Modal**: all overlays share a single Modal component (ESC to close, [×] button)
+- **System Notifications**: macOS banner + sound when background Pane finishes (toggle in Preferences)
+- **Status bar**: live clock + battery level (laptops)
+- **UI Scale**: `⌘=` / `⌘-` zoom entire interface (0.5x–2.0x)
+- **Sidebar**: right-click context menu (Edit / Duplicate / Restart / Delete), position toggle (left/right)
+- **From Template**: two-step flow (select template → configure Pane)
+- **Preferences**: Appearance tab (color scheme, zoom, sidebar position), Keys tab, Notifications toggle
+- **Terminal**: zoom-corrected mouse selection, system font dropdown
+- **Fix**: unread notification stale closure, modal overflow at high zoom
+
+### v0.1.5
+- New logo + Nightfox as default color scheme
+- Preferences: Appearance tab, Keys tab, Templates management
+- Right-click context menu on Panes
+- Auto templates can be deleted
+- Shell tabs open in Pane's working directory
+
+### v0.1.4
+- Preferences: Template editing, Auto-template deletion
+- Shell tab border fix, scrollIntoView for active tab
+- Duplicate Pane from context menu
+
 ### v0.1.3
-- **Unread notifications**: dot pulses while streaming, stays lit when idle (unread)
-- **UTF-8 / CJK display** fixed in terminal
-- Working Dir native folder picker `[...]`
-- Lazy REPL spawn (only starts when selected)
-- Code quality: shared `ui.ts` constants, `CloseButton` / `FolderButton` components
+- Unread notifications (amber dot)
+- UTF-8 / CJK display fixed
+- Working Dir native folder picker
 
-### v0.1.2
-- New REPL flow: From Template / Custom
-- System prompts (CLAUDE.md / GEMINI.md / AGENTS.md), per-REPL isolated
-- Keyboard shortcuts (⌘K, ⌘1-9, ⌘T/W, ⌘R, ⌘,)
-- Preferences panel with per-REPL overrides
-- 11 color schemes, Nightfox default
-
-### v0.1.1
-- Command Palette (⌘K)
-- Preferences panel: font, cursor, terminal settings
-- App icon
-
-### v0.1.0
-- Initial release
+### v0.1.0 – v0.1.2
+- Initial release, keyboard shortcuts, preferences, system prompts, templates
