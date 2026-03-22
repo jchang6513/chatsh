@@ -273,9 +273,34 @@ cd ~/Workspace/chatsh && npm run tauri dev
 
 ## Known Issues（v0.1.7 待修）
 
-| # | 問題 | 修法 |
-|---|------|------|
-| 1 | Template 不同步（Preference vs New Pane modal） | 移除 auto-detect，固定 4 個預設 |
-| 2 | 系統通知去重（同內容只彈一次） | body 加時間戳 |
-| 3 | ⌘[ / ⌘] 切換 pane 未讀不清除 | 改走 handleSelectAgent |
-| 4 | Daemon 重啟後 scrollback 消失 | Phase 4：scrollback 寫入 `~/.chatsh/scrollback/{id}` |
+| # | 問題 | 修法 | 狀態 |
+|---|------|------|------|
+| 1 | Template 不同步（Preference vs New Pane modal） | 移除 auto-detect，固定預設（zsh/bash 擇一 + claude + gemini + codex），統一儲存 | 待修 v0.1.7 |
+| 2 | 系統通知去重（同內容只彈一次） | body 加時間戳 | 待修 v0.1.7 |
+| 3 | ⌘[ / ⌘] 切換 pane 未讀不清除 | 改走 handleSelectAgent | 待修 v0.1.7 |
+| 4 | Daemon 重啟後 scrollback 消失 | Phase 4：scrollback 寫入 `~/.chatsh/scrollback/{id}` | 待修 Phase 4 |
+
+---
+
+## TC-V017: v0.1.7 新功能測試案例
+
+### TC-V017-01: New Pane modal 顯示固定預設 template
+- 前置: 全新安裝或清 localStorage
+- Steps: 點 `+ New Pane` → 選 "From Template"
+- Expected:
+  - 顯示固定預設：`zsh`（或 `bash` 若無 zsh）、`claude`、`gemini`、`codex`
+  - 不顯示其他 auto-detected tool（aider, node, python3 等）
+  - 不分「Auto-detected」和「User Templates」兩類，統一列表
+
+### TC-V017-02: Preference Template 與 New Pane 同步
+- Steps: Preference → Templates 頁面查看 template 清單 → 開 New Pane → From Template
+- Expected: 兩邊顯示完全一致的 template 清單
+
+### TC-V017-03: 系統通知每次都觸發
+- 前置: 系統通知已授權
+- Steps: 在非 active pane 觸發 AI 回應完成（多次）
+- Expected: 每次都有通知彈出（body 帶時間戳避免去重）
+
+### TC-V017-04: ⌘[ / ⌘] 清除未讀
+- Steps: 讓非 active pane 有未讀（藍點）→ 用 ⌘[ 或 ⌘] 切換到該 pane
+- Expected: 切換後未讀標記消失
