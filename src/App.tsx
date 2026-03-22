@@ -114,7 +114,7 @@ export default function App() {
     () => new Set([loadAgents()[0]?.id ?? ""])
   );
   const [unreadAgents, setUnreadAgents] = useState<Set<string>>(new Set());
-  const [streamingAgents, setStreamingAgents] = useState<Set<string>>(new Set());
+
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
   const bumpRestart = (id: string) => setRestartKeys(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
@@ -156,22 +156,12 @@ export default function App() {
   useEffect(() => {
     const unlisteners: (() => void)[] = []
     for (const agentId of mountedAgents) {
-      // pty-output: mark as streaming (if not active)
-      listen<string>(`pty-output-${agentId}`, () => {
-        if (agentId === activeAgentIdRef.current) return
-        setStreamingAgents(prev => {
-          if (prev.has(agentId)) return prev
-          return new Set([...prev, agentId])
-        })
-      }).then(fn => unlisteners.push(fn))
-
-      // pty-idle: output stopped → clear streaming, mark unread
-      // But ignore if we just switched away from this agent (grace period)
+      // pty-idle: output stopped → mark unread (works for both LLM and shell)
+      // Ignore if active or within grace period after switching away
       listen<void>(`pty-idle-${agentId}`, () => {
         if (agentId === activeAgentIdRef.current) return
         const switchedAt = switchedAwayAt.current.get(agentId)
         if (switchedAt && Date.now() - switchedAt < GRACE_MS) return
-        setStreamingAgents(prev => { const next = new Set(prev); next.delete(agentId); return next })
         setUnreadAgents(prev => {
           if (prev.has(agentId)) return prev
           return new Set([...prev, agentId])
@@ -196,7 +186,7 @@ export default function App() {
     setActiveAgentId(id);
     setMountedAgents(prev => new Set([...prev, id]));
     setUnreadAgents(prev => { const next = new Set(prev); next.delete(id); return next });
-    setStreamingAgents(prev => { const next = new Set(prev); next.delete(id); return next });
+
   }, []);
 
   const handleRemoveAgent = useCallback((id: string) => {
@@ -294,7 +284,6 @@ export default function App() {
           agents={agents}
           activeAgentId={activeAgentId}
           unreadAgents={unreadAgents}
-          streamingAgents={streamingAgents}
           onSelect={handleSelectAgent}
           onAdd={() => setShowAddPane(true)}
           onRemove={handleRemoveAgent}

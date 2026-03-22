@@ -137,10 +137,9 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
                 {agent.name}
               </span>
               <span style={{
-                color: isStreaming ? "#ffb000" : isUnread ? "#ffb000" : agent.status === "online" ? "var(--green)" : "var(--muted)",
-                fontSize: (isStreaming || isUnread) ? 10 : 8,
+                color: isUnread ? "#ffb000" : agent.status === "online" ? "var(--green)" : "var(--muted)",
+                fontSize: isUnread ? 10 : 8,
                 flexShrink: 0,
-                animation: isStreaming ? "pulse 0.8s infinite" : undefined,
               }}>●</span>
               {/* Hover buttons */}
               {isHover && (
