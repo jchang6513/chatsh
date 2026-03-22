@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { MONO_FONT } from "../ui"
 import { useTheme } from "../ThemeContext";
 import type { Agent } from "../types";
@@ -8,6 +9,11 @@ interface Props {
 
 export default function StatusBar({ agent }: Props) {
   const { scheme, schemeKey } = useTheme();
+  const [time, setTime] = useState(() => new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }))
+  useEffect(() => {
+    const t = setInterval(() => setTime(new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" })), 1000)
+    return () => clearInterval(t)
+  }, [])
 
   return (
     <div style={{
@@ -35,6 +41,8 @@ export default function StatusBar({ agent }: Props) {
         <span style={{ color: agent?.status === "online" ? "var(--green)" : "var(--red, var(--muted))" }}>
           ● {agent?.status === "online" ? "RUNNING" : "STOPPED"}
         </span>
+        <span style={{ color: "var(--border)" }}>│</span>
+        <span>{time}</span>
       </div>
     </div>
   );
