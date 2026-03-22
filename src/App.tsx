@@ -193,8 +193,11 @@ export default function App() {
           }));
 
           // Enrich with localStorage metadata (name, emoji, llmLabel) if available
+          // and preserve localStorage order (user's last-seen order)
           const saved = loadAgents();
           const savedMap = new Map(saved.map(a => [a.id, a]));
+          const savedOrder = new Map(saved.map((a, i) => [a.id, i]));
+
           for (const agent of daemonAgents) {
             const s = savedMap.get(agent.id);
             if (s) {
@@ -203,6 +206,13 @@ export default function App() {
               if (s.llmLabel) agent.llmLabel = s.llmLabel;
             }
           }
+
+          // Sort: panes in localStorage keep their saved order; new panes go to the end
+          daemonAgents.sort((a, b) => {
+            const ia = savedOrder.has(a.id) ? savedOrder.get(a.id)! : Infinity;
+            const ib = savedOrder.has(b.id) ? savedOrder.get(b.id)! : Infinity;
+            return ia - ib;
+          });
 
           setAgents(daemonAgents);
           if (daemonAgents.length > 0) {
