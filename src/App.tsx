@@ -160,6 +160,8 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
+    // Don't overwrite localStorage while agents list is still being initialized
+    if (agents.length === 0) return;
     // Deduplicate by id before saving
     const seen = new Set<string>()
     const deduped = agents.filter(a => seen.has(a.id) ? false : (seen.add(a.id), true))
