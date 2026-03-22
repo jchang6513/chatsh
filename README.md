@@ -17,7 +17,11 @@ brew install --cask chatsh
 ```
 Or [download the DMG](https://github.com/jchang6513/chatsh/releases/latest) directly.
 
-> First launch: right-click → Open (unsigned build bypasses Gatekeeper)
+> **First launch on macOS:** If you see "app is damaged", run this in Terminal:
+> ```
+> xattr -cr /Applications/chat.sh.app
+> ```
+> Then open normally. This is a one-time step for unsigned apps on macOS 14+.
 
 ---
 
