@@ -623,10 +623,13 @@ async fn handle_client(stream: tokio::net::UnixStream, daemon: Arc<Daemon>) {
 
                 match daemon.attach_pane(&id) {
                     Some((scrollback_data, status, rx)) => {
-                        // Send scrollback
+                        // Send scrollback (prefixed with terminal reset to clear stale color state)
                         if !scrollback_data.is_empty() {
+                            let reset = b"\x1b[0m\x1b[2J\x1b[H";
+                            let mut payload = reset.to_vec();
+                            payload.extend_from_slice(&scrollback_data);
                             let data = base64::engine::general_purpose::STANDARD
-                                .encode(&scrollback_data);
+                                .encode(&payload);
                             let _ = msg_tx.send(ServerMessage::Scrollback {
                                 id: id.clone(),
                                 data,
