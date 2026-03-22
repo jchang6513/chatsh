@@ -1,5 +1,6 @@
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useRef } from "react";
+import { useSettings } from "../SettingsContext";
 import type { Agent } from "../types";
 
 interface Props {
@@ -18,6 +19,8 @@ interface Props {
 }
 
 export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), streamingAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onRestart, onDuplicate, onReorder, onOpenSettings }: Props) {
+  const { globalSettings } = useSettings();
+  const zoom = globalSettings.uiScale ?? 1;
   const [dragId, setDragId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ agentId: string; x: number; y: number } | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -102,7 +105,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
               onDrop={(e) => handleDrop(e, agent.id)}
               onDragEnd={handleDragEnd}
               onClick={() => { setContextMenu(null); onSelect(agent.id); }}
-              onContextMenu={e => { e.preventDefault(); setContextMenu({ agentId: agent.id, x: e.clientX, y: e.clientY }) }}
+              onContextMenu={e => { e.preventDefault(); setContextMenu({ agentId: agent.id, x: e.clientX / zoom, y: e.clientY / zoom }) }}
               onMouseEnter={() => setHoverId(agent.id)}
               onMouseLeave={() => setHoverId(null)}
               style={{

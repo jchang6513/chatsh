@@ -654,23 +654,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
           >
             [{isGlobal ? "Reset All" : "Clear Agent Settings"}]
           </button>
-          <button
-            onClick={onClose}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--green)",
-              color: "var(--green)",
-              fontFamily: monoFont,
-              fontSize: 10,
-              padding: "4px 10px",
-              cursor: "pointer",
-              letterSpacing: "0.05em",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)" }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)" }}
-          >
-            [Close]
-          </button>
+
         </div>
       </div>
     </Modal>
