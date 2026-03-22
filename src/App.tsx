@@ -439,7 +439,6 @@ export default function App() {
 
                 {/* Right-side toolbar */}
                 <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, padding: "0 10px", borderLeft: "1px solid var(--border)" }}>
-                  <span style={{ color: "var(--muted)", fontSize: 9 }}>{agent.workingDir}</span>
 
                   <button
                     onClick={async () => {
