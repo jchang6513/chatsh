@@ -62,8 +62,13 @@ export default function App() {
   const [activeTabMap, setActiveTabMap] = useState<Record<string, string>>({});
 
   const getActivePanelTab = (agentId: string) => activeTabMap[agentId] ?? REPL_TAB;
-  const setActivePanelTab = (agentId: string, tab: string) =>
+  const setActivePanelTab = (agentId: string, tab: string) => {
     setActiveTabMap(prev => ({ ...prev, [agentId]: tab }));
+    // Switching back to REPL tab of the active pane clears unread
+    if (tab === REPL_TAB && agentId === activeAgentIdRef.current) {
+      setUnreadAgents(prev => { const next = new Set(prev); next.delete(agentId); return next });
+    }
+  };
 
   // Initialize shell counters from persisted sessions to avoid ID collisions
   const shellCounters = useRef<Record<string, number>>((() => {
