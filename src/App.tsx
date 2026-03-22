@@ -1,6 +1,7 @@
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "./ui"
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { listen } from "@tauri-apps/api/event";
 import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
@@ -133,6 +134,19 @@ export default function App() {
     invoke("cleanup_deleted_agents").catch(() => {});
   }, []);
 
+  // Request notification permission on startup
+  useEffect(() => {
+    isPermissionGranted().then(granted => {
+      if (!granted) requestPermission()
+    }).catch(() => {})
+  }, [])
+
+  // Refs for stale closure prevention
+  const globalSettingsRef = useRef(globalSettings)
+  globalSettingsRef.current = globalSettings
+  const agentsRef = useRef(agents)
+  agentsRef.current = agents
+
   // Keep a ref to latest activeAgentId to avoid stale closure in listeners
   const activeAgentIdRef = useRef(activeAgentId)
 
@@ -166,6 +180,14 @@ export default function App() {
           if (prev.has(agentId)) return prev
           return new Set([...prev, agentId])
         })
+        // System notification (if enabled and app not in focus)
+        if (globalSettingsRef.current.notificationsEnabled) {
+          const agent = agentsRef.current.find(a => a.id === agentId)
+          const name = agent?.name ?? "Pane"
+          isPermissionGranted().then(granted => {
+            if (granted) sendNotification({ title: "chat.sh", body: `${name} finished`, sound: "default" })
+          }).catch(() => {})
+        }
       }).then(fn => unlisteners.push(fn))
     }
     return () => unlisteners.forEach(fn => fn())

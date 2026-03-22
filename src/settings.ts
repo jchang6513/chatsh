@@ -11,6 +11,7 @@ export interface TerminalSettings {
   padding: number
   uiScale: number  // 0.7 - 1.5
   sidebarPosition: "left" | "right"
+  notificationsEnabled: boolean
 }
 
 export type AgentTerminalOverrides = Partial<TerminalSettings>
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: TerminalSettings = {
   padding: 4,
   uiScale: 1.0,
   sidebarPosition: "left",
+  notificationsEnabled: true,
 }
 
 const GLOBAL_STORAGE_KEY = "chatsh_global_settings"

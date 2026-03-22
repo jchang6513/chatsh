@@ -9,6 +9,10 @@
     "core:event:allow-unlisten",
     "core:event:allow-emit",
     "shell:allow-open",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "notification:default",
+    "notification:allow-request-permission",
+    "notification:allow-is-permission-granted",
+    "notification:allow-notify"
   ]
 }

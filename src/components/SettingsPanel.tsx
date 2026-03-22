@@ -535,6 +535,23 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
             )}
           </div>
 
+          {/* Notifications — global only */}
+          {isGlobal && <div style={sectionStyle}>
+            <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>NOTIFICATIONS</div>
+            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--muted)", cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={globalSettings.notificationsEnabled ?? true}
+                onChange={e => updateGlobalSettings({ notificationsEnabled: e.target.checked })}
+                style={{ accentColor: "var(--green)", width: 14, height: 14, cursor: "pointer" }}
+              />
+              System notifications + sound when Pane finishes
+            </label>
+            <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>
+              Uses macOS notification banner with system sound
+            </div>
+          </div>}
+
           {/* Scrollback */}
           <div style={sectionStyle}>
             <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>SCROLLBACK</div>
