@@ -372,6 +372,7 @@ export default function App() {
                 {(shellSessions[agent.id] ?? []).map((shellId, idx) => (
                   <div
                     key={shellId}
+                    ref={el => { if (el && getActivePanelTab(agent.id) === shellId) el.scrollIntoView({ block: "nearest", inline: "nearest" }) }}
                     onClick={() => setActivePanelTab(agent.id, shellId)}
                     style={{
                       display: "flex", alignItems: "center", gap: 4, padding: "0 10px",
@@ -429,7 +430,7 @@ export default function App() {
                   onClick={() => addShellToAgent(agent.id)}
                   style={{
                     padding: "0 10px", background: "transparent", border: "none",
-                    borderRight: "1px solid var(--border)", color: "var(--muted)",
+                    borderLeft: "1px solid var(--border)", borderRight: "1px solid var(--border)", color: "var(--muted)",
                     fontFamily: "monospace", fontSize: 13, cursor: "pointer", flexShrink: 0,
                   }}
                   onMouseEnter={e => (e.currentTarget.style.color = "var(--green)")}
