@@ -285,6 +285,17 @@ export default function App() {
           onAdd={() => setShowAddPane(true)}
           onRemove={handleRemoveAgent}
           onEdit={handleEditAgent}
+          onDuplicate={(agent) => {
+            const newAgent = { ...agent, id: Date.now().toString(), name: `${agent.name} (copy)`, status: "offline" as const }
+            setAgents(prev => {
+              const idx = prev.findIndex(a => a.id === agent.id)
+              const next = [...prev]
+              next.splice(idx + 1, 0, newAgent)
+              return next
+            })
+            setActiveAgentId(newAgent.id)
+            setMountedAgents(prev => new Set([...prev, newAgent.id]))
+          }}
           onRestart={async (id) => {
             try { await invoke("kill_agent", { agentId: id }) } catch {}
             updateAgentStatus(id, "offline")

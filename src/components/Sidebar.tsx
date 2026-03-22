@@ -12,11 +12,12 @@ interface Props {
   onRemove: (id: string) => void;
   onEdit: (agent: Agent) => void;
   onRestart?: (id: string) => void;
+  onDuplicate?: (agent: Agent) => void;
   onReorder: (agents: Agent[]) => void;
   onOpenSettings: () => void;
 }
 
-export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), streamingAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onRestart, onReorder, onOpenSettings }: Props) {
+export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(), streamingAgents = new Set(), onSelect, onAdd, onRemove, onEdit, onRestart, onDuplicate, onReorder, onOpenSettings }: Props) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ agentId: string; x: number; y: number } | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
@@ -224,6 +225,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
         if (!agent) return null
         const menuItems = [
           { label: "Edit", action: () => { onEdit(agent); setContextMenu(null) } },
+          { label: "Duplicate", action: () => { onDuplicate?.(agent); setContextMenu(null) } },
           { label: "Restart", action: () => { onRestart?.(agent.id); setContextMenu(null) } },
           { label: "Delete", action: () => { onRemove(agent.id); setContextMenu(null) }, danger: true },
         ]
