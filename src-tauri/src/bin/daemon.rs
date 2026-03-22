@@ -13,6 +13,7 @@ const MAX_SCROLLBACK: usize = 2 * 1024 * 1024; // 2MB
 const BROADCAST_CAP: usize = 4096;
 const IDLE_MS: u64 = 500;
 const IDLE_POLL_MS: u64 = 100;
+const PROCESS_MONITOR_INTERVAL_MS: u64 = 500;
 
 // ── Paths ──
 
@@ -289,11 +290,14 @@ impl Daemon {
     }
 
     fn write_pane(&self, id: &str, data: &str) -> Result<(), String> {
+        let decoded = base64::engine::general_purpose::STANDARD
+            .decode(data)
+            .map_err(|e| format!("base64 decode 失敗: {e}"))?;
         let mut panes = self.panes.lock().unwrap();
         if let Some(pane) = panes.get_mut(id) {
             if let Some(ref mut writer) = pane.writer {
                 writer
-                    .write_all(data.as_bytes())
+                    .write_all(&decoded)
                     .map_err(|e| format!("寫入失敗: {e}"))?;
                 writer.flush().map_err(|e| format!("flush 失敗: {e}"))?;
             } else {
@@ -340,16 +344,23 @@ impl Daemon {
     }
 
     fn restart_pane(&self, id: &str) -> Result<(), String> {
-        let (command, cwd) = {
+        let (command, cwd, child_pid) = {
             let panes = self.panes.lock().unwrap();
             if let Some(pane) = panes.get(id) {
-                (pane.command.clone(), pane.cwd.clone())
+                (pane.command.clone(), pane.cwd.clone(), pane.child_pid)
             } else {
                 return Err(format!("pane {} 不存在", id));
             }
         };
 
-        // Remove old pane (kill process)
+        // Kill old process
+        if let Some(pid) = child_pid {
+            unsafe {
+                libc::kill(pid as i32, libc::SIGKILL);
+            }
+        }
+
+        // Remove old pane
         {
             let mut panes = self.panes.lock().unwrap();
             if let Some(old) = panes.remove(id) {
@@ -674,6 +685,79 @@ async fn handle_client(stream: tokio::net::UnixStream, daemon: Arc<Daemon>) {
     let _ = write_task.await;
 }
 
+// ── Process monitor ──
+// 定期檢查所有 running pane 的 PID 是否還存活。
+// 當外部 kill process 且 PTY reader 未偵測到時，由此補救。
+
+fn start_process_monitor(panes: Arc<Mutex<HashMap<String, Pane>>>) {
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(std::time::Duration::from_millis(PROCESS_MONITOR_INTERVAL_MS)).await;
+
+            let dead_panes: Vec<(String, broadcast::Sender<ServerMessage>)> = {
+                let panes_guard = match panes.lock() {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                };
+                eprintln!("[monitor] checking {} panes", panes_guard.len());
+                panes_guard
+                    .iter()
+                    .filter(|(id, pane)| {
+                        if pane.status != "running" {
+                            return false;
+                        }
+                        if let Some(pid) = pane.child_pid {
+                            unsafe {
+                                let ret = libc::kill(pid as i32, 0);
+                                if ret == 0 {
+                                    // process alive
+                                    false
+                                } else {
+                                    let err = *libc::__error();
+                                    let is_dead = err == libc::ESRCH; // No such process
+                                    eprintln!("[monitor] pane {} pid={} kill_ret={} errno={} is_dead={}", id, pid, ret, err, is_dead);
+                                    is_dead
+                                }
+                            }
+                        } else {
+                            false
+                        }
+                    })
+                    .map(|(id, pane)| (id.clone(), pane.output_tx.clone()))
+                    .collect()
+            };
+
+            eprintln!("[monitor] found {} dead panes", dead_panes.len());
+
+            if dead_panes.is_empty() {
+                continue;
+            }
+
+            {
+                let mut panes_guard = match panes.lock() {
+                    Ok(p) => p,
+                    Err(_) => continue,
+                };
+                for (id, tx) in &dead_panes {
+                    if let Some(pane) = panes_guard.get_mut(id) {
+                        if pane.status == "running" {
+                            pane.status = "stopped".to_string();
+                            pane.writer = None;
+                            pane.master = None;
+                            let _ = tx.send(ServerMessage::PaneStatus {
+                                id: id.clone(),
+                                status: "stopped".to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+
+            save_state_from_panes(&panes);
+        }
+    });
+}
+
 // ── Main ──
 
 #[tokio::main]
@@ -707,6 +791,9 @@ async fn main() {
 
     let daemon = Arc::new(Daemon::new());
     daemon.load_state();
+
+    // 啟動 process 監控背景任務
+    start_process_monitor(Arc::clone(&daemon.panes));
 
     // Graceful shutdown handler
     let sock_cleanup = sock.clone();
