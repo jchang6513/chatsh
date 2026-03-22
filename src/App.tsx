@@ -185,7 +185,7 @@ export default function App() {
           const agent = agentsRef.current.find(a => a.id === agentId)
           const name = agent?.name ?? "Pane"
           isPermissionGranted().then(granted => {
-            if (granted) sendNotification({ title: "chat.sh", body: `${name} finished`, sound: "default" })
+            if (granted) sendNotification({ title: name, body: "Finished", sound: "default" })
           }).catch(() => {})
         }
       }).then(fn => unlisteners.push(fn))

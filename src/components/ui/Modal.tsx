@@ -52,12 +52,12 @@ export default function Modal({ title, onClose, width = 520, children }: ModalPr
           <button
             onClick={onClose}
             style={{
-              background: "none", border: "1px solid var(--border)",
-              color: "var(--muted)", fontFamily: MONO_FONT, fontSize: 11,
-              padding: "1px 8px", cursor: "pointer",
+              background: "none", border: "none",
+              color: "var(--muted)", fontFamily: MONO_FONT, fontSize: 14,
+              padding: "0 4px", cursor: "pointer", lineHeight: 1,
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--red)"; e.currentTarget.style.color = "var(--red)" }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)" }}
+            onMouseEnter={e => { e.currentTarget.style.color = "var(--red)" }}
+            onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)" }}
           >[×]</button>
         </div>
         {/* Scrollable content */}
