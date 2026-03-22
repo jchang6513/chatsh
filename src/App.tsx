@@ -1,3 +1,4 @@
+import { REPL_TAB } from "./constants"
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "./ui"
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -58,7 +59,7 @@ export default function App() {
   const [shellSessions, setShellSessions] = useState<Record<string, string[]>>({});
   const [activeTabMap, setActiveTabMap] = useState<Record<string, string>>({});
 
-  const getActivePanelTab = (agentId: string) => activeTabMap[agentId] ?? "terminal";
+  const getActivePanelTab = (agentId: string) => activeTabMap[agentId] ?? REPL_TAB;
   const setActivePanelTab = (agentId: string, tab: string) =>
     setActiveTabMap(prev => ({ ...prev, [agentId]: tab }));
 
@@ -83,7 +84,7 @@ export default function App() {
       // only switch tab if closing the active one
       if (getActivePanelTab(agentId) === shellId) {
         const idx = sessions.indexOf(shellId);
-        const prevTab = idx > 0 ? sessions[idx - 1] : "terminal";
+        const prevTab = idx > 0 ? sessions[idx - 1] : REPL_TAB;
         setActivePanelTab(agentId, prevTab);
       }
       return { ...prev, [agentId]: next };
@@ -422,12 +423,12 @@ export default function App() {
     onCloseShell: () => {
       if (!activeAgentId) return
       const currentTab = getActivePanelTab(activeAgentId)
-      if (currentTab !== "terminal") removeShellFromAgent(activeAgentId, currentTab)
+      if (currentTab !== REPL_TAB) removeShellFromAgent(activeAgentId, currentTab)
     },
     onPrevShell: () => {
       if (!activeAgentId) return
       const sessions = shellSessions[activeAgentId] ?? []
-      const allTabs = ["terminal", ...sessions]
+      const allTabs = [REPL_TAB, ...sessions]
       const currentTab = getActivePanelTab(activeAgentId)
       const idx = allTabs.indexOf(currentTab)
       if (idx > 0) setActivePanelTab(activeAgentId, allTabs[idx - 1])
@@ -435,7 +436,7 @@ export default function App() {
     onNextShell: () => {
       if (!activeAgentId) return
       const sessions = shellSessions[activeAgentId] ?? []
-      const allTabs = ["terminal", ...sessions]
+      const allTabs = [REPL_TAB, ...sessions]
       const currentTab = getActivePanelTab(activeAgentId)
       const idx = allTabs.indexOf(currentTab)
       if (idx < allTabs.length - 1) setActivePanelTab(activeAgentId, allTabs[idx + 1])
@@ -523,14 +524,14 @@ export default function App() {
               }}>
                 {/* Agent terminal tab */}
                 <div
-                  onClick={() => setActivePanelTab(agent.id, "terminal")}
+                  onClick={() => setActivePanelTab(agent.id, REPL_TAB)}
                   style={{
                     display: "flex", alignItems: "center", gap: 4, padding: "0 12px",
                     cursor: "pointer",
                     borderRight: "1px solid var(--border)",
-                    borderBottom: getActivePanelTab(agent.id) === "terminal"
+                    borderBottom: getActivePanelTab(agent.id) === REPL_TAB
                       ? "2px solid var(--green)" : "2px solid transparent",
-                    color: getActivePanelTab(agent.id) === "terminal" ? "var(--green)" : "var(--muted)",
+                    color: getActivePanelTab(agent.id) === REPL_TAB ? "var(--green)" : "var(--muted)",
                   }}
                 >
                   <span style={{ border: "1px solid currentColor", padding: "0 2px", fontSize: 9, flexShrink: 0 }}>
@@ -638,11 +639,11 @@ export default function App() {
               </div>
               {/* Terminal: lazy mount, visibility toggle */}
               {/* counter-zoom so xterm mouse coords are correct */}
-              <div style={{ flex: 1, display: getActivePanelTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0, zoom: 1 / globalSettings.uiScale }}>
+              <div style={{ flex: 1, display: getActivePanelTab(agent.id) === REPL_TAB ? "flex" : "none", minHeight: 0, zoom: 1 / globalSettings.uiScale }}>
                 {mountedAgents.has(agent.id) && (
                   <Terminal
                     agent={agent}
-                    isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === "terminal"}
+                    isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === REPL_TAB}
                     onStatusChange={(status) => updateAgentStatus(agent.id, status)}
                     restartKey={restartKeys[agent.id] ?? 0}
                   />
