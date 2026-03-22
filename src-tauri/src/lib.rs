@@ -3,42 +3,13 @@ pub mod protocol;
 use protocol::*;
 use serde_json;
 use std::collections::HashMap;
-use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::net::unix::OwnedWriteHalf;
-use tokio::sync::oneshot;
-
-// ── DaemonClient ──
-
-#[derive(Clone)]
-struct DaemonClient {
-    writer: std::sync::Arc<tokio::sync::Mutex<OwnedWriteHalf>>,
-}
-
-impl DaemonClient {
-    async fn send(&self, msg: &ClientMessage) -> Result<(), String> {
-        let mut writer = self.writer.lock().await;
-        let mut json = serde_json::to_string(msg).map_err(|e| e.to_string())?;
-        json.push('\n');
-        writer
-            .write_all(json.as_bytes())
-            .await
-            .map_err(|e| format!("socket 寫入失敗: {e}"))?;
-        writer
-            .flush()
-            .await
-            .map_err(|e| format!("socket flush 失敗: {e}"))?;
-        Ok(())
-    }
-}
 
 // ── AppState ──
 
 struct AppState {
-    daemon: DaemonClient,
-    pending_spawns: std::sync::Arc<Mutex<HashMap<String, oneshot::Sender<Result<(), String>>>>>,
-    pending_list: std::sync::Arc<Mutex<Option<oneshot::Sender<Vec<PaneInfo>>>>>,
+    sock_path: String,
 }
 
 // ── Daemon lifecycle ──
@@ -50,12 +21,10 @@ fn sock_path() -> String {
 
 fn ensure_daemon_running() -> Result<(), String> {
     let sock = sock_path();
-    // Try to connect — if successful, daemon is running
     if std::os::unix::net::UnixStream::connect(&sock).is_ok() {
         return Ok(());
     }
 
-    // Find daemon binary: same directory as current exe
     let exe = std::env::current_exe().map_err(|e| e.to_string())?;
     let dir = exe.parent().ok_or("no parent dir")?;
     let daemon_bin = dir.join("chatsh-daemon");
@@ -67,7 +36,6 @@ fn ensure_daemon_running() -> Result<(), String> {
         ));
     }
 
-    // Create log file
     let home = std::env::var("HOME").unwrap_or_default();
     let log_dir = format!("{}/.chatsh", home);
     std::fs::create_dir_all(&log_dir).ok();
@@ -83,7 +51,6 @@ fn ensure_daemon_running() -> Result<(), String> {
         .try_clone()
         .map_err(|e| format!("無法複製 log fd: {e}"))?;
 
-    // Spawn daemon in its own process group
     use std::os::unix::process::CommandExt;
     std::process::Command::new(&daemon_bin)
         .process_group(0)
@@ -93,7 +60,6 @@ fn ensure_daemon_running() -> Result<(), String> {
         .spawn()
         .map_err(|e| format!("無法啟動 chatsh-daemon: {e}"))?;
 
-    // Wait for socket to appear (max 3s)
     for _ in 0..30 {
         std::thread::sleep(std::time::Duration::from_millis(100));
         if std::os::unix::net::UnixStream::connect(&sock).is_ok() {
@@ -103,71 +69,122 @@ fn ensure_daemon_running() -> Result<(), String> {
     Err("chatsh-daemon 啟動逾時".into())
 }
 
-async fn connect_daemon() -> Result<tokio::net::UnixStream, String> {
-    let sock = sock_path();
-    tokio::net::UnixStream::connect(&sock)
+// ── Per-request helpers ──
+
+async fn daemon_connect(sock_path: &str) -> Result<tokio::net::UnixStream, String> {
+    tokio::net::UnixStream::connect(sock_path)
         .await
         .map_err(|e| format!("無法連線 daemon: {e}"))
 }
 
-// ── Background reader task ──
+async fn send_msg(stream: &mut tokio::net::UnixStream, msg: &ClientMessage) -> Result<(), String> {
+    let mut json = serde_json::to_string(msg).map_err(|e| e.to_string())?;
+    json.push('\n');
+    stream
+        .write_all(json.as_bytes())
+        .await
+        .map_err(|e| format!("socket 寫入失敗: {e}"))?;
+    stream
+        .flush()
+        .await
+        .map_err(|e| format!("socket flush 失敗: {e}"))?;
+    Ok(())
+}
 
-fn spawn_reader_task(
-    read_half: tokio::net::unix::OwnedReadHalf,
-    app_handle: AppHandle,
-    pending_spawns: std::sync::Arc<Mutex<HashMap<String, oneshot::Sender<Result<(), String>>>>>,
-    pending_list: std::sync::Arc<Mutex<Option<oneshot::Sender<Vec<PaneInfo>>>>>,
-) {
-    tokio::spawn(async move {
+/// Send a message and read lines until `predicate` returns Some(T).
+async fn send_and_recv<T, F>(
+    sock_path: &str,
+    msg: &ClientMessage,
+    predicate: F,
+) -> Result<T, String>
+where
+    F: Fn(ServerMessage) -> Option<T>,
+{
+    let stream = daemon_connect(sock_path).await?;
+    let (read_half, mut write_half) = stream.into_split();
+
+    let mut json = serde_json::to_string(msg).map_err(|e| e.to_string())?;
+    json.push('\n');
+    write_half
+        .write_all(json.as_bytes())
+        .await
+        .map_err(|e| format!("socket 寫入失敗: {e}"))?;
+    write_half
+        .flush()
+        .await
+        .map_err(|e| format!("socket flush 失敗: {e}"))?;
+
+    let mut lines = BufReader::new(read_half).lines();
+    while let Ok(Some(line)) = lines.next_line().await {
+        if line.trim().is_empty() {
+            continue;
+        }
+        if let Ok(server_msg) = serde_json::from_str::<ServerMessage>(&line) {
+            if let Some(result) = predicate(server_msg) {
+                return Ok(result);
+            }
+        }
+    }
+    Err("daemon 連線中斷，未收到預期回應".into())
+}
+
+/// Fire-and-forget: send a message, don't wait for response.
+async fn send_fire_and_forget(sock_path: &str, msg: &ClientMessage) -> Result<(), String> {
+    let mut stream = daemon_connect(sock_path).await?;
+    send_msg(&mut stream, msg).await
+}
+
+// ── Attach stream background task ──
+
+fn spawn_attach_task(sock_path: String, pane_id: String, app_handle: AppHandle) {
+    tauri::async_runtime::spawn(async move {
+        let stream = match daemon_connect(&sock_path).await {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("attach 連線失敗 (pane {pane_id}): {e}");
+                return;
+            }
+        };
+        let (read_half, mut write_half) = stream.into_split();
+
+        // Send attach_pane
+        let msg = ClientMessage::AttachPane {
+            id: pane_id.clone(),
+        };
+        let mut json = serde_json::to_string(&msg).unwrap();
+        json.push('\n');
+        if write_half.write_all(json.as_bytes()).await.is_err() {
+            return;
+        }
+        let _ = write_half.flush().await;
+
+        // Read stream events
         let mut lines = BufReader::new(read_half).lines();
         while let Ok(Some(line)) = lines.next_line().await {
             if line.trim().is_empty() {
                 continue;
             }
-            let msg: ServerMessage = match serde_json::from_str(&line) {
+            let server_msg: ServerMessage = match serde_json::from_str(&line) {
                 Ok(m) => m,
                 Err(_) => continue,
             };
-            match msg {
-                ServerMessage::PaneOutput { id, data } => {
-                    app_handle.emit(&format!("pty-output-{id}"), &data).ok();
+            match server_msg {
+                ServerMessage::PaneOutput { ref id, ref data }
+                | ServerMessage::Scrollback { ref id, ref data } => {
+                    app_handle.emit(&format!("pty-output-{id}"), data).ok();
                 }
-                ServerMessage::Scrollback { id, data } => {
-                    // Same as PaneOutput — Terminal.tsx writes to xterm
-                    app_handle.emit(&format!("pty-output-{id}"), &data).ok();
-                }
-                ServerMessage::PaneStatus { id, status } => {
+                ServerMessage::PaneStatus { ref id, ref status } => {
                     if status == "stopped" || status == "deleted" {
                         app_handle.emit(&format!("pty-exit-{id}"), ()).ok();
+                        break;
                     }
                 }
-                ServerMessage::PaneIdle { id } => {
+                ServerMessage::PaneIdle { ref id } => {
                     app_handle.emit(&format!("pty-idle-{id}"), ()).ok();
                 }
-                ServerMessage::PaneList { panes } => {
-                    if let Ok(mut guard) = pending_list.lock() {
-                        if let Some(tx) = guard.take() {
-                            let _ = tx.send(panes);
-                        }
-                    }
-                }
-                ServerMessage::SpawnResult { id, success, error } => {
-                    if let Ok(mut guard) = pending_spawns.lock() {
-                        if let Some(tx) = guard.remove(&id) {
-                            if success {
-                                let _ = tx.send(Ok(()));
-                            } else {
-                                let _ = tx.send(Err(error.unwrap_or_default()));
-                            }
-                        }
-                    }
-                }
-                ServerMessage::Error { message } => {
-                    eprintln!("daemon error: {message}");
-                }
+                _ => {}
             }
         }
-        eprintln!("daemon 連線中斷");
     });
 }
 
@@ -181,53 +198,50 @@ async fn spawn_agent(
     cols: u16,
     rows: u16,
     state: State<'_, AppState>,
+    app_handle: AppHandle,
 ) -> Result<(), String> {
-    let daemon = state.daemon.clone();
-    let pending = std::sync::Arc::clone(&state.pending_spawns);
+    let sock = state.sock_path.clone();
 
-    let (tx, rx) = oneshot::channel();
-    pending.lock().unwrap().insert(agent_id.clone(), tx);
+    // Send spawn_pane and wait for SpawnResult
+    let spawn_result = send_and_recv(&sock, &ClientMessage::SpawnPane {
+        id: agent_id.clone(),
+        command,
+        cwd: working_dir,
+        env: HashMap::new(),
+        cols,
+        rows,
+    }, |msg| {
+        match msg {
+            ServerMessage::SpawnResult { ref id, success, ref error } if *id == agent_id => {
+                if success {
+                    Some(Ok(()))
+                } else {
+                    Some(Err(error.clone().unwrap_or_default()))
+                }
+            }
+            _ => None,
+        }
+    }).await?;
 
-    // Send spawn_pane — daemon will not replace if already running
-    daemon
-        .send(&ClientMessage::SpawnPane {
-            id: agent_id.clone(),
-            command,
-            cwd: working_dir,
-            env: HashMap::new(),
-            cols,
-            rows,
-        })
-        .await?;
+    // Check if spawn itself failed
+    spawn_result?;
 
-    // Wait for spawn result
-    let result = rx.await.map_err(|_| "daemon 連線中斷".to_string())?;
+    // Resize to current dimensions
+    send_fire_and_forget(&sock, &ClientMessage::ResizePane {
+        id: agent_id.clone(),
+        cols,
+        rows,
+    }).await.ok();
 
-    // Always attach (subscribe to output + get scrollback)
-    daemon
-        .send(&ClientMessage::AttachPane {
-            id: agent_id.clone(),
-        })
-        .await?;
+    // Start background attach stream task
+    spawn_attach_task(sock, agent_id, app_handle);
 
-    // If already running, resize to current dimensions
-    daemon
-        .send(&ClientMessage::ResizePane {
-            id: agent_id,
-            cols,
-            rows,
-        })
-        .await?;
-
-    result
+    Ok(())
 }
 
 #[tauri::command]
 async fn kill_agent(agent_id: String, state: State<'_, AppState>) -> Result<(), String> {
-    state
-        .daemon
-        .send(&ClientMessage::DeletePane { id: agent_id })
-        .await
+    send_fire_and_forget(&state.sock_path, &ClientMessage::DeletePane { id: agent_id }).await
 }
 
 #[tauri::command]
@@ -236,13 +250,14 @@ async fn write_to_agent(
     data: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    state
-        .daemon
-        .send(&ClientMessage::WritePane {
+    send_fire_and_forget(
+        &state.sock_path,
+        &ClientMessage::WritePane {
             id: agent_id,
             data,
-        })
-        .await
+        },
+    )
+    .await
 }
 
 #[tauri::command]
@@ -252,41 +267,42 @@ async fn resize_pty(
     rows: u16,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
-    state
-        .daemon
-        .send(&ClientMessage::ResizePane {
+    send_fire_and_forget(
+        &state.sock_path,
+        &ClientMessage::ResizePane {
             id: agent_id,
             cols,
             rows,
-        })
-        .await
+        },
+    )
+    .await
 }
 
 #[tauri::command]
 async fn is_agent_alive(agent_id: String, state: State<'_, AppState>) -> Result<bool, String> {
-    let daemon = state.daemon.clone();
-    let pending = std::sync::Arc::clone(&state.pending_list);
-
-    let (tx, rx) = oneshot::channel();
-    pending.lock().unwrap().replace(tx);
-
-    daemon.send(&ClientMessage::ListPanes).await?;
-
-    let panes = rx.await.map_err(|_| "daemon 連線中斷".to_string())?;
+    let panes: Vec<PaneInfo> = send_and_recv(
+        &state.sock_path,
+        &ClientMessage::ListPanes,
+        |msg| match msg {
+            ServerMessage::PaneList { panes } => Some(panes),
+            _ => None,
+        },
+    )
+    .await?;
     Ok(panes.iter().any(|p| p.id == agent_id && p.status == "running"))
 }
 
 #[tauri::command]
 async fn list_panes(state: State<'_, AppState>) -> Result<Vec<PaneInfo>, String> {
-    let daemon = state.daemon.clone();
-    let pending = std::sync::Arc::clone(&state.pending_list);
-
-    let (tx, rx) = oneshot::channel();
-    pending.lock().unwrap().replace(tx);
-
-    daemon.send(&ClientMessage::ListPanes).await?;
-
-    rx.await.map_err(|_| "daemon 連線中斷".to_string())
+    send_and_recv(
+        &state.sock_path,
+        &ClientMessage::ListPanes,
+        |msg| match msg {
+            ServerMessage::PaneList { panes } => Some(panes),
+            _ => None,
+        },
+    )
+    .await
 }
 
 #[tauri::command]
@@ -472,7 +488,6 @@ fn cleanup_deleted_agents() -> Result<u32, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Ensure daemon is running (blocking — before Tauri starts)
     if let Err(e) = ensure_daemon_running() {
         eprintln!("Warning: 無法啟動 chatsh-daemon: {e}");
     }
@@ -482,59 +497,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
-            let app_handle = app.handle().clone();
-            let rt = tokio::runtime::Handle::current();
-
-            // Connect to daemon (async, within Tauri's tokio runtime)
-            let pending_spawns =
-                std::sync::Arc::new(Mutex::new(HashMap::<String, oneshot::Sender<Result<(), String>>>::new()));
-            let pending_list =
-                std::sync::Arc::new(Mutex::new(None::<oneshot::Sender<Vec<PaneInfo>>>));
-
-            let ps = std::sync::Arc::clone(&pending_spawns);
-            let pl = std::sync::Arc::clone(&pending_list);
-
-            let daemon_client = rt.block_on(async {
-                match connect_daemon().await {
-                    Ok(stream) => {
-                        let (read_half, write_half) = stream.into_split();
-                        spawn_reader_task(read_half, app_handle, ps, pl);
-                        Some(DaemonClient {
-                            writer: std::sync::Arc::new(tokio::sync::Mutex::new(write_half)),
-                        })
-                    }
-                    Err(e) => {
-                        eprintln!("無法連線到 daemon: {e}");
-                        None
-                    }
-                }
+            app.manage(AppState {
+                sock_path: sock_path(),
             });
-
-            if let Some(daemon) = daemon_client {
-                app.manage(AppState {
-                    daemon,
-                    pending_spawns,
-                    pending_list,
-                });
-            } else {
-                // Fallback: create a dummy connection that will fail on use
-                // This allows the app to start even if daemon isn't available
-                eprintln!("Warning: 未連線到 daemon，PTY 功能無法使用");
-                let (stream, _) = std::os::unix::net::UnixStream::pair().unwrap();
-                stream.set_nonblocking(true).ok();
-                let tokio_stream = rt.block_on(async {
-                    tokio::net::UnixStream::from_std(stream).unwrap()
-                });
-                let (_, write_half) = tokio_stream.into_split();
-                app.manage(AppState {
-                    daemon: DaemonClient {
-                        writer: std::sync::Arc::new(tokio::sync::Mutex::new(write_half)),
-                    },
-                    pending_spawns,
-                    pending_list,
-                });
-            }
-
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

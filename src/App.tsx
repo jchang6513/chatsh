@@ -170,6 +170,50 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
   }, [agents]);
 
+  // Reconnect to daemon panes on startup
+  useEffect(() => {
+    (async () => {
+      try {
+        const panes = await invoke<Array<{ id: string; command: string[]; cwd: string; status: string }>>("list_panes");
+        if (!panes || panes.length === 0) return;
+
+        setAgents(prev => {
+          const existingIds = new Set(prev.map(a => a.id));
+          const newAgents: Agent[] = [];
+          for (const pane of panes) {
+            if (!existingIds.has(pane.id)) {
+              newAgents.push({
+                id: pane.id,
+                name: pane.command[0] ?? "pane",
+                emoji: "🔗",
+                command: pane.command,
+                workingDir: pane.cwd,
+                status: pane.status === "running" ? "online" : "offline",
+              });
+            }
+          }
+          if (newAgents.length === 0) return prev;
+          return [...prev, ...newAgents];
+        });
+
+        // Re-attach running panes (spawn_agent handles attach if already running)
+        for (const pane of panes) {
+          if (pane.status === "running") {
+            invoke("spawn_agent", {
+              agentId: pane.id,
+              command: pane.command,
+              workingDir: pane.cwd,
+              cols: 80,
+              rows: 24,
+            }).catch(() => {});
+          }
+        }
+      } catch {
+        // daemon not ready yet — ignore
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     invoke("cleanup_deleted_agents").catch(() => {});
   }, []);
