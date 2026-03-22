@@ -1,3 +1,4 @@
+import { REPL_TAB } from "./constants"
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "./ui"
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -60,9 +61,14 @@ export default function App() {
   });
   const [activeTabMap, setActiveTabMap] = useState<Record<string, string>>({});
 
-  const getActivePanelTab = (agentId: string) => activeTabMap[agentId] ?? "terminal";
-  const setActivePanelTab = (agentId: string, tab: string) =>
+  const getActivePanelTab = (agentId: string) => activeTabMap[agentId] ?? REPL_TAB;
+  const setActivePanelTab = (agentId: string, tab: string) => {
     setActiveTabMap(prev => ({ ...prev, [agentId]: tab }));
+    // Switching back to REPL tab of the active pane clears unread
+    if (tab === REPL_TAB && agentId === activeAgentIdRef.current) {
+      setUnreadAgents(prev => { const next = new Set(prev); next.delete(agentId); return next });
+    }
+  };
 
   // Initialize shell counters from persisted sessions to avoid ID collisions
   const shellCounters = useRef<Record<string, number>>((() => {
@@ -102,7 +108,7 @@ export default function App() {
       // only switch tab if closing the active one
       if (getActivePanelTab(agentId) === shellId) {
         const idx = sessions.indexOf(shellId);
-        const prevTab = idx > 0 ? sessions[idx - 1] : "terminal";
+        const prevTab = idx > 0 ? sessions[idx - 1] : REPL_TAB;
         setActivePanelTab(agentId, prevTab);
       }
       return { ...prev, [agentId]: next };
@@ -307,6 +313,10 @@ export default function App() {
   showCommandPaletteRef.current = showCommandPalette
   activeAgentIdRef.current = activeAgentId
 
+  // Track active tab per agent (for unread/notification logic)
+  const activeTabMapRef = useRef(activeTabMap)
+  activeTabMapRef.current = activeTabMap
+
   // Track when we last switched AWAY from each agent (grace period for pty-idle)
   const switchedAwayAt = useRef<Map<string, number>>(new Map())
   const GRACE_MS = 2000 // ignore pty-idle within 2s of switching away
@@ -319,7 +329,11 @@ export default function App() {
       // pty-idle: output stopped → mark unread (works for both LLM and shell)
       // Ignore if active or within grace period after switching away
       listen<void>(`pty-idle-${agentId}`, () => {
-        if (agentId === activeAgentIdRef.current) return
+        // Only skip if pane is active AND terminal tab is visible
+        const isActivePane = agentId === activeAgentIdRef.current
+        const activeTab = activeTabMapRef.current[agentId] ?? REPL_TAB
+        const isTerminalVisible = activeTab === REPL_TAB
+        if (isActivePane && isTerminalVisible) return
         const switchedAt = switchedAwayAt.current.get(agentId)
         if (switchedAt && Date.now() - switchedAt < GRACE_MS) return
         setUnreadAgents(prev => {
@@ -410,12 +424,12 @@ export default function App() {
     onCloseShell: () => {
       if (!activeAgentId) return
       const currentTab = getActivePanelTab(activeAgentId)
-      if (currentTab !== "terminal") removeShellFromAgent(activeAgentId, currentTab)
+      if (currentTab !== REPL_TAB) removeShellFromAgent(activeAgentId, currentTab)
     },
     onPrevShell: () => {
       if (!activeAgentId) return
       const sessions = shellSessions[activeAgentId] ?? []
-      const allTabs = ["terminal", ...sessions]
+      const allTabs = [REPL_TAB, ...sessions]
       const currentTab = getActivePanelTab(activeAgentId)
       const idx = allTabs.indexOf(currentTab)
       if (idx > 0) setActivePanelTab(activeAgentId, allTabs[idx - 1])
@@ -423,7 +437,7 @@ export default function App() {
     onNextShell: () => {
       if (!activeAgentId) return
       const sessions = shellSessions[activeAgentId] ?? []
-      const allTabs = ["terminal", ...sessions]
+      const allTabs = [REPL_TAB, ...sessions]
       const currentTab = getActivePanelTab(activeAgentId)
       const idx = allTabs.indexOf(currentTab)
       if (idx < allTabs.length - 1) setActivePanelTab(activeAgentId, allTabs[idx + 1])
@@ -511,14 +525,14 @@ export default function App() {
               }}>
                 {/* Agent terminal tab */}
                 <div
-                  onClick={() => setActivePanelTab(agent.id, "terminal")}
+                  onClick={() => setActivePanelTab(agent.id, REPL_TAB)}
                   style={{
                     display: "flex", alignItems: "center", gap: 4, padding: "0 12px",
                     cursor: "pointer",
                     borderRight: "1px solid var(--border)",
-                    borderBottom: getActivePanelTab(agent.id) === "terminal"
+                    borderBottom: getActivePanelTab(agent.id) === REPL_TAB
                       ? "2px solid var(--green)" : "2px solid transparent",
-                    color: getActivePanelTab(agent.id) === "terminal" ? "var(--green)" : "var(--muted)",
+                    color: getActivePanelTab(agent.id) === REPL_TAB ? "var(--green)" : "var(--muted)",
                   }}
                 >
                   <span style={{ border: "1px solid currentColor", padding: "0 2px", fontSize: 9, flexShrink: 0 }}>
@@ -626,11 +640,11 @@ export default function App() {
               </div>
               {/* Terminal: lazy mount, visibility toggle */}
               {/* counter-zoom so xterm mouse coords are correct */}
-              <div style={{ flex: 1, display: getActivePanelTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0, zoom: 1 / globalSettings.uiScale }}>
+              <div style={{ flex: 1, display: getActivePanelTab(agent.id) === REPL_TAB ? "flex" : "none", minHeight: 0, zoom: 1 / globalSettings.uiScale }}>
                 {mountedAgents.has(agent.id) && (
                   <Terminal
                     agent={agent}
-                    isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === "terminal"}
+                    isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === REPL_TAB}
                     onStatusChange={(status) => updateAgentStatus(agent.id, status)}
                     restartKey={restartKeys[agent.id] ?? 0}
                   />
