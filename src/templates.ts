@@ -25,8 +25,8 @@ export const KNOWN_TOOLS: Array<{
   { id: "aider",   name: "Aider",         command: "aider",   description: "AI pair programmer" },
   { id: "zsh",     name: "Zsh",           command: "/bin/zsh",description: "Z shell" },
   { id: "bash",    name: "Bash",          command: "/bin/bash",description: "Bash shell" },
-  { id: "node",    name: "Node.js REPL",  command: "node",    description: "Node.js interactive REPL" },
-  { id: "python3", name: "Python 3",      command: "python3", description: "Python 3 interactive REPL" },
+  { id: "node",    name: "Node.js Pane",  command: "node",    description: "Node.js interactive Pane" },
+  { id: "python3", name: "Python 3",      command: "python3", description: "Python 3 interactive Pane" },
 ]
 
 export function loadTemplates(): Template[] {

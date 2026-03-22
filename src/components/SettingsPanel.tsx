@@ -322,11 +322,11 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
             <div>
               <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 16 }}>KEYBOARD SHORTCUTS</div>
               {[
-                ["⌘1–9", "Switch to REPL"],
-                ["⌘[", "Previous REPL"],
-                ["⌘]", "Next REPL"],
-                ["⌘N", "New REPL"],
-                ["⌘R", "Restart REPL"],
+                ["⌘1–9", "Switch to Pane"],
+                ["⌘[", "Previous Pane"],
+                ["⌘]", "Next Pane"],
+                ["⌘N", "New Pane"],
+                ["⌘R", "Restart Pane"],
                 ["⌘T", "New Shell tab"],
                 ["⌘W", "Close Shell tab"],
                 ["⌘Shift+[", "Previous Shell tab"],

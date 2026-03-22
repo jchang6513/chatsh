@@ -83,7 +83,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
       fontFamily: MONO_FONT,
       height: "100%",
     }}>
-      {/* REPL list */}
+      {/* Pane list */}
       <div style={{ flex: 1, overflowY: "auto" }}>
         {agents.map((agent) => {
           const isActive = agent.id === activeAgentId;
@@ -196,7 +196,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
         [Preferences ⌘,]
       </button>
 
-      {/* New REPL button */}
+      {/* New Pane button */}
       <button
         onClick={onAdd}
         style={{
@@ -215,7 +215,7 @@ export default function Sidebar({ agents, activeAgentId, unreadAgents = new Set(
         onMouseEnter={onHoverGreen}
         onMouseLeave={onLeaveGreen}
       >
-        [+ New REPL]
+        [+ New Pane]
       </button>
 
       {/* Context Menu */}

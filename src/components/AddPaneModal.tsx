@@ -69,7 +69,7 @@ async function writeSystemPrompt(agentId: string, command: string, content: stri
   await invoke("write_file", { path, content }).catch(() => {})
 }
 
-export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClose }: Props) {
+export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose }: Props) {
   const [mode, setMode] = useState<Mode>("choose");
   const [detectedIds, setDetectedIds] = useState<string[]>([]);
 
@@ -174,7 +174,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
           <span style={{ fontSize: 10, color: "var(--green)", letterSpacing: "0.1em" }}>
-            ─ {mode === "choose" ? "NEW REPL" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
+            ─ {mode === "choose" ? "NEW PANE" : mode === "from-template" ? "FROM TEMPLATE" : "CUSTOM"} ─
           </span>
           <CloseButton onClose={onClose} />
         </div>
@@ -190,7 +190,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 onMouseLeave={onLeaveBorder}
               >
                 <span style={{ color: "var(--fg)", fontSize: 12 }}>[From Template]</span>
-                <span style={{ color: "var(--muted)", fontSize: 10 }}>Open REPL from template</span>
+                <span style={{ color: "var(--muted)", fontSize: 10 }}>Open Pane from template</span>
               </button>
               <button onClick={() => setMode("custom")} style={{ ...btnBase, display: "flex", flexDirection: "column", gap: 4, padding: 14, textAlign: "left", border: "1px dashed var(--border)" }}
                 onMouseEnter={onHoverBorder}
@@ -312,7 +312,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
               {/* Settings after selection */}
               {selectedTemplate && (<>
                 <label style={labelStyle}>
-                  REPL Name
+                  Pane Name
                   <input type="text" value={sessionName} onChange={e => setSessionName(e.target.value)}
                     style={inputStyle} placeholder={selectedTemplate.name} autoFocus
                     onFocus={onFocusInput} onBlur={onBlurInput}
@@ -348,7 +348,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                   style={{ ...btnBase, borderColor: selectedTemplate ? "var(--green)" : "var(--border)", color: selectedTemplate ? "var(--green)" : "var(--muted)" }}
                   onMouseEnter={e => { if (selectedTemplate) { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; } }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = selectedTemplate ? "var(--green)" : "var(--muted)"; }}
-                >[Open REPL]</button>
+                >[Open Pane]</button>
               </div>
             </div>
           )}
@@ -394,7 +394,7 @@ export default function AddSessionModal({ templates, onAdd, onAddTemplate, onClo
                 <button type="submit" style={{ ...btnBase, borderColor: "var(--green)", color: "var(--green)" }}
                   onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--green)"; }}
-                >[New REPL]</button>
+                >[New Pane]</button>
               </div>
             </form>
           )}

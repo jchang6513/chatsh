@@ -6,8 +6,8 @@ import Sidebar from "./components/Sidebar";
 import Terminal from "./components/Terminal";
 import SingleShell from "./components/SingleShell";
 import StatusBar from "./components/StatusBar";
-import AddAgentModal from "./components/AddAgentModal";
-import AddSessionModal from "./components/AddSessionModal";
+import EditPaneModal from "./components/EditPaneModal";
+import AddPaneModal from "./components/AddPaneModal";
 import { loadTemplates } from "./templates";
 import CommandPalette from "./components/CommandPalette";
 import SettingsPanel from "./components/SettingsPanel";
@@ -103,8 +103,8 @@ export default function App() {
     setEditingShellId(null);
   };
 
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showAddSession, setShowAddSession] = useState(false);
+  const [showEditPane, setShowEditPane] = useState(false);
+  const [showAddPane, setShowAddPane] = useState(false);
   const [templates, setTemplates] = useState(loadTemplates);
   // track which agents have been opened (lazy mount)
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(
@@ -209,7 +209,7 @@ export default function App() {
   }, []);
 
   const activeAgent = agents.find(a => a.id === activeAgentId);
-  const showModal = showAddModal || editingAgent !== null;
+  const showModal = showEditPane || editingAgent !== null;
 
   // global keyboard shortcuts
   const keyHandlers = useMemo(() => ({
@@ -224,7 +224,7 @@ export default function App() {
       const idx = agents.findIndex(a => a.id === activeAgentId)
       if (idx < agents.length - 1) setActiveAgentId(agents[idx + 1].id)
     },
-    onNewAgent: () => setShowAddSession(true),
+    onNewAgent: () => setShowAddPane(true),
     onRestartAgent: async () => {
       if (!activeAgentId) return
       try { await invoke("kill_agent", { agentId: activeAgentId }) } catch {}
@@ -264,8 +264,8 @@ export default function App() {
     onEscape: () => {
       if (showCommandPalette) { setShowCommandPalette(false); return }
       if (showSettings) { setShowSettings(false); return }
-      if (showAddSession) { setShowAddSession(false); return }
-      if (showAddModal) { setShowAddModal(false); return }
+      if (showAddPane) { setShowAddPane(false); return }
+      if (showEditPane) { setShowEditPane(false); return }
     },
   }), [agents, activeAgentId, activeAgent, shellSessions, activeTabMap])
 
@@ -282,7 +282,7 @@ export default function App() {
           unreadAgents={unreadAgents}
           streamingAgents={streamingAgents}
           onSelect={handleSelectAgent}
-          onAdd={() => setShowAddSession(true)}
+          onAdd={() => setShowAddPane(true)}
           onRemove={handleRemoveAgent}
           onEdit={handleEditAgent}
           onRestart={async (id) => {
@@ -482,21 +482,21 @@ export default function App() {
           onClose={() => setShowCommandPalette(false)}
         />
       )}
-      {showAddSession && (
-        <AddSessionModal
+      {showAddPane && (
+        <AddPaneModal
           templates={templates}
           onAddTemplate={(t) => setTemplates(prev => [...prev, t])}
           onAdd={(agent) => {
             setAgents(prev => [...prev, agent]);
             setActiveAgentId(agent.id);
             setMountedAgents(prev => new Set([...prev, agent.id]));
-            setShowAddSession(false);
+            setShowAddPane(false);
           }}
-          onClose={() => setShowAddSession(false)}
+          onClose={() => setShowAddPane(false)}
         />
       )}
       {showModal && (
-        <AddAgentModal
+        <EditPaneModal
           initialValues={editingAgent ?? undefined}
           onAdd={(agent) => {
             if (editingAgent) {
@@ -508,11 +508,11 @@ export default function App() {
               setAgents((prev) => [...prev, agent]);
               setActiveAgentId(agent.id);
               setMountedAgents(prev => new Set([...prev, agent.id]));
-              setShowAddModal(false);
+              setShowEditPane(false);
             }
           }}
           onClose={() => {
-            setShowAddModal(false);
+            setShowEditPane(false);
             setEditingAgent(null);
           }}
         />

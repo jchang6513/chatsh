@@ -47,7 +47,7 @@ const btnStyle: React.CSSProperties = {
   borderRadius: 0,
 };
 
-export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) {
+export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) {
   const isEditing = !!initialValues?.id;
 
   const [step, setStep] = useState<1 | 2>(isEditing ? 2 : 1);
@@ -247,7 +247,7 @@ export default function AddAgentModal({ onAdd, onClose, initialValues }: Props) 
               ┌─── {isEditing ? "EDIT AGENT" : "CONFIGURE"} ───┐
             </div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 16 }}>
-              {isEditing ? "Edit REPL" : `Configure ${name || "REPL"}`}
+              {isEditing ? "Edit Pane" : `Configure ${name || "Pane"}`}
             </div>
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
