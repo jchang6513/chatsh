@@ -2,15 +2,15 @@ import { useEffect, useRef } from "react"
 
 interface Handlers {
   onSelectAgent: (index: number) => void      // ⌘1-9
-  onPrevAgent: () => void                      // ⌘[
-  onNextAgent: () => void                      // ⌘]
+  onPrevAgent: () => void                      // ⌘Shift+[
+  onNextAgent: () => void                      // ⌘Shift+]
   onNewAgent: () => void                       // ⌘N
   onRestartAgent: () => void                   // ⌘R
   onOpenSettings: () => void                   // ⌘,
   onNewShell: () => void                       // ⌘T
   onCloseShell: () => void                     // ⌘W
-  onPrevShell: () => void                      // ⌘Shift+[
-  onNextShell: () => void                      // ⌘Shift+]
+  onPrevShell: () => void                      // ⌘[
+  onNextShell: () => void                      // ⌘]
   onToggleCommandPalette: () => void           // ⌘K
   onEscape: () => void                         // Esc — close any overlay
   onFontIncrease: () => void                   // ⌘+
@@ -49,12 +49,12 @@ export function useKeyboardShortcuts(handlers: Handlers) {
 
       switch (e.key) {
         case "[":
-          if (!shift) { e.preventDefault(); h.onPrevAgent() }
-          else { e.preventDefault(); h.onPrevShell() }
+          if (!shift) { e.preventDefault(); h.onPrevShell() }
+          else { e.preventDefault(); h.onPrevAgent() }
           break
         case "]":
-          if (!shift) { e.preventDefault(); h.onNextAgent() }
-          else { e.preventDefault(); h.onNextShell() }
+          if (!shift) { e.preventDefault(); h.onNextShell() }
+          else { e.preventDefault(); h.onNextAgent() }
           break
         case "n":
           if (!shift) { e.preventDefault(); h.onNewAgent() }

@@ -273,14 +273,14 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
               <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 16 }}>KEYBOARD SHORTCUTS</div>
               {[
                 ["⌘1–9", "Switch to Pane"],
-                ["⌘[", "Previous Pane"],
-                ["⌘]", "Next Pane"],
+                ["⌘Shift+[", "Previous Pane"],
+                ["⌘Shift+]", "Next Pane"],
                 ["⌘N", "New Pane"],
                 ["⌘R", "Restart Pane"],
                 ["⌘T", "New Shell tab"],
                 ["⌘W", "Close Shell tab"],
-                ["⌘Shift+[", "Previous Shell tab"],
-                ["⌘Shift+]", "Next Shell tab"],
+                ["⌘[", "Previous Shell tab"],
+                ["⌘]", "Next Shell tab"],
                 ["⌘K", "Command palette"],
                 ["⌘,", "Preferences"],
                 ["⌘=", "Zoom in"],

@@ -100,7 +100,7 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - Steps: 按 ⌘1, ⌘2, ⌘3
 - Expected: 切換到對應序號的 pane
 
-### TC-P08: 切換 Pane（⌘[ / ⌘]）
+### TC-P08: 切換 Pane（⌘Shift+[ / ]）
 - Steps: 按 ⌘[ 和 ⌘]
 - Expected: 前/後切換，**未讀標記清除**
 
@@ -116,7 +116,7 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - Steps: 按 ⌘W 或點 × 按鈕
 - Expected: tab 移除，切換到前一個 tab；pane process 終止
 
-### TC-S03: 切換 Shell tab（⌘Shift+[ / ⌘Shift+]）
+### TC-S03: 切換 Shell tab（⌘Shift+[ / ]）
 - Steps: 按 ⌘Shift+[ 和 ⌘Shift+]
 - Expected: 前/後切換 shell tab
 
@@ -277,7 +277,7 @@ cd ~/Workspace/chatsh && npm run tauri dev
 |---|------|------|------|
 | 1 | Template 不同步（Preference vs New Pane modal） | 移除 auto-detect，固定預設（zsh/bash 擇一 + claude + gemini + codex），統一儲存 | ✅ v0.1.7 |
 | 2 | 系統通知去重（同內容只彈一次） | body 加時間戳 | ✅ v0.1.7 |
-| 3 | ⌘[ / ⌘] 切換 pane 未讀不清除 | 改走 handleSelectAgent | ✅ v0.1.7 |
+| 3 | ⌘Shift+[ / ] 切換 pane 未讀不清除 | 改走 handleSelectAgent | ✅ v0.1.7 |
 | 4 | Daemon 重啟後 scrollback 消失 | Phase 4：scrollback 寫入 `~/.chatsh/scrollback/{id}` | 待修 Phase 4 |
 
 ---
@@ -301,6 +301,6 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - Steps: 在非 active pane 觸發 AI 回應完成（多次）
 - Expected: 每次都有通知彈出（body 帶時間戳避免去重）
 
-### TC-V017-04: ⌘[ / ⌘] 清除未讀
+### TC-V017-04: ⌘Shift+[ / ] 清除未讀
 - Steps: 讓非 active pane 有未讀（藍點）→ 用 ⌘[ 或 ⌘] 切換到該 pane
 - Expected: 切換後未讀標記消失
