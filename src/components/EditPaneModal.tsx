@@ -1,4 +1,5 @@
 import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen, onHoverBorder, onLeaveBorder } from "../ui"
+import Modal from "./ui/Modal"
 import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
@@ -122,24 +123,8 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
   
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(0, 0, 0, 0.8)" }}
-      onClick={onClose}
-      onKeyDown={e => { if (e.key === "Escape") onClose() }}
-    >
-      <div
-        style={{
-          width: 440,
-          maxHeight: "90vh",
-          overflowY: "auto",
-          padding: 24,
-          background: "var(--bg)",
-          border: "1px solid var(--border)",
-          fontFamily: monoFont,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal title={isEditing ? "Edit Pane" : "New Pane"} onClose={onClose} width={440}>
+      <div style={{ padding: 24 }}>
         {step === 1 && !isEditing ? (
           <>
             <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>┌─── SELECT AGENT ───┐</div>
@@ -216,12 +201,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
           </>
         ) : (
           <>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>
-              ┌─── {isEditing ? "EDIT PANE" : "NEW PANE"} ───┐
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 16 }}>
-              {isEditing ? "Edit Pane" : "New Pane"}
-            </div>
+
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", alignItems: "flex-start", gap: 16 }}>
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
@@ -356,6 +336,6 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
           </>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }

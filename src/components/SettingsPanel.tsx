@@ -1,4 +1,5 @@
 import CloseButton from "./ui/CloseButton"
+import Modal from "./ui/Modal"
 import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
@@ -164,52 +165,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
   )
 
   return (
-    <div
-      style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0, 0, 0, 0.8)" }}
-      onClick={onClose}
-      onKeyDown={e => { if (e.key === "Escape") onClose() }}
-    >
-      <div
-        style={{
-          width: 560,
-          maxHeight: "80vh",
-          display: "flex",
-          flexDirection: "column",
-          background: "var(--bg)",
-          border: "1px solid var(--border)",
-          fontFamily: monoFont,
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div style={{
-          padding: "12px 16px",
-          borderBottom: "1px solid var(--border)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}>
-          <div>
-            <div style={{ fontSize: 11, color: "var(--muted)" }}>┌─── PREFERENCES ───┐</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)" }}>Terminal Settings</div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--border)",
-              color: "var(--muted)",
-              fontFamily: monoFont,
-              fontSize: 10,
-              padding: "2px 8px",
-              cursor: "pointer",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--red)"; e.currentTarget.style.color = "var(--red)" }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)" }}
-          >
-            [×]
-          </button>
-        </div>
+    <Modal title="Preferences" onClose={onClose} width={560}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
 
         {/* Main tabs: TERMINAL / TEMPLATES */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", fontSize: 10, letterSpacing: "0.06em", flexShrink: 0 }}>
@@ -716,6 +673,6 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
           </button>
         </div>
       </div>
-    </div>
+    </Modal>
   )
 }

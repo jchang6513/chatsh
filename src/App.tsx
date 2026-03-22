@@ -135,6 +135,16 @@ export default function App() {
 
   // Keep a ref to latest activeAgentId to avoid stale closure in listeners
   const activeAgentIdRef = useRef(activeAgentId)
+
+  // Refs for overlay states so onEscape always reads latest
+  const showSettingsRef = useRef(showSettings)
+  const showAddPaneRef = useRef(showAddPane)
+  const showEditPaneRef = useRef(showEditPane)
+  const showCommandPaletteRef = useRef(showCommandPalette)
+  showSettingsRef.current = showSettings
+  showAddPaneRef.current = showAddPane
+  showEditPaneRef.current = showEditPane
+  showCommandPaletteRef.current = showCommandPalette
   activeAgentIdRef.current = activeAgentId
 
   // Track when we last switched AWAY from each agent (grace period for pty-idle)
@@ -265,23 +275,18 @@ export default function App() {
       updateGlobalSettings(prev => ({ uiScale: Math.max(+((prev.uiScale ?? 1.0) - 0.05).toFixed(2), 0.5) }))
     },
     onEscape: () => {
-      if (showCommandPalette) { setShowCommandPalette(false); return }
-      if (showSettings) { setShowSettings(false); return }
-      if (showAddPane) { setShowAddPane(false); return }
-      if (showEditPane) { setShowEditPane(false); return }
+      if (showCommandPaletteRef.current) { setShowCommandPalette(false); return }
+      if (showSettingsRef.current) { setShowSettings(false); return }
+      if (showAddPaneRef.current) { setShowAddPane(false); return }
+      if (showEditPaneRef.current) { setShowEditPane(false); return }
     },
   }), [agents, activeAgentId, activeAgent, shellSessions, activeTabMap])
 
   useKeyboardShortcuts(keyHandlers)
 
   return (
-    <div style={{
-        display: "flex", flexDirection: "column", background: "var(--bg)",
-        transform: `scale(${globalSettings.uiScale})`,
-        transformOrigin: "top left",
-        width: `${100 / globalSettings.uiScale}%`,
-        height: `${100 / globalSettings.uiScale}%`,
-      }}>
+    <>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--bg)", zoom: globalSettings.uiScale }}>
 
       <div style={{ display: "flex", flex: 1, minHeight: 0, flexDirection: globalSettings.sidebarPosition === "right" ? "row-reverse" : "row" }}>
         {/* Sidebar */}
@@ -485,8 +490,9 @@ export default function App() {
 
       {/* Status bar */}
       <StatusBar agent={activeAgent} />
+    </div>
 
-      {/* Overlays */}
+      {/* Overlays — outside zoom div so position:fixed works correctly */}
       {showSettings && (
         <SettingsPanel
           agents={agents}
@@ -540,6 +546,6 @@ export default function App() {
           }}
         />
       )}
-    </div>
+    </>
   );
 }

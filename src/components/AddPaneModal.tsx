@@ -1,5 +1,6 @@
 import { useRef } from "react"
 import CloseButton from "./ui/CloseButton"
+import Modal from "./ui/Modal"
 import FolderButton from "./ui/FolderButton"
 import { MONO_FONT, onHoverGreen, onLeaveGreen, onFocusInput, onBlurInput, onHoverBorder, onLeaveBorder } from "../ui"
 import { useState, useEffect } from "react";
@@ -157,31 +158,19 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
   const onBlurInput = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     (e.currentTarget.style.borderColor = "var(--border)")
 
+  const modalTitle = mode === "choose" ? "New Pane" : mode === "from-template" ? (templateStep === 1 ? "From Template" : "Configure Pane") : "Custom Pane"
+
   return (
-    <div
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center" }}
-      onClick={onClose}
-    >
+    <Modal title={modalTitle} onClose={onClose} width={520}>
       <div
-        style={{ width: 520, maxHeight: "60vh", display: "flex", flexDirection: "column", background: "var(--bg)", border: "1px solid var(--border)", borderTop: "2px solid var(--green)", fontFamily: mono }}
-        onClick={e => e.stopPropagation()}
+        style={{ padding: 20 }}
         onKeyDown={e => {
-          if (e.key === "Escape") { onClose(); return }
           if (e.key === "Enter" && mode === "from-template" && selectedTemplate && !showNewTemplatForm) {
             e.preventDefault()
             handleFromTemplate()
           }
         }}
       >
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 16px", borderBottom: "1px solid var(--border)", flexShrink: 0 }}>
-          <span style={{ fontSize: 10, color: "var(--green)", letterSpacing: "0.1em" }}>
-            ─ {mode === "choose" ? "NEW PANE" : mode === "from-template" ? (templateStep === 1 ? "FROM TEMPLATE" : "CONFIGURE PANE") : "CUSTOM"} ─
-          </span>
-          <CloseButton onClose={onClose} />
-        </div>
-
-        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
 
           {/* CHOOSE */}
           {mode === "choose" && (
@@ -379,7 +368,6 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
           )}
 
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 }
