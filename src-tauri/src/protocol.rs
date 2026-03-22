@@ -78,4 +78,6 @@ pub struct PaneInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parent_pane_id: Option<String>,
     pub pane_type: String,
+    #[serde(default)]
+    pub created_at: u64,
 }

@@ -48,6 +48,8 @@ struct PersistedPane {
     parent_pane_id: Option<String>,
     #[serde(default = "default_pane_type")]
     pane_type: String,
+    #[serde(default)]
+    created_at: u64,  // unix timestamp ms, for ordering
 }
 
 fn default_pane_type() -> String {
@@ -69,6 +71,7 @@ struct Pane {
     child_pid: Option<u32>,
     parent_pane_id: Option<String>,
     pane_type: String,
+    created_at: u64,
 }
 
 // ── Daemon ──
@@ -195,6 +198,10 @@ impl Daemon {
         let shutdown = Arc::new(AtomicBool::new(false));
 
         let resolved_pane_type = pane_type.unwrap_or_else(|| "agent".to_string());
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis() as u64;
         let pane = Pane {
             id: id.clone(),
             command: command.clone(),
@@ -208,6 +215,7 @@ impl Daemon {
             child_pid,
             parent_pane_id: parent_pane_id.clone(),
             pane_type: resolved_pane_type,
+            created_at: now_ms,
         };
 
         self.panes.lock().unwrap().insert(id.clone(), pane);
@@ -393,7 +401,7 @@ impl Daemon {
 
     fn list_panes(&self) -> Vec<PaneInfo> {
         let panes = self.panes.lock().unwrap();
-        panes
+        let mut list: Vec<PaneInfo> = panes
             .values()
             .map(|p| PaneInfo {
                 id: p.id.clone(),
@@ -402,8 +410,12 @@ impl Daemon {
                 status: p.status.clone(),
                 parent_pane_id: p.parent_pane_id.clone(),
                 pane_type: p.pane_type.clone(),
+                created_at: p.created_at,
             })
-            .collect()
+            .collect();
+        // Sort by creation time so sidebar order is stable across restarts
+        list.sort_by_key(|p| p.created_at);
+        list
     }
 
     fn attach_pane(&self, id: &str) -> Option<(Vec<u8>, String, broadcast::Receiver<ServerMessage>)> {
@@ -459,6 +471,7 @@ impl Daemon {
                 child_pid: pp.pid,
                 parent_pane_id: pp.parent_pane_id,
                 pane_type: pp.pane_type,
+                created_at: pp.created_at,
             };
             panes.insert(pp.id, pane);
         }
@@ -537,6 +550,7 @@ fn save_state_from_panes(panes: &Arc<Mutex<HashMap<String, Pane>>>) {
                 pid: p.child_pid,
                 parent_pane_id: p.parent_pane_id.clone(),
                 pane_type: p.pane_type.clone(),
+                created_at: p.created_at,
             })
             .collect(),
     };

@@ -83,6 +83,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
 
     // keyboard input
     const disposable = xterm.onData(data => {
+      // Filter DA responses xterm.js auto-generates — must not reach PTY
+      if (/^\x1b\[[\d;]*c$/.test(data) || /^\x1b\[>\d/.test(data)) return;
       invoke("write_to_agent", { agentId: sessionId, data });
     });
 

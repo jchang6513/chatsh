@@ -229,6 +229,11 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - Steps: 重啟 app
 - Expected: 名稱/emoji 保留
 
+### TC-Session06: Pane 順序重啟後一致
+- 前置: 有 ≥2 個 pane（不同建立時間）
+- Steps: 記下 sidebar 順序 → 重啟 app
+- Expected: sidebar 順序與重啟前相同（依建立時間排序）
+
 ---
 
 ## TC-R: Regression Tests（已修問題防範）
@@ -248,10 +253,11 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - Steps: Claude/Gemini pane → 重啟 app
 - Expected: 無異常背景色
 
-### TC-R04: 無 `1;2c` 輸入（DA query 副作用）
-- Commit: 244e87e
-- Steps: Gemini pane → 重啟 app → 觀察輸入框
-- Expected: 不出現 `1;2c`
+### TC-R04: 無 `1;2c` 輸入（DA response 過濾）
+- Commit: 244e87e, 修正 onData filter
+- Steps: Gemini/Claude pane → 重啟 app → 觀察輸入框（每次重啟都驗證）
+- Expected: 不出現 `1;2c` 或其他 `\x1b[...c` 格式字串
+- Note: xterm.js 自動回應 scrollback 裡的 DA query，需在 onData 過濾
 
 ### TC-R05: Pane 不重複（localStorage vs daemon）
 - Commit: f16c44e

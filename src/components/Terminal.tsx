@@ -140,8 +140,9 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     resizeObs.observe(container);
 
     xterm.onData((data) => {
-      console.log("[Terminal] onData:", data.length, "bytes");
-      console.log("[Terminal] write_to_agent:", agent.id, data.length, "bytes");
+      // Filter DA (Device Attributes) responses xterm.js auto-generates —
+      // must not be forwarded to PTY (causes "1;2c" appearing as spurious input)
+      if (/^\x1b\[[\d;]*c$/.test(data) || /^\x1b\[>\d/.test(data)) return;
       invoke("write_to_agent", { agentId: agent.id, data });
     });
 
