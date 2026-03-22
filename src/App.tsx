@@ -245,25 +245,8 @@ export default function App() {
             });
           }
 
-          // Re-attach running panes (spawn_agent handles attach if already running)
-          for (const pane of panes) {
-            if (pane.status === "running") {
-              console.log("[App] re-attach spawn_agent BEFORE:", pane.id, pane.pane_type);
-              invoke("spawn_agent", {
-                agentId: pane.id,
-                command: pane.command,
-                workingDir: pane.cwd,
-                cols: 80,
-                rows: 24,
-                parentPaneId: pane.parent_pane_id ?? null,
-                paneType: pane.pane_type,
-              }).then(() => {
-                console.log("[App] re-attach spawn_agent DONE:", pane.id);
-              }).catch((e) => {
-                console.log("[App] re-attach spawn_agent FAILED:", pane.id, e);
-              });
-            }
-          }
+          // Terminal.tsx / SingleShell.tsx mount 後會自己 spawn_agent（listener ready 後）
+          // 這裡不重複呼叫，避免 double attach → scrollback 重複
         }
       } catch {
         // daemon not ready yet — fallback below
