@@ -1,4 +1,5 @@
 use base64::Engine;
+
 use chatsh_lib::protocol::*;
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
@@ -827,6 +828,8 @@ async fn main() {
     }
 
     let listener = UnixListener::bind(&sock).expect("無法綁定 Unix socket");
+    // Restrict socket access to owner only (0600)
+    std::fs::set_permissions(&sock, std::os::unix::fs::PermissionsExt::from_mode(0o600)).ok();
     eprintln!("chatsh-daemon 啟動：{}", sock);
 
     let daemon = Arc::new(Daemon::new());
