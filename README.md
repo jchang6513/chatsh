@@ -21,35 +21,36 @@ Or [download the DMG](https://github.com/jchang6513/chatsh/releases/latest) dire
 > ```
 > xattr -cr /Applications/chat.sh.app
 > ```
-> Then open normally. This is a one-time step for unsigned apps on macOS 14+.
 
 ---
 
 ## Features
 
+### Session Persistence
+- Panes survive app restart via a background daemon
+- Shell tabs also persist — reopen the app and pick up where you left off
+- Pane order is preserved across restarts
+
 ### Multi-Pane Management
 - Open multiple Panes in one window (Claude Code, Codex, Gemini, Zsh, Python, Node...)
 - Sidebar with live status indicators (RUNNING / STOPPED)
-- Lazy spawn — Panes only start when first selected
 - Right-click Pane for Edit / Duplicate / Restart / Delete
 
 ### Templates
-- Auto-detects installed CLIs on startup
+- Built-in templates for Claude, Gemini, Codex, Zsh
 - Save custom templates (command + working dir + system prompt)
-- Open Panes from templates in two steps, or with a custom one-off command
 
 ### System Prompts
 - Per-Pane system prompts, completely isolated
 - Supports `CLAUDE.md`, `GEMINI.md`, `AGENTS.md`
-- Edit anytime via Edit Pane modal
 
 ### Shell Tabs
-- Add multiple shell tabs per Pane
+- Add multiple shell tabs per Pane (`⌘T`)
 - Rename (double-click), close, auto-scroll to active tab
 
 ### Status Bar
 - Working dir, CLI name, color scheme, RUNNING/STOPPED
-- Live clock · Battery level on laptops
+- Live clock · Battery level
 
 ### System Notifications
 - macOS banner + sound when a background Pane finishes
@@ -59,27 +60,23 @@ Or [download the DMG](https://github.com/jchang6513/chatsh/releases/latest) dire
 | Shortcut | Action |
 |---|---|
 | `⌘1`–`⌘9` | Switch to Pane |
-| `⌘[` / `⌘]` | Previous / Next Pane |
+| `⌘Shift+[` / `⌘Shift+]` | Previous / Next Pane |
 | `⌘K` | Command Palette |
 | `⌘N` | New Pane |
 | `⌘R` | Restart Pane |
 | `⌘T` | New shell tab |
 | `⌘W` | Close shell tab |
-| `⌘Shift+[` / `⌘Shift+]` | Switch shell tab |
+| `⌘[` / `⌘]` | Previous / Next shell tab |
 | `⌘,` | Preferences |
-| `⌘=` | Zoom in |
-| `⌘-` | Zoom out |
+| `⌘=` / `⌘-` | Zoom in / out |
 | `Esc` | Close overlay |
 
 ### Preferences
-- Font family (system font picker), size, line height
-- Cursor style (block / bar / underline) + blink
-- Scrollback lines
-- 11 color schemes (Nightfox, Kanagawa, Gruvbox...) — Nightfox default
-- UI Scale (0.5x – 2.0x), Sidebar position (left / right)
+- Font family, size, line height, cursor style
+- 11 color schemes (Nightfox default)
+- UI Scale (0.5x–2.0x), Sidebar position (left/right)
 - Notifications toggle
-- Per-Pane terminal overrides
-- Template management (create / edit / delete)
+- Template management
 
 ---
 
@@ -94,6 +91,17 @@ npm run tauri dev
 
 Requirements: [Rust](https://rustup.rs), [Node.js](https://nodejs.org)
 
+### Testing
+```bash
+# Daemon integration tests (TC-D01~D07)
+bash scripts/test-daemon.sh
+
+# Type check
+npx tsc --noEmit
+```
+
+See [`docs/test-cases.md`](docs/test-cases.md) for the full test case list.
+
 ---
 
 ## License
@@ -104,34 +112,30 @@ MIT
 
 ## Changelog
 
+### v0.1.8
+- **Security**: daemon socket restricted to owner only (0600)
+- **Shortcuts**: swapped `⌘[/]` (shell tab) and `⌘Shift+[/]` (pane) — tab switch is now the easier shortcut
+
+### v0.1.7
+- **Session Persistence**: panes survive app restart via background daemon (chatsh-daemon)
+- **Shell tab persistence**: shell tabs also restored after restart
+- **Pane ordering**: order preserved across restarts (created_at timestamp)
+- **Template sync**: Preferences and New Pane modal now share the same template list
+- **Fix**: terminal input not working (base64 encode in write_to_agent)
+- **Fix**: scrollback not displaying after restart (listener race condition)
+- **Fix**: spurious `1;2c` input in Gemini/Claude panes (DA response filter)
+- **Fix**: duplicate panes after restart (localStorage vs daemon conflict)
+- **Fix**: ⌘Shift+[ / ] not clearing unread badge
+- **Fix**: system notifications deduplication (timestamp in body)
+- **Tests**: automated daemon integration tests (`bash scripts/test-daemon.sh`)
+
 ### v0.1.6
-- **Terminology**: Agent/REPL → **Pane** throughout the UI
-- **Unified Modal**: all overlays share a single Modal component (ESC to close, [×] button)
-- **System Notifications**: macOS banner + sound when background Pane finishes (toggle in Preferences)
-- **Status bar**: live clock + battery level (laptops)
-- **UI Scale**: `⌘=` / `⌘-` zoom entire interface (0.5x–2.0x)
-- **Sidebar**: right-click context menu (Edit / Duplicate / Restart / Delete), position toggle (left/right)
-- **From Template**: two-step flow (select template → configure Pane)
-- **Preferences**: Appearance tab (color scheme, zoom, sidebar position), Keys tab, Notifications toggle
-- **Terminal**: zoom-corrected mouse selection, system font dropdown
-- **Fix**: unread notification stale closure, modal overflow at high zoom
+- **Terminology**: Agent/REPL → Pane
+- System notifications, status bar clock/battery, UI zoom
+- Unified Modal (ESC to close), sidebar context menu
 
 ### v0.1.5
-- New logo + Nightfox as default color scheme
-- Preferences: Appearance tab, Keys tab, Templates management
-- Right-click context menu on Panes
-- Auto templates can be deleted
-- Shell tabs open in Pane's working directory
+- Nightfox default, Preferences tabs, right-click context menu
 
-### v0.1.4
-- Preferences: Template editing, Auto-template deletion
-- Shell tab border fix, scrollIntoView for active tab
-- Duplicate Pane from context menu
-
-### v0.1.3
-- Unread notifications (amber dot)
-- UTF-8 / CJK display fixed
-- Working Dir native folder picker
-
-### v0.1.0 – v0.1.2
+### v0.1.0 – v0.1.4
 - Initial release, keyboard shortcuts, preferences, system prompts, templates
