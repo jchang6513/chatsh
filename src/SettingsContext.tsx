@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import {
   TerminalSettings,
   AgentTerminalOverrides,
+  DEFAULT_SETTINGS,
   loadGlobalSettings,
   saveGlobalSettings,
   loadAgentOverrides,
@@ -20,8 +21,14 @@ interface SettingsContextValue {
 const SettingsContext = createContext<SettingsContextValue>(null!)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [globalSettings, setGlobalSettings] = useState<TerminalSettings>(loadGlobalSettings)
-  const [agentOverrides, setAgentOverrides] = useState<Record<string, AgentTerminalOverrides>>(loadAgentOverrides)
+  const [globalSettings, setGlobalSettings] = useState<TerminalSettings>(DEFAULT_SETTINGS)
+  const [agentOverrides, setAgentOverrides] = useState<Record<string, AgentTerminalOverrides>>({})
+
+  // 非同步載入設定
+  useEffect(() => {
+    loadGlobalSettings().then(setGlobalSettings)
+    loadAgentOverrides().then(setAgentOverrides)
+  }, [])
 
   const updateGlobalSettings = (patch: Partial<TerminalSettings> | ((prev: TerminalSettings) => Partial<TerminalSettings>)) => {
     setGlobalSettings(prev => {

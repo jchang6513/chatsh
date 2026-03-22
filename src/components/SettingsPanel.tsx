@@ -60,7 +60,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
   }, [])
 
   // Templates state
-  const [templates, setTemplates] = useState<Template[]>(loadTemplates)
+  const [templates, setTemplates] = useState<Template[]>([])
+  useEffect(() => { loadTemplates().then(setTemplates) }, [])
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null)
   const [showNewTemplate, setShowNewTemplate] = useState(false)
   const [newTpl, setNewTpl] = useState({ name: "", command: "", workingDir: "~", description: "" })

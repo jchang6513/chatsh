@@ -1,4 +1,5 @@
 import { MONO_FONT } from "./ui"
+import { migrateFromLocalStorage, writeJsonFile } from "./storage"
 
 export interface TerminalSettings {
   fontFamily: string
@@ -30,29 +31,23 @@ export const DEFAULT_SETTINGS: TerminalSettings = {
   notificationsEnabled: true,
 }
 
-const GLOBAL_STORAGE_KEY = "chatsh_global_settings"
-const AGENT_STORAGE_KEY = "chatsh_agent_overrides"
-
-export function loadGlobalSettings(): TerminalSettings {
-  try {
-    const saved = localStorage.getItem(GLOBAL_STORAGE_KEY)
-    if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) }
-  } catch {}
-  return { ...DEFAULT_SETTINGS }
+export async function loadGlobalSettings(): Promise<TerminalSettings> {
+  const saved = await migrateFromLocalStorage<Partial<TerminalSettings>>(
+    "config.json", "chatsh_global_settings", {}
+  )
+  return { ...DEFAULT_SETTINGS, ...saved }
 }
 
 export function saveGlobalSettings(s: TerminalSettings) {
-  localStorage.setItem(GLOBAL_STORAGE_KEY, JSON.stringify(s))
+  writeJsonFile("config.json", s)
 }
 
-export function loadAgentOverrides(): Record<string, AgentTerminalOverrides> {
-  try {
-    const saved = localStorage.getItem(AGENT_STORAGE_KEY)
-    if (saved) return JSON.parse(saved)
-  } catch {}
-  return {}
+export async function loadAgentOverrides(): Promise<Record<string, AgentTerminalOverrides>> {
+  return migrateFromLocalStorage<Record<string, AgentTerminalOverrides>>(
+    "agent_overrides.json", "chatsh_agent_overrides", {}
+  )
 }
 
 export function saveAgentOverrides(overrides: Record<string, AgentTerminalOverrides>) {
-  localStorage.setItem(AGENT_STORAGE_KEY, JSON.stringify(overrides))
+  writeJsonFile("agent_overrides.json", overrides)
 }

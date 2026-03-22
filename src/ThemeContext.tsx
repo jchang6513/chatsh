@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { ColorScheme, SCHEMES, DEFAULT_SCHEME } from "./theme"
+import { readJsonFile, writeJsonFile } from "./storage"
 
 interface ThemeContextValue {
   scheme: ColorScheme
@@ -27,16 +28,37 @@ function applyScheme(scheme: ColorScheme) {
   root.style.setProperty("--muted", scheme.muted)
 }
 
+async function loadThemeKey(): Promise<string> {
+  // 先嘗試從 JSON 檔讀取
+  const saved = await readJsonFile<string>("theme.json", "")
+  if (saved && SCHEMES[saved]) {
+    localStorage.removeItem("chatsh_scheme")
+    return saved
+  }
+  // 從 localStorage 遷移（存的是 plain string，非 JSON）
+  try {
+    const lsKey = localStorage.getItem("chatsh_scheme")
+    if (lsKey && SCHEMES[lsKey]) {
+      writeJsonFile("theme.json", lsKey)
+      localStorage.removeItem("chatsh_scheme")
+      return lsKey
+    }
+  } catch {}
+  return DEFAULT_SCHEME
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [schemeKey, setSchemeKey] = useState(() =>
-    localStorage.getItem("chatsh_scheme") ?? DEFAULT_SCHEME
-  )
+  const [schemeKey, setSchemeKey] = useState(DEFAULT_SCHEME)
+
+  useEffect(() => {
+    loadThemeKey().then(setSchemeKey)
+  }, [])
 
   const scheme = SCHEMES[schemeKey] ?? SCHEMES[DEFAULT_SCHEME]
 
   useEffect(() => {
     applyScheme(scheme)
-    localStorage.setItem("chatsh_scheme", schemeKey)
+    writeJsonFile("theme.json", schemeKey)
   }, [scheme, schemeKey])
 
   return (

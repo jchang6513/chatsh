@@ -14,6 +14,7 @@ import CommandPalette from "./components/CommandPalette";
 import SettingsPanel from "./components/SettingsPanel";
 import { useSettings } from "./SettingsContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { migrateFromLocalStorage, writeJsonFile } from "./storage";
 import type { Agent } from "./types";
 
 const DEFAULT_AGENTS: Agent[] = [
@@ -36,28 +37,25 @@ const DEFAULT_AGENTS: Agent[] = [
   },
 ];
 
-const STORAGE_KEY = "chatsh_agents";
+interface AgentsFileData {
+  agents: Agent[]
+  shellSessions: Record<string, string[]>
+  shellNames: Record<string, string>
+  hiddenBuiltins: string[]
+}
 
-function loadAgents(): Agent[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved).map((a: Agent) => ({ ...a, status: "offline" }));
-    }
-  } catch {}
-  return DEFAULT_AGENTS;
+const DEFAULT_AGENTS_FILE: AgentsFileData = {
+  agents: [],
+  shellSessions: {},
+  shellNames: {},
+  hiddenBuiltins: [],
 }
 
 export default function App() {
   const { globalSettings, updateGlobalSettings } = useSettings();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [activeAgentId, setActiveAgentId] = useState<string>("");
-  const [shellSessions, setShellSessions] = useState<Record<string, string[]>>(() => {
-    try {
-      const saved = localStorage.getItem("chatsh_shell_sessions");
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
+  const [shellSessions, setShellSessions] = useState<Record<string, string[]>>({});
   const [activeTabMap, setActiveTabMap] = useState<Record<string, string>>({});
 
   const getActivePanelTab = (agentId: string) => activeTabMap[agentId] ?? "terminal";
@@ -65,24 +63,7 @@ export default function App() {
     setActiveTabMap(prev => ({ ...prev, [agentId]: tab }));
 
   // Initialize shell counters from persisted sessions to avoid ID collisions
-  const shellCounters = useRef<Record<string, number>>((() => {
-    const counters: Record<string, number> = {};
-    try {
-      const saved = localStorage.getItem("chatsh_shell_sessions");
-      if (saved) {
-        const sessions: Record<string, string[]> = JSON.parse(saved);
-        for (const [agentId, ids] of Object.entries(sessions)) {
-          let max = 0;
-          for (const id of ids) {
-            const m = id.match(/__shell_.*_(\d+)__$/);
-            if (m) max = Math.max(max, parseInt(m[1], 10));
-          }
-          counters[agentId] = max;
-        }
-      }
-    } catch {}
-    return counters;
-  })());
+  const shellCounters = useRef<Record<string, number>>({});
   const addShellToAgent = (agentId: string) => {
     shellCounters.current[agentId] = (shellCounters.current[agentId] ?? 0) + 1;
     const n = shellCounters.current[agentId];
@@ -109,18 +90,8 @@ export default function App() {
     });
   };
 
-  // Persist shell sessions
-  useEffect(() => {
-    localStorage.setItem("chatsh_shell_sessions", JSON.stringify(shellSessions));
-  }, [shellSessions]);
-
   // shell tab names (custom, persisted)
-  const [shellNames, setShellNames] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem("chatsh_shell_names");
-      return saved ? JSON.parse(saved) : {};
-    } catch { return {}; }
-  });
+  const [shellNames, setShellNames] = useState<Record<string, string>>({});
   const [editingShellId, setEditingShellId] = useState<string | null>(null);
   const [editingShellName, setEditingShellName] = useState("");
   const getShellName = (shellId: string, idx: number) => shellNames[shellId] ?? `Shell ${idx + 1}`;
@@ -137,17 +108,10 @@ export default function App() {
     setEditingShellId(null);
   };
 
-  // Persist shell names
-  useEffect(() => {
-    localStorage.setItem("chatsh_shell_names", JSON.stringify(shellNames));
-  }, [shellNames]);
-
   const [showEditPane, setShowEditPane] = useState(false);
   const [showAddPane, setShowAddPane] = useState(false);
-  const [templates, setTemplates] = useState(loadTemplates);
-  const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]") as string[]) } catch { return new Set<string>() }
-  })
+  const [templates, setTemplates] = useState<Awaited<ReturnType<typeof loadTemplates>>>([]);
+  const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(new Set());
   // track which agents have been opened (lazy mount)
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(new Set());
   const [unreadAgents, setUnreadAgents] = useState<Set<string>>(new Set());
@@ -159,30 +123,83 @@ export default function App() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  useEffect(() => {
-    // Don't overwrite localStorage while agents list is still being initialized
-    if (agents.length === 0) return;
-    // Deduplicate by id before saving
-    const seen = new Set<string>()
-    const deduped = agents.filter(a => seen.has(a.id) ? false : (seen.add(a.id), true))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
-  }, [agents]);
+  // Persist agents data to agents.json
+  const agentsRef = useRef(agents)
+  agentsRef.current = agents
+  const shellSessionsRef = useRef(shellSessions)
+  shellSessionsRef.current = shellSessions
+  const shellNamesRef = useRef(shellNames)
+  shellNamesRef.current = shellNames
+  const hiddenBuiltinsRef = useRef(hiddenBuiltins)
+  hiddenBuiltinsRef.current = hiddenBuiltins
 
-  // Initialize agents: daemon panes first, fallback to localStorage
+  // 統一寫入 agents.json
+  const saveAgentsFile = useCallback(() => {
+    const currentAgents = agentsRef.current
+    if (currentAgents.length === 0) return
+    const seen = new Set<string>()
+    const deduped = currentAgents.filter(a => seen.has(a.id) ? false : (seen.add(a.id), true))
+    const data: AgentsFileData = {
+      agents: deduped,
+      shellSessions: shellSessionsRef.current,
+      shellNames: shellNamesRef.current,
+      hiddenBuiltins: [...hiddenBuiltinsRef.current],
+    }
+    writeJsonFile("agents.json", data)
+  }, [])
+
+  useEffect(() => {
+    if (agents.length === 0) return
+    saveAgentsFile()
+  }, [agents, saveAgentsFile]);
+
+  useEffect(() => { saveAgentsFile() }, [shellSessions, saveAgentsFile]);
+  useEffect(() => { saveAgentsFile() }, [shellNames, saveAgentsFile]);
+  useEffect(() => { saveAgentsFile() }, [hiddenBuiltins, saveAgentsFile]);
+
+  // Initialize: load from agents.json (with localStorage migration), then daemon
   useEffect(() => {
     (async () => {
-      let usedDaemon = false;
+      // 載入 agents.json（含遷移）
+      const fileData = await loadAgentsFileWithMigration()
+
+      // 載入 templates
+      const loadedTemplates = await loadTemplates()
+      setTemplates(loadedTemplates)
+
+      // 從 fileData 還原 shell 相關 state
+      const savedAgents = fileData.agents.length > 0
+        ? fileData.agents.map((a: Agent) => ({ ...a, status: "offline" as const }))
+        : DEFAULT_AGENTS
+      const savedShellSessions = fileData.shellSessions
+      const savedShellNames = fileData.shellNames
+      const savedHiddenBuiltins = new Set(fileData.hiddenBuiltins)
+
+      // 計算 shell counters
+      const counters: Record<string, number> = {}
+      for (const [agentId, ids] of Object.entries(savedShellSessions)) {
+        let max = 0
+        for (const id of ids) {
+          const m = id.match(/__shell_.*_(\d+)__$/)
+          if (m) max = Math.max(max, parseInt(m[1], 10))
+        }
+        counters[agentId] = max
+      }
+      shellCounters.current = counters
+
+      setHiddenBuiltins(savedHiddenBuiltins)
+
+      // 嘗試從 daemon 取得 pane
+      let usedDaemon = false
       try {
         const panes = await invoke<Array<{ id: string; command: string[]; cwd: string; status: string; parent_pane_id: string | null; pane_type: string }>>("list_panes");
         console.log("[App] list_panes result:", JSON.stringify(panes));
         if (panes && panes.length > 0) {
           usedDaemon = true;
 
-          // Separate agent panes and shell panes
           const agentPanes = panes.filter(p => p.pane_type !== "shell");
           const shellPanes = panes.filter(p => p.pane_type === "shell");
 
-          // Build agents purely from daemon data (replace localStorage)
           const daemonAgents: Agent[] = agentPanes.map(pane => ({
             id: pane.id,
             name: pane.command[0] ?? "pane",
@@ -192,11 +209,9 @@ export default function App() {
             status: (pane.status === "running" ? "online" : "offline") as Agent["status"],
           }));
 
-          // Enrich with localStorage metadata (name, emoji, llmLabel) if available
-          // and preserve localStorage order (user's last-seen order)
-          const saved = loadAgents();
-          const savedMap = new Map(saved.map(a => [a.id, a]));
-          const savedOrder = new Map(saved.map((a, i) => [a.id, i]));
+          // Enrich with saved metadata and preserve saved order
+          const savedMap = new Map(savedAgents.map(a => [a.id, a]));
+          const savedOrder = new Map(savedAgents.map((a, i) => [a.id, i]));
 
           for (const agent of daemonAgents) {
             const s = savedMap.get(agent.id);
@@ -207,7 +222,6 @@ export default function App() {
             }
           }
 
-          // Sort: panes in localStorage keep their saved order; new panes go to the end
           daemonAgents.sort((a, b) => {
             const ia = savedOrder.has(a.id) ? savedOrder.get(a.id)! : Infinity;
             const ib = savedOrder.has(b.id) ? savedOrder.get(b.id)! : Infinity;
@@ -233,20 +247,19 @@ export default function App() {
             }
             setShellSessions(nextSessions);
 
-            // Update shell counters to avoid ID collisions
-            const counters: Record<string, number> = {};
+            const daemonCounters: Record<string, number> = {};
             for (const sp of shellPanes) {
               const m = sp.id.match(/__shell_.*_(\d+)__$/);
               if (m && sp.parent_pane_id) {
                 const n = parseInt(m[1], 10);
-                counters[sp.parent_pane_id] = Math.max(counters[sp.parent_pane_id] ?? 0, n);
+                daemonCounters[sp.parent_pane_id] = Math.max(daemonCounters[sp.parent_pane_id] ?? 0, n);
               }
             }
-            shellCounters.current = counters;
+            shellCounters.current = daemonCounters;
 
-            // Set default shell names for restored shells that don't have names
+            // Set default shell names for restored shells
             setShellNames(prev => {
-              const next = { ...prev };
+              const next = { ...savedShellNames, ...prev };
               for (const sp of shellPanes) {
                 if (!next[sp.id]) {
                   const m = sp.id.match(/__shell_.*_(\d+)__$/);
@@ -255,22 +268,23 @@ export default function App() {
               }
               return next;
             });
+          } else {
+            setShellSessions(savedShellSessions);
+            setShellNames(savedShellNames);
           }
-
-          // Terminal.tsx / SingleShell.tsx mount 後會自己 spawn_agent（listener ready 後）
-          // 這裡不重複呼叫，避免 double attach → scrollback 重複
         }
       } catch {
         // daemon not ready yet — fallback below
       }
 
-      // Fallback: no daemon panes → use localStorage
+      // Fallback: no daemon panes → use saved agents
       if (!usedDaemon) {
-        const saved = loadAgents();
-        setAgents(saved);
-        if (saved.length > 0) {
-          setActiveAgentId(saved[0].id);
-          setMountedAgents(new Set([saved[0].id]));
+        setAgents(savedAgents);
+        setShellSessions(savedShellSessions);
+        setShellNames(savedShellNames);
+        if (savedAgents.length > 0) {
+          setActiveAgentId(savedAgents[0].id);
+          setMountedAgents(new Set([savedAgents[0].id]));
         }
       }
     })();
@@ -290,8 +304,6 @@ export default function App() {
   // Refs for stale closure prevention
   const globalSettingsRef = useRef(globalSettings)
   globalSettingsRef.current = globalSettings
-  const agentsRef = useRef(agents)
-  agentsRef.current = agents
 
   // Keep a ref to latest activeAgentId to avoid stale closure in listeners
   const activeAgentIdRef = useRef(activeAgentId)
@@ -659,7 +671,7 @@ export default function App() {
           agents={agents}
           onTemplatesChange={(t) => setTemplates(t)}
           hiddenBuiltins={hiddenBuiltins}
-          onHiddenBuiltinsChange={(h) => { setHiddenBuiltins(h); localStorage.setItem("chatsh_hidden_builtins", JSON.stringify([...h])) }}
+          onHiddenBuiltinsChange={(h) => setHiddenBuiltins(h)}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -709,4 +721,54 @@ export default function App() {
       )}
     </>
   );
+}
+
+/**
+ * 從 agents.json 載入，支援從多個 localStorage key 遷移
+ */
+async function loadAgentsFileWithMigration(): Promise<AgentsFileData> {
+  // 先嘗試用 migrateFromLocalStorage 讀 agents.json（處理 chatsh_agents）
+  const saved = await migrateFromLocalStorage<AgentsFileData | Agent[]>(
+    "agents.json", "chatsh_agents", []
+  )
+
+  // 如果讀到的是 AgentsFileData 格式（有 agents 欄位）
+  if (saved && typeof saved === "object" && !Array.isArray(saved) && "agents" in saved) {
+    // 清除已遷移的 localStorage keys
+    localStorage.removeItem("chatsh_shell_sessions")
+    localStorage.removeItem("chatsh_shell_names")
+    localStorage.removeItem("chatsh_hidden_builtins")
+    return saved as AgentsFileData
+  }
+
+  // 如果讀到的是舊格式（Agent[] 陣列，從 localStorage chatsh_agents 遷移來的）
+  const agents = Array.isArray(saved) ? saved as Agent[] : []
+
+  // 繼續遷移其他 localStorage keys
+  let shellSessions: Record<string, string[]> = {}
+  let shellNames: Record<string, string> = {}
+  let hiddenBuiltins: string[] = []
+
+  try {
+    const ss = localStorage.getItem("chatsh_shell_sessions")
+    if (ss) { shellSessions = JSON.parse(ss); localStorage.removeItem("chatsh_shell_sessions") }
+  } catch {}
+  try {
+    const sn = localStorage.getItem("chatsh_shell_names")
+    if (sn) { shellNames = JSON.parse(sn); localStorage.removeItem("chatsh_shell_names") }
+  } catch {}
+  try {
+    const hb = localStorage.getItem("chatsh_hidden_builtins")
+    if (hb) { hiddenBuiltins = JSON.parse(hb); localStorage.removeItem("chatsh_hidden_builtins") }
+  } catch {}
+
+  const data: AgentsFileData = { agents, shellSessions, shellNames, hiddenBuiltins }
+
+  // 如果有資料，寫入 agents.json
+  if (agents.length > 0) {
+    const { writeJsonFileImmediate } = await import("./storage")
+    await writeJsonFileImmediate("agents.json", data)
+  }
+
+  return data
 }

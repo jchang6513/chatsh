@@ -1,3 +1,5 @@
+import { migrateFromLocalStorage, writeJsonFile } from "./storage"
+
 export interface Template {
   id: string
   name: string
@@ -9,8 +11,6 @@ export interface Template {
   claudeMd?: string      // only for claude
 }
 
-const STORAGE_KEY = "chatsh_templates"
-
 export const DEFAULT_TEMPLATES: Template[] = [
   { id: "shell", name: "Zsh", command: "/bin/zsh", workingDir: "~", description: "Interactive shell", isBuiltin: true },
   { id: "claude", name: "Claude Code", command: "claude", workingDir: "~", description: "Anthropic AI coding assistant", isBuiltin: true },
@@ -18,21 +18,23 @@ export const DEFAULT_TEMPLATES: Template[] = [
   { id: "codex", name: "Codex", command: "codex", workingDir: "~", description: "OpenAI Codex agent", isBuiltin: true },
 ]
 
-export function loadTemplates(): Template[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      const parsed: Template[] = JSON.parse(saved)
-      if (parsed.length > 0) return parsed
-    }
-  } catch {}
+export async function loadTemplates(): Promise<Template[]> {
+  const saved = await migrateFromLocalStorage<Template[]>(
+    "templates.json", "chatsh_templates", []
+  )
+  if (saved.length > 0) return saved
   // First launch or empty: seed with defaults
-  saveTemplates(DEFAULT_TEMPLATES)
+  await saveTemplatesAsync(DEFAULT_TEMPLATES)
   return [...DEFAULT_TEMPLATES]
 }
 
 export function saveTemplates(templates: Template[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(templates))
+  writeJsonFile("templates.json", templates)
+}
+
+async function saveTemplatesAsync(templates: Template[]) {
+  const { writeJsonFileImmediate } = await import("./storage")
+  await writeJsonFileImmediate("templates.json", templates)
 }
 
 export function addTemplate(templates: Template[], t: Template): Template[] {

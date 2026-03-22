@@ -304,3 +304,46 @@ cd ~/Workspace/chatsh && npm run tauri dev
 ### TC-V017-04: ⌘Shift+[ / ] 清除未讀
 - Steps: 讓非 active pane 有未讀（藍點）→ 用 ⌘[ 或 ⌘] 切換到該 pane
 - Expected: 切換後未讀標記消失
+
+---
+
+## TC-JSON: 設定 JSON 化
+
+> 所有設定從 localStorage 搬到 `~/.chatsh/*.json`
+
+### TC-JSON01: 首次啟動產生 JSON 檔
+- 前置: 清環境（含刪除 `~/.chatsh/config.json`, `agents.json`, `templates.json`）
+- Steps: 啟動 app → 建立一個 pane
+- Expected:
+  - `~/.chatsh/config.json` 存在，內容為預設設定
+  - `~/.chatsh/agents.json` 存在，內容含剛建立的 pane
+  - `~/.chatsh/templates.json` 存在，內容為預設 template
+
+### TC-JSON02: 設定修改寫入 JSON
+- Steps: Preferences → 切換主題 / 修改字體大小
+- Expected: `~/.chatsh/config.json` 即時更新，內容反映新設定
+
+### TC-JSON03: 外部編輯 config.json 重啟生效
+- Steps: `vim ~/.chatsh/config.json` 改主題 key → 重啟 app
+- Expected: app 套用新主題
+
+### TC-JSON04: agents.json 保留 pane 資訊
+- Steps: 建 2 pane，改名、改 emoji → 重啟 app
+- Expected: 名稱、emoji、順序皆保留（從 agents.json 讀取）
+
+### TC-JSON05: templates.json 保留自訂 template
+- Steps: Preferences → Templates → 新增自訂 template → 重啟 app
+- Expected: 自訂 template 仍在（從 templates.json 讀取）
+
+### TC-JSON06: Shell sessions 保留
+- Steps: 開 shell tab × 2，重命名 → 重啟 app
+- Expected: shell tab 恢復，名稱保留（存在 agents.json）
+
+### TC-JSON07: localStorage 遷移（向後相容）
+- 前置: 有 localStorage 資料但無 JSON 檔
+- Steps: 啟動 app
+- Expected: 自動從 localStorage 遷移到 JSON 檔，設定不遺失
+
+### TC-JSON08: localStorage 不再被使用
+- Steps: 啟動 app → 操作各種設定 → 檢查 DevTools > Application > Local Storage
+- Expected: 不再寫入任何 `chatsh_*` key
