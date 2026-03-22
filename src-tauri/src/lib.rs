@@ -1,5 +1,6 @@
 pub mod protocol;
 
+use base64::Engine as _;
 use protocol::*;
 use serde_json;
 use std::collections::HashMap;
@@ -254,11 +255,13 @@ async fn write_to_agent(
     data: String,
     state: State<'_, AppState>,
 ) -> Result<(), String> {
+    // daemon expects base64-encoded data
+    let encoded = base64::engine::general_purpose::STANDARD.encode(data.as_bytes());
     send_fire_and_forget(
         &state.sock_path,
         &ClientMessage::WritePane {
             id: agent_id,
-            data,
+            data: encoded,
         },
     )
     .await
