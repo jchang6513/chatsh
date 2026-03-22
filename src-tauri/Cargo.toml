@@ -7,6 +7,10 @@ edition = "2021"
 name = "chatsh_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[[bin]]
+name = "chatsh-daemon"
+path = "src/bin/daemon.rs"
+
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
@@ -20,3 +24,4 @@ base64 = "0.22"
 tokio = { version = "1", features = ["full"] }
 tauri-plugin-dialog = "2.6.0"
 tauri-plugin-notification = "2.3.3"
+libc = "0.2"

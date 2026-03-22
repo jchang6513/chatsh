@@ -92,7 +92,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
       obs.disconnect();
       unlisten?.();
       xterm.dispose();
-      invoke("kill_agent", { agentId: sessionId }).catch(() => {});
+      // Don't kill — daemon keeps the shell alive for reconnect.
+      // Kill happens in removeShellFromAgent when user closes the tab.
       xtermRef.current = null;
       fitRef.current = null;
     };

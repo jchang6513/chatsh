@@ -54,14 +54,37 @@ export default function App() {
   const [activeAgentId, setActiveAgentId] = useState<string>(
     () => loadAgents()[0]?.id ?? ""
   );
-  const [shellSessions, setShellSessions] = useState<Record<string, string[]>>({});
+  const [shellSessions, setShellSessions] = useState<Record<string, string[]>>(() => {
+    try {
+      const saved = localStorage.getItem("chatsh_shell_sessions");
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
   const [activeTabMap, setActiveTabMap] = useState<Record<string, string>>({});
 
   const getActivePanelTab = (agentId: string) => activeTabMap[agentId] ?? "terminal";
   const setActivePanelTab = (agentId: string, tab: string) =>
     setActiveTabMap(prev => ({ ...prev, [agentId]: tab }));
 
-  const shellCounters = useRef<Record<string, number>>({});
+  // Initialize shell counters from persisted sessions to avoid ID collisions
+  const shellCounters = useRef<Record<string, number>>((() => {
+    const counters: Record<string, number> = {};
+    try {
+      const saved = localStorage.getItem("chatsh_shell_sessions");
+      if (saved) {
+        const sessions: Record<string, string[]> = JSON.parse(saved);
+        for (const [agentId, ids] of Object.entries(sessions)) {
+          let max = 0;
+          for (const id of ids) {
+            const m = id.match(/__shell_.*_(\d+)__$/);
+            if (m) max = Math.max(max, parseInt(m[1], 10));
+          }
+          counters[agentId] = max;
+        }
+      }
+    } catch {}
+    return counters;
+  })());
   const addShellToAgent = (agentId: string) => {
     shellCounters.current[agentId] = (shellCounters.current[agentId] ?? 0) + 1;
     const n = shellCounters.current[agentId];
@@ -73,6 +96,8 @@ export default function App() {
   };
 
   const removeShellFromAgent = (agentId: string, shellId: string) => {
+    // Kill the shell PTY in daemon
+    invoke("kill_agent", { agentId: shellId }).catch(() => {});
     setShellSessions(prev => {
       const sessions = prev[agentId] ?? [];
       const next = sessions.filter(id => id !== shellId);
@@ -86,8 +111,18 @@ export default function App() {
     });
   };
 
-  // shell tab names (custom)
-  const [shellNames, setShellNames] = useState<Record<string, string>>({});
+  // Persist shell sessions
+  useEffect(() => {
+    localStorage.setItem("chatsh_shell_sessions", JSON.stringify(shellSessions));
+  }, [shellSessions]);
+
+  // shell tab names (custom, persisted)
+  const [shellNames, setShellNames] = useState<Record<string, string>>(() => {
+    try {
+      const saved = localStorage.getItem("chatsh_shell_names");
+      return saved ? JSON.parse(saved) : {};
+    } catch { return {}; }
+  });
   const [editingShellId, setEditingShellId] = useState<string | null>(null);
   const [editingShellName, setEditingShellName] = useState("");
   const getShellName = (shellId: string, idx: number) => shellNames[shellId] ?? `Shell ${idx + 1}`;
@@ -103,6 +138,11 @@ export default function App() {
     }
     setEditingShellId(null);
   };
+
+  // Persist shell names
+  useEffect(() => {
+    localStorage.setItem("chatsh_shell_names", JSON.stringify(shellNames));
+  }, [shellNames]);
 
   const [showEditPane, setShowEditPane] = useState(false);
   const [showAddPane, setShowAddPane] = useState(false);

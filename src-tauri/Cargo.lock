@@ -449,6 +449,7 @@ name = "chatsh"
 version = "0.1.6"
 dependencies = [
  "base64 0.22.1",
+ "libc",
  "portable-pty",
  "serde",
  "serde_json",
