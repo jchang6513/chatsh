@@ -50,10 +50,8 @@ function loadAgents(): Agent[] {
 
 export default function App() {
   const { globalSettings, updateGlobalSettings } = useSettings();
-  const [agents, setAgents] = useState<Agent[]>(loadAgents);
-  const [activeAgentId, setActiveAgentId] = useState<string>(
-    () => loadAgents()[0]?.id ?? ""
-  );
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [activeAgentId, setActiveAgentId] = useState<string>("");
   const [shellSessions, setShellSessions] = useState<Record<string, string[]>>(() => {
     try {
       const saved = localStorage.getItem("chatsh_shell_sessions");
@@ -151,9 +149,7 @@ export default function App() {
     try { return new Set(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]")) } catch { return new Set() }
   })
   // track which agents have been opened (lazy mount)
-  const [mountedAgents, setMountedAgents] = useState<Set<string>>(
-    () => new Set([loadAgents()[0]?.id ?? ""])
-  );
+  const [mountedAgents, setMountedAgents] = useState<Set<string>>(new Set());
   const [unreadAgents, setUnreadAgents] = useState<Set<string>>(new Set());
 
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
@@ -170,89 +166,111 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
   }, [agents]);
 
-  // Reconnect to daemon panes on startup
+  // Initialize agents: daemon panes first, fallback to localStorage
   useEffect(() => {
     (async () => {
+      let usedDaemon = false;
       try {
         const panes = await invoke<Array<{ id: string; command: string[]; cwd: string; status: string; parent_pane_id: string | null; pane_type: string }>>("list_panes");
-        if (!panes || panes.length === 0) return;
+        if (panes && panes.length > 0) {
+          usedDaemon = true;
 
-        // Separate agent panes and shell panes
-        const agentPanes = panes.filter(p => p.pane_type !== "shell");
-        const shellPanes = panes.filter(p => p.pane_type === "shell");
+          // Separate agent panes and shell panes
+          const agentPanes = panes.filter(p => p.pane_type !== "shell");
+          const shellPanes = panes.filter(p => p.pane_type === "shell");
 
-        setAgents(prev => {
-          const existingIds = new Set(prev.map(a => a.id));
-          const newAgents: Agent[] = [];
-          for (const pane of agentPanes) {
-            if (!existingIds.has(pane.id)) {
-              newAgents.push({
-                id: pane.id,
-                name: pane.command[0] ?? "pane",
-                emoji: "🔗",
-                command: pane.command,
-                workingDir: pane.cwd,
-                status: pane.status === "running" ? "online" : "offline",
-              });
+          // Build agents purely from daemon data (replace localStorage)
+          const daemonAgents: Agent[] = agentPanes.map(pane => ({
+            id: pane.id,
+            name: pane.command[0] ?? "pane",
+            emoji: "🔗",
+            command: pane.command,
+            workingDir: pane.cwd,
+            status: (pane.status === "running" ? "online" : "offline") as Agent["status"],
+          }));
+
+          // Enrich with localStorage metadata (name, emoji, llmLabel) if available
+          const saved = loadAgents();
+          const savedMap = new Map(saved.map(a => [a.id, a]));
+          for (const agent of daemonAgents) {
+            const s = savedMap.get(agent.id);
+            if (s) {
+              agent.name = s.name;
+              agent.emoji = s.emoji;
+              if (s.llmLabel) agent.llmLabel = s.llmLabel;
             }
           }
-          if (newAgents.length === 0) return prev;
-          return [...prev, ...newAgents];
-        });
 
-        // Restore shell sessions from daemon
-        if (shellPanes.length > 0) {
-          setShellSessions(prev => {
-            const next = { ...prev };
+          setAgents(daemonAgents);
+          if (daemonAgents.length > 0) {
+            setActiveAgentId(daemonAgents[0].id);
+            setMountedAgents(new Set([daemonAgents[0].id]));
+          }
+
+          // Restore shell sessions from daemon
+          if (shellPanes.length > 0) {
+            const nextSessions: Record<string, string[]> = {};
             for (const sp of shellPanes) {
               const parentId = sp.parent_pane_id;
               if (!parentId) continue;
-              if (!next[parentId]) next[parentId] = [];
-              if (!next[parentId].includes(sp.id)) {
-                next[parentId] = [...next[parentId], sp.id];
+              if (!nextSessions[parentId]) nextSessions[parentId] = [];
+              if (!nextSessions[parentId].includes(sp.id)) {
+                nextSessions[parentId].push(sp.id);
               }
             }
-            return next;
-          });
-          // Update shell counters to avoid ID collisions
-          for (const sp of shellPanes) {
-            const m = sp.id.match(/__shell_.*_(\d+)__$/);
-            if (m && sp.parent_pane_id) {
-              const n = parseInt(m[1], 10);
-              shellCounters.current[sp.parent_pane_id] = Math.max(
-                shellCounters.current[sp.parent_pane_id] ?? 0, n
-              );
-            }
-          }
-          // Set default shell names for restored shells that don't have names
-          setShellNames(prev => {
-            const next = { ...prev };
-            for (const sp of shellPanes) {
-              if (!next[sp.id]) {
-                const m = sp.id.match(/__shell_.*_(\d+)__$/);
-                next[sp.id] = m ? `Shell ${m[1]}` : "Shell";
-              }
-            }
-            return next;
-          });
-        }
+            setShellSessions(nextSessions);
 
-        // Re-attach running panes (spawn_agent handles attach if already running)
-        for (const pane of panes) {
-          if (pane.status === "running") {
-            invoke("spawn_agent", {
-              agentId: pane.id,
-              command: pane.command,
-              workingDir: pane.cwd,
-              cols: 80,
-              rows: 24,
-              parentPaneId: pane.parent_pane_id ?? null,
-              paneType: pane.pane_type,
-            }).catch(() => {});
+            // Update shell counters to avoid ID collisions
+            const counters: Record<string, number> = {};
+            for (const sp of shellPanes) {
+              const m = sp.id.match(/__shell_.*_(\d+)__$/);
+              if (m && sp.parent_pane_id) {
+                const n = parseInt(m[1], 10);
+                counters[sp.parent_pane_id] = Math.max(counters[sp.parent_pane_id] ?? 0, n);
+              }
+            }
+            shellCounters.current = counters;
+
+            // Set default shell names for restored shells that don't have names
+            setShellNames(prev => {
+              const next = { ...prev };
+              for (const sp of shellPanes) {
+                if (!next[sp.id]) {
+                  const m = sp.id.match(/__shell_.*_(\d+)__$/);
+                  next[sp.id] = m ? `Shell ${m[1]}` : "Shell";
+                }
+              }
+              return next;
+            });
+          }
+
+          // Re-attach running panes (spawn_agent handles attach if already running)
+          for (const pane of panes) {
+            if (pane.status === "running") {
+              invoke("spawn_agent", {
+                agentId: pane.id,
+                command: pane.command,
+                workingDir: pane.cwd,
+                cols: 80,
+                rows: 24,
+                parentPaneId: pane.parent_pane_id ?? null,
+                paneType: pane.pane_type,
+              }).catch(() => {});
+            }
           }
         }
       } catch {
-        // daemon not ready yet — ignore
+        // daemon not ready yet — fallback below
+      }
+
+      // Fallback: no daemon panes → use localStorage
+      if (!usedDaemon) {
+        const saved = loadAgents();
+        setAgents(saved);
+        if (saved.length > 0) {
+          setActiveAgentId(saved[0].id);
+          setMountedAgents(new Set([saved[0].id]));
+        }
       }
     })();
   }, []);
