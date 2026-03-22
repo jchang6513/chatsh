@@ -138,6 +138,25 @@ fn schedule_deletion(agent_id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn list_fonts() -> Vec<String> {
+    // Use system_profiler or fc-list to get installed fonts
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(r#"fc-list 2>/dev/null | sed 's/.*: //;s/:.*//;s/, /\n/g' | sort -u | grep -v '^$' || ls /System/Library/Fonts/ /Library/Fonts/ ~/Library/Fonts/ 2>/dev/null | grep -E '\.(ttf|otf|ttc)$' | sed 's/\.[^.]*$//' | sort -u"#)
+        .output();
+    match output {
+        Ok(o) if o.status.success() => {
+            let raw = String::from_utf8_lossy(&o.stdout);
+            raw.lines()
+                .map(|l| l.trim().to_string())
+                .filter(|l| !l.is_empty())
+                .collect()
+        }
+        _ => vec!["SF Mono".to_string(), "Menlo".to_string(), "Monaco".to_string(), "Courier New".to_string()]
+    }
+}
+
+#[tauri::command]
 fn cleanup_deleted_agents() -> Result<u32, String> {
     let home = std::env::var("HOME").unwrap_or_default();
     let pending_path = format!("{}/.chatsh/pending_deletion.json", home);
@@ -198,6 +217,7 @@ pub fn run() {
             write_file,
             schedule_deletion,
             cleanup_deleted_agents,
+            list_fonts,
         ])
         .run(tauri::generate_context!())
         .expect("Failed to launch Tauri app");

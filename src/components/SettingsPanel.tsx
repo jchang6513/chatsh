@@ -1,6 +1,7 @@
 import CloseButton from "./ui/CloseButton"
 import { MONO_FONT, onBlurInput, onFocusInput, onHoverGreen, onLeaveGreen } from "../ui"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { invoke } from "@tauri-apps/api/core"
 import { useSettings } from "../SettingsContext"
 import { useTheme } from "../ThemeContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
@@ -45,6 +46,17 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
   const [mainTab, setMainTab] = useState<MainTab>("terminal")
   const [activeTab, setActiveTab] = useState<TerminalTab>("global")
   const [editingTpl, setEditingTpl] = useState<Template | null>(null)
+  const [systemFonts, setSystemFonts] = useState<string[]>([])
+  const [fontSearch, setFontSearch] = useState("")
+
+  useEffect(() => {
+    invoke<string[]>("list_fonts").then(fonts => {
+      // Prepend common monospace fonts
+      const mono = ["SF Mono", "Menlo", "Monaco", "Courier New", "JetBrains Mono", "Fira Code", "Source Code Pro"]
+      const filtered = fonts.filter(f => !mono.includes(f))
+      setSystemFonts([...mono, ...filtered])
+    }).catch(() => {})
+  }, [])
 
   // Templates state
   const [templates, setTemplates] = useState<Template[]>(loadTemplates)
@@ -506,13 +518,20 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
           <div style={sectionStyle}>
             <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>TEXT</div>
             {renderFieldRow("Font Family", "fontFamily",
-              <input
-                value={isGlobal ? resolved.fontFamily : (isOverridden("fontFamily") ? (currentOverrides.fontFamily ?? "") : resolved.fontFamily)}
-                onChange={e => updateField("fontFamily", e.target.value)}
-                style={inputStyle}
-                onFocus={onFocusInput}
-                onBlur={onBlurInput}
-              />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                <input
+                  list="system-fonts-list"
+                  value={isGlobal ? resolved.fontFamily : (isOverridden("fontFamily") ? (currentOverrides.fontFamily ?? "") : resolved.fontFamily)}
+                  onChange={e => updateField("fontFamily", e.target.value)}
+                  style={inputStyle}
+                  onFocus={onFocusInput}
+                  onBlur={onBlurInput}
+                  placeholder="e.g. SF Mono"
+                />
+                <datalist id="system-fonts-list">
+                  {systemFonts.map(f => <option key={f} value={f} />)}
+                </datalist>
+              </div>
             )}
             {renderFieldRow("Font Size", "fontSize",
               <input
