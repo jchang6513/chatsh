@@ -19,7 +19,7 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   const xtermRef = useRef<XTerm | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const { scheme } = useTheme();
-  const { getResolvedSettings } = useSettings();
+  const { getResolvedSettings, globalSettings } = useSettings();
   const settings = getResolvedSettings(agentId);
 
   // xterm lifecycle: create on mount, cleanup on unmount
@@ -30,7 +30,7 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     const xterm = new XTerm({
       cursorBlink: settings.cursorBlink,
       cursorStyle: settings.cursorStyle,
-      fontSize: settings.fontSize,
+      fontSize: Math.round(settings.fontSize * (globalSettings.uiScale ?? 1)),
       fontFamily: settings.fontFamily,
       lineHeight: settings.lineHeight,
       scrollback: settings.scrollback,
@@ -121,7 +121,7 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   useEffect(() => {
     const xterm = xtermRef.current;
     if (!xterm) return;
-    xterm.options.fontSize = settings.fontSize;
+    xterm.options.fontSize = Math.round(settings.fontSize * (globalSettings.uiScale ?? 1));
     xterm.options.fontFamily = settings.fontFamily;
     xterm.options.lineHeight = settings.lineHeight;
     xterm.options.cursorBlink = settings.cursorBlink;

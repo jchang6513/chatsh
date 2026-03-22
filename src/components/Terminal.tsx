@@ -17,7 +17,7 @@ interface Props {
 
 export default function Terminal({ agent, isActive, onStatusChange, restartKey = 0 }: Props) {
   const { scheme } = useTheme();
-  const { getResolvedSettings } = useSettings();
+  const { getResolvedSettings, globalSettings } = useSettings();
   const settings = getResolvedSettings(agent.id);
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
@@ -27,7 +27,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
   useEffect(() => {
     if (!xtermRef.current) return;
     const xterm = xtermRef.current;
-    xterm.options.fontSize = settings.fontSize;
+    xterm.options.fontSize = Math.round(settings.fontSize * (globalSettings.uiScale ?? 1));
     xterm.options.fontFamily = settings.fontFamily;
     xterm.options.lineHeight = settings.lineHeight;
     xterm.options.cursorBlink = settings.cursorBlink;
@@ -86,7 +86,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     const xterm = new XTerm({
       cursorBlink: settings.cursorBlink,
       cursorStyle: settings.cursorStyle,
-      fontSize: settings.fontSize,
+      fontSize: Math.round(settings.fontSize * (globalSettings.uiScale ?? 1)),
       fontFamily: settings.fontFamily,
       lineHeight: settings.lineHeight,
       scrollback: settings.scrollback,

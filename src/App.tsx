@@ -465,7 +465,8 @@ export default function App() {
                 </div>
               </div>
               {/* Terminal: lazy mount, visibility toggle */}
-              <div style={{ flex: 1, display: getActivePanelTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0 }}>
+              {/* counter-zoom so xterm mouse coords are correct */}
+              <div style={{ flex: 1, display: getActivePanelTab(agent.id) === "terminal" ? "flex" : "none", minHeight: 0, zoom: 1 / globalSettings.uiScale }}>
                 {mountedAgents.has(agent.id) && (
                   <Terminal
                     agent={agent}
@@ -477,7 +478,7 @@ export default function App() {
               </div>
               {/* Shell tabs: independent, visibility toggle */}
               {(shellSessions[agent.id] ?? []).map(shellId => (
-                <div key={shellId} style={{ flex: 1, display: getActivePanelTab(agent.id) === shellId ? "flex" : "none", minHeight: 0, position: "relative" }}>
+                <div key={shellId} style={{ flex: 1, display: getActivePanelTab(agent.id) === shellId ? "flex" : "none", minHeight: 0, position: "relative", zoom: 1 / globalSettings.uiScale }}>
                   <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
                     <SingleShell sessionId={shellId} agentId={agent.id} workingDir={agent.workingDir} isActive={agent.id === activeAgentId && getActivePanelTab(agent.id) === shellId} />
                   </div>
