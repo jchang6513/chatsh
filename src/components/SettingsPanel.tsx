@@ -8,6 +8,8 @@ import { loadTemplates, saveTemplates, type Template, KNOWN_TOOLS } from "../tem
 import type { Agent } from "../types"
 
 interface Props {
+  hiddenBuiltins?: Set<string>
+  onHiddenBuiltinsChange?: (h: Set<string>) => void
   agents: Agent[]
   onTemplatesChange?: (templates: Template[]) => void
   onClose: () => void
@@ -22,7 +24,7 @@ const SYSTEM_PROMPT_FILES: Record<string, string> = {
   claude: "CLAUDE.md", gemini: "GEMINI.md", codex: "AGENTS.md",
 }
 
-export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Props) {
+export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltins: hiddenBuiltinsProp, onHiddenBuiltinsChange, onClose }: Props) {
   const {
     globalSettings,
     updateGlobalSettings,
@@ -34,13 +36,10 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
 
   const { schemeKey, setScheme, availableSchemes } = useTheme()
   const [hoveredScheme, setHoveredScheme] = useState<string | null>(null)
-  const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]")) } catch { return new Set() }
-  })
+  const hiddenBuiltins = hiddenBuiltinsProp ?? new Set<string>()
   const hideBuiltin = (id: string) => {
     const next = new Set([...hiddenBuiltins, id])
-    setHiddenBuiltins(next)
-    localStorage.setItem("chatsh_hidden_builtins", JSON.stringify([...next]))
+    onHiddenBuiltinsChange?.(next)
   }
 
   const [mainTab, setMainTab] = useState<MainTab>("terminal")
@@ -196,7 +195,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, onClose }: Pr
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--red)"; e.currentTarget.style.color = "var(--red)" }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)" }}
           >
-            [ESC]
+            [×]
           </button>
         </div>
 

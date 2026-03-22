@@ -10,6 +10,7 @@ import { KNOWN_TOOLS, addTemplate } from "../templates";
 
 
 interface Props {
+  hiddenBuiltins?: Set<string>;
   templates: Template[];
   onAdd: (agent: Agent) => void;
   onAddTemplate?: (t: Template) => void;
@@ -69,7 +70,7 @@ async function writeSystemPrompt(agentId: string, command: string, content: stri
   await invoke("write_file", { path, content }).catch(() => {})
 }
 
-export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose }: Props) {
+export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltinsProp, onAdd, onAddTemplate, onClose }: Props) {
   const [mode, setMode] = useState<Mode>("choose");
   const [templateStep, setTemplateStep] = useState<1 | 2>(1);
   const [detectedIds, setDetectedIds] = useState<string[]>([]);
@@ -96,7 +97,7 @@ export default function AddPaneModal({ templates, onAdd, onAddTemplate, onClose 
       .catch(() => {})
   }, [])
 
-  const hiddenBuiltins = new Set<string>(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]"))
+  const hiddenBuiltins = hiddenBuiltinsProp ?? new Set<string>()
   const builtinTemplates = KNOWN_TOOLS.filter(t => detectedIds.includes(t.id) && !hiddenBuiltins.has(t.id))
   const userTemplates = templates.filter(t => !t.isBuiltin)
   const allTemplates = [

@@ -106,6 +106,9 @@ export default function App() {
   const [showEditPane, setShowEditPane] = useState(false);
   const [showAddPane, setShowAddPane] = useState(false);
   const [templates, setTemplates] = useState(loadTemplates);
+  const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]")) } catch { return new Set() }
+  })
   // track which agents have been opened (lazy mount)
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(
     () => new Set([loadAgents()[0]?.id ?? ""])
@@ -482,6 +485,8 @@ export default function App() {
         <SettingsPanel
           agents={agents}
           onTemplatesChange={(t) => setTemplates(t)}
+          hiddenBuiltins={hiddenBuiltins}
+          onHiddenBuiltinsChange={(h) => { setHiddenBuiltins(h); localStorage.setItem("chatsh_hidden_builtins", JSON.stringify([...h])) }}
           onClose={() => setShowSettings(false)}
         />
       )}
@@ -496,6 +501,7 @@ export default function App() {
       {showAddPane && (
         <AddPaneModal
           templates={templates}
+          hiddenBuiltins={hiddenBuiltins}
           onAddTemplate={(t) => setTemplates(prev => [...prev, t])}
           onAdd={(agent) => {
             setAgents(prev => [...prev, agent]);
