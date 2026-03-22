@@ -72,13 +72,33 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - `write_to_agent`：傳送前必須 base64 encode（daemon protocol 要求）
 - App.tsx：**不要在 reconnect 時呼叫 spawn_agent**，由 Terminal.tsx mount 後自行 attach
 
-### 清乾淨環境（測試前）
+### 何時需要清環境
+
+| 測試類型 | 需要清環境？ | 說明 |
+|---------|------------|------|
+| TC-D（自動化） | ❌ 不需要 | 腳本自己 setup/teardown |
+| TC-Session01~04（保留測試） | ❌ 不需要 | 測試的就是「有東西可以保留」 |
+| TC-P / TC-S / TC-T / TC-UI | ❌ 不需要 | 在現有環境操作即可 |
+| **全新啟動測試（from scratch）** | ✅ 必須清 | 確認無舊 state 干擾 |
+| **發版前完整回歸** | ✅ 必須清 | 從零驗證整個流程 |
+
+### 清乾淨環境指令
+只在需要「從零開始」時執行：
 ```bash
 pkill -f chatsh-daemon; pkill -f "tauri dev|vite|target/debug/chatsh$"
+sleep 1
 rm -f ~/.chatsh/daemon.sock ~/.chatsh/state.json
 rm -rf ~/.chatsh/agents/
 rm -rf ~/Library/WebKit/chatsh/         # dev build
 rm -rf ~/Library/WebKit/sh.chat.app/    # release build
+```
+
+### 只重啟 app（保留 daemon 和 session）
+```bash
+pkill -f "target/debug/chatsh$"
+pkill -f "vite|tauri dev"
+# 等 2 秒後重開
+cd ~/Workspace/chatsh && npm run tauri dev
 ```
 
 ---

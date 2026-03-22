@@ -1,5 +1,33 @@
 # chatsh Test Cases
 
+## 測試環境說明
+
+### 何時清環境
+| 情境 | 指令 |
+|------|------|
+| 全新啟動驗證 / 發版前完整回歸 | 執行 clean（見下方） |
+| Session 保留測試（TC-Session01~05） | **不清**，需要有現有 pane |
+| 一般功能測試（TC-P/S/T/UI） | 不需要清，在現有環境操作 |
+| TC-D 自動化 | 腳本自行 setup/teardown |
+
+### Clean Script（全新啟動用）
+```bash
+pkill -f chatsh-daemon; pkill -f "tauri dev|vite|target/debug/chatsh$"
+sleep 1
+rm -f ~/.chatsh/daemon.sock ~/.chatsh/state.json
+rm -rf ~/.chatsh/agents/
+rm -rf ~/Library/WebKit/chatsh/
+rm -rf ~/Library/WebKit/sh.chat.app/
+cd ~/Workspace/chatsh && npm run tauri dev
+```
+
+### 只重啟 app（保留 session）
+```bash
+pkill -f "target/debug/chatsh$"; pkill -f "vite|tauri dev"
+sleep 2
+cd ~/Workspace/chatsh && npm run tauri dev
+```
+
 ---
 
 ## TC-D: Daemon 整合測試（自動化）
@@ -172,25 +200,34 @@
 
 ## TC-Session: Session 持久化
 
+> **環境說明**
+> - TC-Session01~05（保留測試）：**不清環境**，需要有現有 pane 才能驗證保留
+> - 全新啟動驗證：先執行 clean script 再從 TC-P01 建 pane
+
 ### TC-Session01: App 重啟保留 pane（only kill app）
+- 前置: 至少有 1 個 running pane，daemon 繼續跑
 - Steps: 關閉 app（不殺 daemon）→ 重啟 app
 - Expected: 所有 pane 恢復，scrollback 顯示
 
 ### TC-Session02: App 重啟後可正常輸入
-- Steps: 重啟 app → 點擊 terminal → 輸入文字
+- 前置: TC-Session01 通過後
+- Steps: 點擊 terminal → 輸入文字 → Enter
 - Expected: 輸入正常，有 echo
 
 ### TC-Session03: App 重啟後無視覺異常
+- 前置: 有 Claude/Gemini pane，daemon 繼續跑
 - Steps: 重啟 app，觀察各 pane
 - Expected: 無底色殘留，無 `1;2c` 等亂碼，scrollback 不重複
 
 ### TC-Session04: Shell tab 重啟保留
-- Steps: 建立 agent + 2 shell tab → 重啟 app
+- 前置: 有 agent pane + ≥2 shell tab，daemon 繼續跑
+- Steps: 重啟 app
 - Expected: shell tab 恢復，tab bar 顯示正確數量
 
 ### TC-Session05: Pane 設定（名稱/emoji）重啟保留
-- Steps: 重命名 pane → 重啟 app
-- Expected: 名稱保留
+- 前置: 有已命名的 pane
+- Steps: 重啟 app
+- Expected: 名稱/emoji 保留
 
 ---
 
