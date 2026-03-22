@@ -138,6 +138,28 @@ fn schedule_deletion(agent_id: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn get_battery() -> Option<serde_json::Value> {
+    let output = std::process::Command::new("pmset")
+        .args(["-g", "batt"])
+        .output()
+        .ok()?;
+    let text = String::from_utf8_lossy(&output.stdout);
+    // If only AC Power and no battery line, return None
+    if text.contains("'AC Power'") && !text.contains("InternalBattery") {
+        return None;
+    }
+    // Extract percentage and charging status
+    let percent = text.lines()
+        .find(|l| l.contains('%'))
+        .and_then(|l| l.split_whitespace().find(|w| w.ends_with('%') || w.ends_with("%;")))?
+        .trim_end_matches("%;")
+        .trim_end_matches('%')
+        .parse::<u8>().ok()?;
+    let charging = text.contains("AC Power") || text.contains("charging");
+    Some(serde_json::json!({ "percent": percent, "charging": charging }))
+}
+
+#[tauri::command]
 fn list_fonts() -> Vec<String> {
     // Use system_profiler or fc-list to get installed fonts
     let output = std::process::Command::new("sh")
@@ -218,6 +240,7 @@ pub fn run() {
             schedule_deletion,
             cleanup_deleted_agents,
             list_fonts,
+            get_battery,
         ])
         .run(tauri::generate_context!())
         .expect("Failed to launch Tauri app");
