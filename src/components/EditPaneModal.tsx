@@ -3,18 +3,18 @@ import Modal from "./ui/Modal"
 import { useState, useEffect } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import type { Agent } from "../types";
+import type { Pane } from "../types";
 
-interface AvailableAgent {
+interface AvailablePane {
   name: string;
   command: string;
   description: string;
 }
 
 interface Props {
-  onAdd: (agent: Agent) => void;
+  onAdd: (agent: Pane) => void;
   onClose: () => void;
-  initialValues?: Partial<Agent>;
+  initialValues?: Partial<Pane>;
 }
 
 
@@ -24,7 +24,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
   const isEditing = !!initialValues?.id;
 
   const [step, setStep] = useState<1 | 2>(isEditing ? 2 : 1);
-  const [available, setAvailable] = useState<AvailableAgent[]>([]);
+  const [available, setAvailable] = useState<AvailablePane[]>([]);
   const [scanning, setScanning] = useState(false);
 
   const [name, setName] = useState(initialValues?.name ?? "");
@@ -53,14 +53,14 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
   useEffect(() => {
     if (!isEditing) {
       setScanning(true);
-      invoke<AvailableAgent[]>("scan_available_agents")
+      invoke<AvailablePane[]>("scan_available_agents")
         .then(setAvailable)
         .catch(() => setAvailable([]))
         .finally(() => setScanning(false));
     }
   }, [isEditing]);
 
-  const selectAgent = (agent: AvailableAgent) => {
+  const selectPane = (agent: AvailablePane) => {
     setName(agent.name);
     setCommand(agent.command);
     setStep(2);
@@ -77,10 +77,9 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
     if (!name.trim() || !command.trim()) return;
 
     const agentId = initialValues?.id ?? Date.now().toString();
-    const agent: Agent = {
+    const agent: Pane = {
       id: agentId,
       name: name.trim(),
-      emoji: "🤖",
       command: command.split(" ").filter(Boolean),
       workingDir: workingDir.trim() || "~",
       status: initialValues?.status ?? "offline",
@@ -117,7 +116,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
           <>
             <div style={{ fontSize: 11, color: "var(--muted)", marginBottom: 4 }}>┌─── SELECT AGENT ───┐</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--green)", marginBottom: 16 }}>
-              Select Agent Type
+              Select Pane Type
             </div>
             {scanning ? (
               <div style={{ fontSize: 12, padding: "32px 0", textAlign: "center", color: "var(--muted)" }}>
@@ -130,7 +129,7 @@ export default function EditPaneModal({ onAdd, onClose, initialValues }: Props) 
                     <button
                       key={a.command}
                       type="button"
-                      onClick={() => selectAgent(a)}
+                      onClick={() => selectPane(a)}
                       style={{
                         display: "flex",
                         flexDirection: "column",

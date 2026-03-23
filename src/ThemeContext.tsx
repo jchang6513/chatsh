@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { ColorScheme, SCHEMES, DEFAULT_SCHEME } from "./theme"
+import { settingsStore } from "./storage"
 
 interface ThemeContextValue {
   scheme: ColorScheme
@@ -28,19 +29,25 @@ function applyScheme(scheme: ColorScheme) {
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [schemeKey, setSchemeKey] = useState(() =>
-    localStorage.getItem("chatsh_scheme") ?? DEFAULT_SCHEME
-  )
+  // Initialize from settingsStore (already loaded by SettingsProvider before render)
+  const [schemeKey, setSchemeKey] = useState<string>(() => {
+    const saved = settingsStore.get().theme
+    return (saved && SCHEMES[saved]) ? saved : DEFAULT_SCHEME
+  })
 
   const scheme = SCHEMES[schemeKey] ?? SCHEMES[DEFAULT_SCHEME]
 
   useEffect(() => {
     applyScheme(scheme)
-    localStorage.setItem("chatsh_scheme", schemeKey)
-  }, [scheme, schemeKey])
+  }, [scheme])
+
+  const setScheme = (key: string) => {
+    setSchemeKey(key)
+    settingsStore.patch({ theme: key })
+  }
 
   return (
-    <ThemeContext.Provider value={{ scheme, schemeKey, setScheme: setSchemeKey, availableSchemes: SCHEMES }}>
+    <ThemeContext.Provider value={{ scheme, schemeKey, setScheme, availableSchemes: SCHEMES }}>
       {children}
     </ThemeContext.Provider>
   )

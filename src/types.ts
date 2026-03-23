@@ -1,16 +1,17 @@
-import type { AgentTerminalOverrides } from "./settings";
+import type { PaneTerminalOverrides } from "./settings";
 
-export interface Agent {
+export interface Pane {
   id: string;
   name: string;
-  emoji: string;
-  avatar?: string;
   command: string[];
   workingDir: string;
   llmLabel?: string;
   status: "online" | "offline";
-  /** Per-agent terminal settings override (overrides global) */
-  terminalOverrides?: AgentTerminalOverrides;
+  /** Per-pane terminal settings override (overrides global) */
+  terminalOverrides?: PaneTerminalOverrides;
   /** Child process PID (from daemon) — used for real-time cwd tracking */
   pid?: number;
 }
+
+// Backwards compatibility alias — remove after full migration
+export type Agent = Pane;

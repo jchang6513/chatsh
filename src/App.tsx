@@ -15,13 +15,13 @@ import CommandPalette from "./components/CommandPalette";
 import SettingsPanel from "./components/SettingsPanel";
 import { useSettings } from "./SettingsContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import type { Agent } from "./types";
+import type { Pane } from "./types";
+import { readJsonFile, writeJsonFile } from "./storage";
 
-const DEFAULT_AGENTS: Agent[] = [
+const DEFAULT_PANES: Pane[] = [
   {
     id: "1000000000001",
     name: "Engineering",
-    emoji: "🤖",
     command: ["claude"],
     workingDir: "~",
     llmLabel: "Claude",
@@ -30,28 +30,57 @@ const DEFAULT_AGENTS: Agent[] = [
   {
     id: "1000000000002",
     name: "Shell",
-    emoji: "🐚",
     command: ["/bin/zsh"],
     workingDir: "~",
     status: "offline",
   },
 ];
 
+interface PanesFileData {
+  panes: Pane[];
+}
+
+const PANES_FILE = "panes.json";
+const LEGACY_AGENTS_FILE = "agents.json";
+
 const STORAGE_KEY = "chatsh_agents";
 
-function loadAgents(): Agent[] {
+function loadAgentsFromLocalStorage(): Pane[] {
   try {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
-      return JSON.parse(saved).map((a: Agent) => ({ ...a, status: "offline" }));
+      return JSON.parse(saved).map((a: Pane) => ({ ...a, status: "offline" }));
     }
   } catch {}
-  return DEFAULT_AGENTS;
+  return DEFAULT_PANES;
+}
+
+async function loadPanesWithMigration(): Promise<Pane[]> {
+  // 1. 先試讀 panes.json
+  const panesData = await readJsonFile<PanesFileData | null>(PANES_FILE, null);
+  if (panesData?.panes) {
+    return panesData.panes.map(p => ({ ...p, status: "offline" as const }));
+  }
+  // 2. 向後相容：試讀 agents.json
+  const agentsData = await readJsonFile<{ agents?: Pane[] } | null>(LEGACY_AGENTS_FILE, null);
+  if (agentsData?.agents) {
+    const panes = agentsData.agents.map(p => ({ ...p, status: "offline" as const }));
+    // 遷移到 panes.json
+    savePanesFile(panes);
+    return panes;
+  }
+  // 3. Fallback: localStorage
+  return loadAgentsFromLocalStorage();
+}
+
+function savePanesFile(panes: Pane[]): void {
+  const data: PanesFileData = { panes };
+  writeJsonFile(PANES_FILE, data);
 }
 
 export default function App() {
   const { globalSettings, updateGlobalSettings } = useSettings();
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agents, setAgents] = useState<Pane[]>([]);
   const [activeAgentId, setActiveAgentId] = useState<string>("");
   const [shellSessions, setShellSessions] = useState<Record<string, string[]>>(() => {
     try {
@@ -158,7 +187,7 @@ export default function App() {
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(new Set());
   const [unreadAgents, setUnreadAgents] = useState<Set<string>>(new Set());
 
-  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [editingAgent, setEditingAgent] = useState<Pane | null>(null);
   const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
   const bumpRestart = (id: string) => setRestartKeys(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
 
@@ -166,11 +195,13 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    // Don't overwrite localStorage while agents list is still being initialized
+    // Don't overwrite while agents list is still being initialized
     if (agents.length === 0) return;
     // Deduplicate by id before saving
     const seen = new Set<string>()
     const deduped = agents.filter(a => seen.has(a.id) ? false : (seen.add(a.id), true))
+    // 寫入 panes.json（debounced）；同時更新 localStorage 作為 fallback
+    savePanesFile(deduped);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
   }, [agents]);
 
@@ -189,19 +220,18 @@ export default function App() {
           const shellPanes = panes.filter(p => p.pane_type === "shell");
 
           // Build agents purely from daemon data (replace localStorage)
-          const daemonAgents: Agent[] = agentPanes.map(pane => ({
+          const daemonAgents: Pane[] = agentPanes.map(pane => ({
             id: pane.id,
             name: pane.command[0] ?? "pane",
-            emoji: "🔗",
             command: pane.command,
             workingDir: pane.cwd,
-            status: (pane.status === "running" ? "online" : "offline") as Agent["status"],
+            status: (pane.status === "running" ? "online" : "offline") as Pane["status"],
             pid: (pane as any).pid ?? undefined,
           }));
 
-          // Enrich with localStorage metadata (name, emoji, llmLabel) if available
-          // and preserve localStorage order (user's last-seen order)
-          const saved = loadAgents();
+          // Enrich with saved metadata (name, llmLabel) if available
+          // and preserve saved order (user's last-seen order)
+          const saved = await loadPanesWithMigration();
           const savedMap = new Map(saved.map(a => [a.id, a]));
           const savedOrder = new Map(saved.map((a, i) => [a.id, i]));
 
@@ -209,7 +239,6 @@ export default function App() {
             const s = savedMap.get(agent.id);
             if (s) {
               agent.name = s.name;
-              agent.emoji = s.emoji;
               if (s.llmLabel) agent.llmLabel = s.llmLabel;
             }
           }
@@ -271,9 +300,9 @@ export default function App() {
         // daemon not ready yet — fallback below
       }
 
-      // Fallback: no daemon panes → use localStorage
+      // Fallback: no daemon panes → use panes.json / localStorage
       if (!usedDaemon) {
-        const saved = loadAgents();
+        const saved = await loadPanesWithMigration();
         setAgents(saved);
         if (saved.length > 0) {
           setActiveAgentId(saved[0].id);
@@ -357,7 +386,7 @@ export default function App() {
     return () => unlisteners.forEach(fn => fn())
   }, [mountedAgents]);
 
-  const updateAgentStatus = (id: string, status: Agent["status"]) => {
+  const updateAgentStatus = (id: string, status: Pane["status"]) => {
     setAgents((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status } : a))
     );
@@ -389,11 +418,11 @@ export default function App() {
     invoke("schedule_deletion", { agentId: id }).catch(() => {});
   }, []);
 
-  const handleEditAgent = useCallback((agent: Agent) => {
+  const handleEditAgent = useCallback((agent: Pane) => {
     setEditingAgent(agent);
   }, []);
 
-  const handleReorder = useCallback((newAgents: Agent[]) => {
+  const handleReorder = useCallback((newAgents: Pane[]) => {
     setAgents(newAgents);
   }, []);
 

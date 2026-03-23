@@ -3,10 +3,10 @@ import { invoke } from "@tauri-apps/api/core"
 
 import { MONO_FONT } from "../ui"
 import { useTheme } from "../ThemeContext";
-import type { Agent } from "../types";
+import type { Pane } from "../types";
 
 interface Props {
-  agent?: Agent;
+  agent?: Pane;
 }
 
 interface GitInfo {

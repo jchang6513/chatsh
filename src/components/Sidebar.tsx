@@ -1,20 +1,20 @@
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "../ui"
 import { useState, useRef } from "react";
 import { useSettings } from "../SettingsContext";
-import type { Agent } from "../types";
+import type { Pane } from "../types";
 
 interface Props {
-  agents: Agent[];
+  agents: Pane[];
   activeAgentId: string;
   unreadAgents?: Set<string>;
   streamingAgents?: Set<string>;
   onSelect: (id: string) => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
-  onEdit: (agent: Agent) => void;
+  onEdit: (agent: Pane) => void;
   onRestart?: (id: string) => void;
-  onDuplicate?: (agent: Agent) => void;
-  onReorder: (agents: Agent[]) => void;
+  onDuplicate?: (agent: Pane) => void;
+  onReorder: (agents: Pane[]) => void;
   onOpenSettings: () => void;
 }
 

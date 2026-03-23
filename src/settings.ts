@@ -1,4 +1,5 @@
 import { MONO_FONT } from "./ui"
+import { settingsStore } from "./storage"
 
 export interface TerminalSettings {
   fontFamily: string
@@ -15,6 +16,7 @@ export interface TerminalSettings {
 }
 
 export type AgentTerminalOverrides = Partial<TerminalSettings>
+export type PaneTerminalOverrides = Partial<TerminalSettings>
 
 export const DEFAULT_SETTINGS: TerminalSettings = {
   fontFamily: MONO_FONT,
@@ -30,29 +32,52 @@ export const DEFAULT_SETTINGS: TerminalSettings = {
   notificationsEnabled: true,
 }
 
-const GLOBAL_STORAGE_KEY = "chatsh_global_settings"
-const AGENT_STORAGE_KEY = "chatsh_agent_overrides"
-
-export function loadGlobalSettings(): TerminalSettings {
-  try {
-    const saved = localStorage.getItem(GLOBAL_STORAGE_KEY)
-    if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) }
-  } catch {}
-  return { ...DEFAULT_SETTINGS }
+/** Extract TerminalSettings fields from the shared AppSettings store. */
+export async function loadGlobalSettings(): Promise<TerminalSettings> {
+  const saved = settingsStore.get()
+  return { ...DEFAULT_SETTINGS, ...pickTerminalFields(saved as unknown as Record<string, unknown>) }
 }
 
-export function saveGlobalSettings(s: TerminalSettings) {
-  localStorage.setItem(GLOBAL_STORAGE_KEY, JSON.stringify(s))
+export function saveGlobalSettings(s: TerminalSettings): void {
+  settingsStore.patch(s)
 }
 
-export function loadAgentOverrides(): Record<string, AgentTerminalOverrides> {
+function pickTerminalFields(obj: Record<string, unknown>): Partial<TerminalSettings> {
+  const keys: Array<keyof TerminalSettings> = [
+    "fontFamily", "fontSize", "lineHeight", "cursorStyle", "cursorBlink",
+    "scrollback", "backgroundOpacity", "padding", "uiScale",
+    "sidebarPosition", "notificationsEnabled",
+  ]
+  const result: Partial<TerminalSettings> = {}
+  for (const k of keys) {
+    if (k in obj) (result as Record<string, unknown>)[k] = obj[k]
+  }
+  return result
+}
+
+// Per-pane overrides — stored in localStorage (runtime state, not config)
+const PANE_OVERRIDES_KEY = "chatsh_pane_overrides"
+// Keep legacy key for migration
+const LEGACY_AGENT_OVERRIDES_KEY = "chatsh_agent_overrides"
+
+export async function loadAgentOverrides(): Promise<Record<string, AgentTerminalOverrides>> {
+  // Migrate legacy key
+  const legacy = localStorage.getItem(LEGACY_AGENT_OVERRIDES_KEY)
+  if (legacy) {
+    try {
+      const parsed = JSON.parse(legacy)
+      localStorage.setItem(PANE_OVERRIDES_KEY, legacy)
+      localStorage.removeItem(LEGACY_AGENT_OVERRIDES_KEY)
+      return parsed
+    } catch {}
+  }
   try {
-    const saved = localStorage.getItem(AGENT_STORAGE_KEY)
+    const saved = localStorage.getItem(PANE_OVERRIDES_KEY)
     if (saved) return JSON.parse(saved)
   } catch {}
   return {}
 }
 
-export function saveAgentOverrides(overrides: Record<string, AgentTerminalOverrides>) {
-  localStorage.setItem(AGENT_STORAGE_KEY, JSON.stringify(overrides))
+export function saveAgentOverrides(overrides: Record<string, AgentTerminalOverrides>): void {
+  localStorage.setItem(PANE_OVERRIDES_KEY, JSON.stringify(overrides))
 }

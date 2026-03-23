@@ -84,9 +84,7 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - Steps: Edit Pane → 修改名稱 → Save
 - Expected: Sidebar 顯示新名稱，重啟 app 後名稱保留
 
-### TC-P04: 修改 Pane emoji
-- Steps: Edit Pane → 修改 emoji
-- Expected: Sidebar 顯示新 emoji
+### TC-P04: （已移除，emoji 欄位已刪除）
 
 ### TC-P05: Restart Pane（⌘R）
 - Steps: 按 ⌘R
@@ -328,3 +326,30 @@ cd ~/Workspace/chatsh && npm run tauri dev
 ### TC-Git05: Branch 更新
 - Steps: 在 pane 裡切換 branch（`git checkout other-branch`），等 5 秒
 - Expected: status bar 的 branch name 自動更新
+
+---
+
+## TC-JSON: Pane 持久化（panes.json）
+
+### TC-JSON01: 新增 pane 後寫入 panes.json
+- Steps: 新增一個 pane
+- Expected: `~/.chatsh/panes.json` 存在，包含 `{ "panes": [...] }`，無 emoji 欄位
+
+### TC-JSON02: 從 agents.json 向後相容遷移
+- 前置: 手動建立 `~/.chatsh/agents.json`（舊格式 `{ "agents": [...] }`），刪除 `panes.json`
+- Steps: 重啟 app
+- Expected: app 讀取 agents.json 內容，自動寫入 panes.json
+
+### TC-JSON03: panes.json 優先於 agents.json
+- 前置: 同時存在 `panes.json` 和 `agents.json`
+- Steps: 重啟 app
+- Expected: 使用 panes.json 的內容
+
+### TC-JSON04: Fallback localStorage
+- 前置: 刪除 `panes.json` 和 `agents.json`，localStorage 有 chatsh_agents
+- Steps: 重啟 app
+- Expected: 從 localStorage 讀取 pane 列表
+
+### TC-JSON05: Shell sessions 仍存 localStorage
+- Steps: 新增 shell tab
+- Expected: `localStorage.chatsh_shell_sessions` 更新，panes.json 不包含 shell session 資料
