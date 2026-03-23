@@ -304,3 +304,27 @@ cd ~/Workspace/chatsh && npm run tauri dev
 ### TC-V017-04: ⌘Shift+[ / ] 清除未讀
 - Steps: 讓非 active pane 有未讀（藍點）→ 用 ⌘[ 或 ⌘] 切換到該 pane
 - Expected: 切換後未讀標記消失
+
+---
+
+## TC-Git: Status Bar Git 資訊
+
+### TC-Git01: Git repo 顯示 branch badge
+- 前置: pane working dir 設為一個 git repo（e.g. ~/Workspace/chatsh）
+- Expected: status bar working dir 右邊出現帶底色的 repo name badge 和 branch badge
+
+### TC-Git02: Clean repo 顯示綠色 branch
+- 前置: working dir 是 clean git repo（no uncommitted changes）
+- Expected: branch badge 底色為綠色，不帶 `*`
+
+### TC-Git03: Dirty repo 顯示橘色 branch + `*`
+- 前置: working dir 有未 commit 的變更
+- Expected: branch badge 底色為橘色，branch name 帶 `*`（e.g. `main*`）
+
+### TC-Git04: 非 git repo 不顯示 badge
+- 前置: pane working dir 設為 `/tmp`（非 git repo）
+- Expected: status bar 只顯示 working dir，沒有 git badge
+
+### TC-Git05: Branch 更新
+- Steps: 在 pane 裡切換 branch（`git checkout other-branch`），等 5 秒
+- Expected: status bar 的 branch name 自動更新

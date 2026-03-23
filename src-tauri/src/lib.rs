@@ -402,6 +402,59 @@ fn schedule_deletion(agent_id: String) -> Result<(), String> {
     .map_err(|e| e.to_string())
 }
 
+#[derive(serde::Serialize)]
+struct GitInfo {
+    repo_name: String,
+    branch: String,
+    dirty: bool,
+}
+
+#[tauri::command]
+async fn get_git_info(path: String) -> Option<GitInfo> {
+    tokio::task::spawn_blocking(move || {
+    let resolved_path = path.replace("~", &std::env::var("HOME").unwrap_or_default());
+
+    // Single git call: status -b --porcelain=v1 gives branch + dirty in one shot
+    let out = std::process::Command::new("git")
+        .args(["status", "-b", "--porcelain=v1"])
+        .current_dir(&resolved_path)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())?;
+
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let mut lines = stdout.lines();
+
+    // First line: ## branch...tracking  or  ## HEAD (no branch)
+    let branch_line = lines.next()?;
+    let branch = branch_line
+        .strip_prefix("## ")
+        .and_then(|s| s.split("...").next())
+        .and_then(|s| s.split(" ").next())
+        .unwrap_or("HEAD")
+        .to_string();
+
+    // Remaining lines = dirty files
+    let dirty = lines.next().is_some();
+
+    // Get repo name via rev-parse (fast, cached by git)
+    let toplevel = std::process::Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .current_dir(&resolved_path)
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())?;
+
+    let repo_name = std::path::Path::new(&toplevel)
+        .file_name()?
+        .to_string_lossy()
+        .to_string();
+
+    Some(GitInfo { repo_name, branch, dirty })
+    }).await.ok().flatten()
+}
+
 #[tauri::command]
 fn get_battery() -> Option<serde_json::Value> {
     let output = std::process::Command::new("pmset")
@@ -523,6 +576,7 @@ pub fn run() {
             cleanup_deleted_agents,
             list_fonts,
             get_battery,
+            get_git_info,
             list_panes,
         ])
         .run(tauri::generate_context!())

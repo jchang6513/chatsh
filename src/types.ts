@@ -11,4 +11,6 @@ export interface Agent {
   status: "online" | "offline";
   /** Per-agent terminal settings override (overrides global) */
   terminalOverrides?: AgentTerminalOverrides;
+  /** Child process PID (from daemon) — used for real-time cwd tracking */
+  pid?: number;
 }
