@@ -45,3 +45,21 @@
 
 ## 已知問題（下版本修）
 見 `docs/test-cases.md` → Known Issues 區塊
+
+### Status Bar Git 資訊
+**目標**：working dir 是 git repo 時，底部 status bar 顯示 git 狀態
+
+**顯示內容**：
+- branch name（e.g. `main`、`feature/json-config`）
+- dirty 狀態（有未 commit 的變更顯示 `*`）
+
+**設計**：
+```
+~/Workspace/chatsh  /bin/zsh  main*  Nightfox  RUNNING  23:49
+```
+
+**實作**：
+- Tauri command `get_git_info(path: String) -> Option<GitInfo>`
+- 呼叫 `git rev-parse --abbrev-ref HEAD` 取 branch
+- 呼叫 `git status --porcelain` 判斷 dirty
+- StatusBar.tsx 每隔 5 秒更新一次
