@@ -79,7 +79,7 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
       id,
       name: sessionName.trim() || selectedTemplate.name,
       emoji: "🤖",
-      command: [selectedTemplate.command, ...(selectedTemplate.args ?? [])],
+      command: [...selectedTemplate.command.trim().split(/\s+/).filter(Boolean), ...(selectedTemplate.args ?? [])],
       workingDir: templateWorkingDir.trim() || "~",
       status: "offline",
     }
