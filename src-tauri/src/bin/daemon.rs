@@ -412,6 +412,7 @@ impl Daemon {
                 parent_pane_id: p.parent_pane_id.clone(),
                 pane_type: p.pane_type.clone(),
                 created_at: p.created_at,
+                pid: p.child_pid,
             })
             .collect();
         // Sort by creation time so sidebar order is stable across restarts

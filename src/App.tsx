@@ -179,7 +179,7 @@ export default function App() {
     (async () => {
       let usedDaemon = false;
       try {
-        const panes = await invoke<Array<{ id: string; command: string[]; cwd: string; status: string; parent_pane_id: string | null; pane_type: string }>>("list_panes");
+        const panes = await invoke<Array<{ id: string; command: string[]; cwd: string; status: string; parent_pane_id: string | null; pane_type: string; pid?: number }>>("list_panes");
         console.log("[App] list_panes result:", JSON.stringify(panes));
         if (panes && panes.length > 0) {
           usedDaemon = true;
@@ -196,6 +196,7 @@ export default function App() {
             command: pane.command,
             workingDir: pane.cwd,
             status: (pane.status === "running" ? "online" : "offline") as Agent["status"],
+            pid: (pane as any).pid ?? undefined,
           }));
 
           // Enrich with localStorage metadata (name, emoji, llmLabel) if available

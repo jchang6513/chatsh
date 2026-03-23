@@ -80,4 +80,6 @@ pub struct PaneInfo {
     pub pane_type: String,
     #[serde(default)]
     pub created_at: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pid: Option<u32>,
 }
