@@ -4,7 +4,7 @@
  */
 import { invoke } from "@tauri-apps/api/core"
 import { homeDir } from "@tauri-apps/api/path"
-import { WRITE_DEBOUNCE_MS } from "./constants"
+import { WRITE_DEBOUNCE_MS } from "../constants"
 
 let cachedDir: string | null = null
 

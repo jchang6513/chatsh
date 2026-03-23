@@ -1,8 +1,5 @@
 /**
- * storage.ts — re-exports for backwards compatibility.
- * New code should import directly from fs.ts / settingsStore.ts / migrate.ts.
+ * Backwards-compat shim — re-exports from src/storage/.
+ * Prefer importing directly from "./storage" (index) or specific sub-modules.
  */
-export { readJsonFile, writeJsonFile, writeJsonFileImmediate } from "./fs"
-export { settingsStore } from "./settingsStore"
-export type { AppSettings } from "./settingsStore"
-export { migrateFromLocalStorage } from "./migrate"
+export * from "./storage/index"

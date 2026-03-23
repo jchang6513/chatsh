@@ -12,7 +12,7 @@ import {
   LEGACY_CONFIG_FILE,
   LEGACY_THEME_FILE,
   WRITE_DEBOUNCE_MS,
-} from "./constants"
+} from "../constants"
 
 export interface AppSettings {
   // Terminal / UI

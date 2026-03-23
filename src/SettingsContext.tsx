@@ -8,7 +8,7 @@ import {
   loadAgentOverrides,
   saveAgentOverrides,
 } from "./settings"
-import { settingsStore } from "./settingsStore"
+import { settingsStore } from "./storage/settingsStore"
 import { LS_SETTINGS_KEY, LS_THEME_KEY } from "./constants"
 
 interface SettingsContextValue {

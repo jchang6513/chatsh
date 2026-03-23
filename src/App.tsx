@@ -25,64 +25,8 @@ import SettingsPanel from "./components/SettingsPanel";
 import { useSettings } from "./SettingsContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import type { Pane } from "./types";
-import { readJsonFile, writeJsonFile } from "./storage";
+import { loadPanesWithMigration, savePanes } from "./storage";
 
-const DEFAULT_PANES: Pane[] = [
-  {
-    id: "1000000000001",
-    name: "Engineering",
-    command: ["claude"],
-    workingDir: "~",
-    llmLabel: "Claude",
-    status: "offline",
-  },
-  {
-    id: "1000000000002",
-    name: "Shell",
-    command: ["/bin/zsh"],
-    workingDir: "~",
-    status: "offline",
-  },
-];
-
-interface PanesFileData {
-  panes: Pane[];
-}
-
-
-
-function loadAgentsFromLocalStorage(): Pane[] {
-  try {
-    const saved = localStorage.getItem(LS_AGENTS_KEY);
-    if (saved) {
-      return JSON.parse(saved).map((a: Pane) => ({ ...a, status: "offline" }));
-    }
-  } catch {}
-  return DEFAULT_PANES;
-}
-
-async function loadPanesWithMigration(): Promise<Pane[]> {
-  // 1. 先試讀 panes.json
-  const panesData = await readJsonFile<PanesFileData | null>(PANES_FILE, null);
-  if (panesData?.panes) {
-    return panesData.panes.map(p => ({ ...p, status: "offline" as const }));
-  }
-  // 2. 向後相容：試讀 agents.json
-  const agentsData = await readJsonFile<{ agents?: Pane[] } | null>(LEGACY_AGENTS_FILE, null);
-  if (agentsData?.agents) {
-    const panes = agentsData.agents.map(p => ({ ...p, status: "offline" as const }));
-    // 遷移到 panes.json
-    savePanesFile(panes);
-    return panes;
-  }
-  // 3. Fallback: localStorage
-  return loadAgentsFromLocalStorage();
-}
-
-function savePanesFile(panes: Pane[]): void {
-  const data: PanesFileData = { panes };
-  writeJsonFile(PANES_FILE, data);
-}
 
 export default function App() {
   const { globalSettings, updateGlobalSettings } = useSettings();
@@ -207,7 +151,7 @@ export default function App() {
     const seen = new Set<string>()
     const deduped = agents.filter(a => seen.has(a.id) ? false : (seen.add(a.id), true))
     // 寫入 panes.json（debounced）；同時更新 localStorage 作為 fallback
-    savePanesFile(deduped);
+    savePanes(deduped);
     localStorage.setItem(LS_AGENTS_KEY, JSON.stringify(deduped));
   }, [agents]);
 
