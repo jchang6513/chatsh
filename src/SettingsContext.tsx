@@ -8,7 +8,8 @@ import {
   loadAgentOverrides,
   saveAgentOverrides,
 } from "./settings"
-import { settingsStore } from "./storage"
+import { settingsStore } from "./settingsStore"
+import { LS_SETTINGS_KEY, LS_THEME_KEY } from "./constants"
 
 interface SettingsContextValue {
   globalSettings: TerminalSettings
@@ -31,7 +32,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      await settingsStore.load("chatsh_global_settings", "chatsh_scheme")
+      await settingsStore.load(LS_SETTINGS_KEY, LS_THEME_KEY)
       const settings = await loadGlobalSettings()
       const overrides = await loadAgentOverrides()
       if (!cancelled) {

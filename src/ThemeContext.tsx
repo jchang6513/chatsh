@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import { ColorScheme, SCHEMES, DEFAULT_SCHEME } from "./theme"
-import { settingsStore } from "./storage"
+import { settingsStore } from "./settingsStore"
 
 interface ThemeContextValue {
   scheme: ColorScheme

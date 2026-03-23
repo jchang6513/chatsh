@@ -1,4 +1,13 @@
-import { REPL_TAB } from "./constants"
+import {
+  REPL_TAB,
+  PANES_FILE,
+  LEGACY_AGENTS_FILE,
+  LS_AGENTS_KEY,
+  LS_SHELL_SESSIONS_KEY,
+  LS_SHELL_NAMES_KEY,
+  LS_HIDDEN_BUILTINS_KEY,
+  PTY_IDLE_GRACE_MS,
+} from "./constants"
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "./ui"
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -40,14 +49,11 @@ interface PanesFileData {
   panes: Pane[];
 }
 
-const PANES_FILE = "panes.json";
-const LEGACY_AGENTS_FILE = "agents.json";
 
-const STORAGE_KEY = "chatsh_agents";
 
 function loadAgentsFromLocalStorage(): Pane[] {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(LS_AGENTS_KEY);
     if (saved) {
       return JSON.parse(saved).map((a: Pane) => ({ ...a, status: "offline" }));
     }
@@ -84,7 +90,7 @@ export default function App() {
   const [activeAgentId, setActiveAgentId] = useState<string>("");
   const [shellSessions, setShellSessions] = useState<Record<string, string[]>>(() => {
     try {
-      const saved = localStorage.getItem("chatsh_shell_sessions");
+      const saved = localStorage.getItem(LS_SHELL_SESSIONS_KEY);
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
@@ -103,7 +109,7 @@ export default function App() {
   const shellCounters = useRef<Record<string, number>>((() => {
     const counters: Record<string, number> = {};
     try {
-      const saved = localStorage.getItem("chatsh_shell_sessions");
+      const saved = localStorage.getItem(LS_SHELL_SESSIONS_KEY);
       if (saved) {
         const sessions: Record<string, string[]> = JSON.parse(saved);
         for (const [agentId, ids] of Object.entries(sessions)) {
@@ -146,13 +152,13 @@ export default function App() {
 
   // Persist shell sessions
   useEffect(() => {
-    localStorage.setItem("chatsh_shell_sessions", JSON.stringify(shellSessions));
+    localStorage.setItem(LS_SHELL_SESSIONS_KEY, JSON.stringify(shellSessions));
   }, [shellSessions]);
 
   // shell tab names (custom, persisted)
   const [shellNames, setShellNames] = useState<Record<string, string>>(() => {
     try {
-      const saved = localStorage.getItem("chatsh_shell_names");
+      const saved = localStorage.getItem(LS_SHELL_NAMES_KEY);
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
@@ -174,14 +180,14 @@ export default function App() {
 
   // Persist shell names
   useEffect(() => {
-    localStorage.setItem("chatsh_shell_names", JSON.stringify(shellNames));
+    localStorage.setItem(LS_SHELL_NAMES_KEY, JSON.stringify(shellNames));
   }, [shellNames]);
 
   const [showEditPane, setShowEditPane] = useState(false);
   const [showAddPane, setShowAddPane] = useState(false);
   const [templates, setTemplates] = useState(loadTemplates);
   const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]") as string[]) } catch { return new Set<string>() }
+    try { return new Set(JSON.parse(localStorage.getItem(LS_HIDDEN_BUILTINS_KEY) ?? "[]") as string[]) } catch { return new Set<string>() }
   })
   // track which agents have been opened (lazy mount)
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(new Set());
@@ -202,7 +208,7 @@ export default function App() {
     const deduped = agents.filter(a => seen.has(a.id) ? false : (seen.add(a.id), true))
     // 寫入 panes.json（debounced）；同時更新 localStorage 作為 fallback
     savePanesFile(deduped);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+    localStorage.setItem(LS_AGENTS_KEY, JSON.stringify(deduped));
   }, [agents]);
 
   // Initialize agents: daemon panes first, fallback to localStorage
@@ -349,7 +355,7 @@ export default function App() {
 
   // Track when we last switched AWAY from each agent (grace period for pty-idle)
   const switchedAwayAt = useRef<Map<string, number>>(new Map())
-  const GRACE_MS = 2000 // ignore pty-idle within 2s of switching away
+  const GRACE_MS = PTY_IDLE_GRACE_MS
 
   // Track streaming + unread state via Rust events
   // Only re-subscribe when mountedAgents changes (not activeAgentId — use ref instead)
@@ -703,7 +709,7 @@ export default function App() {
           agents={agents}
           onTemplatesChange={(t) => setTemplates(t)}
           hiddenBuiltins={hiddenBuiltins}
-          onHiddenBuiltinsChange={(h) => { setHiddenBuiltins(h); localStorage.setItem("chatsh_hidden_builtins", JSON.stringify([...h])) }}
+          onHiddenBuiltinsChange={(h) => { setHiddenBuiltins(h); localStorage.setItem(LS_HIDDEN_BUILTINS_KEY, JSON.stringify([...h])) }}
           onClose={() => setShowSettings(false)}
         />
       )}

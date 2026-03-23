@@ -55,29 +55,27 @@ function pickTerminalFields(obj: Record<string, unknown>): Partial<TerminalSetti
   return result
 }
 
-// Per-pane overrides — stored in localStorage (runtime state, not config)
-const PANE_OVERRIDES_KEY = "chatsh_pane_overrides"
-// Keep legacy key for migration
-const LEGACY_AGENT_OVERRIDES_KEY = "chatsh_agent_overrides"
+import { LS_PANE_OVERRIDES_KEY, LEGACY_LS_AGENT_OVERRIDES_KEY } from "./constants"
 
+// Per-pane overrides — stored in localStorage (runtime state, not config)
 export async function loadAgentOverrides(): Promise<Record<string, AgentTerminalOverrides>> {
   // Migrate legacy key
-  const legacy = localStorage.getItem(LEGACY_AGENT_OVERRIDES_KEY)
+  const legacy = localStorage.getItem(LEGACY_LS_AGENT_OVERRIDES_KEY)
   if (legacy) {
     try {
       const parsed = JSON.parse(legacy)
-      localStorage.setItem(PANE_OVERRIDES_KEY, legacy)
-      localStorage.removeItem(LEGACY_AGENT_OVERRIDES_KEY)
+      localStorage.setItem(LS_PANE_OVERRIDES_KEY, legacy)
+      localStorage.removeItem(LEGACY_LS_AGENT_OVERRIDES_KEY)
       return parsed
     } catch {}
   }
   try {
-    const saved = localStorage.getItem(PANE_OVERRIDES_KEY)
+    const saved = localStorage.getItem(LS_PANE_OVERRIDES_KEY)
     if (saved) return JSON.parse(saved)
   } catch {}
   return {}
 }
 
 export function saveAgentOverrides(overrides: Record<string, AgentTerminalOverrides>): void {
-  localStorage.setItem(PANE_OVERRIDES_KEY, JSON.stringify(overrides))
+  localStorage.setItem(LS_PANE_OVERRIDES_KEY, JSON.stringify(overrides))
 }
