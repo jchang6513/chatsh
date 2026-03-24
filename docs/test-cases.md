@@ -353,3 +353,21 @@ cd ~/Workspace/chatsh && npm run tauri dev
 ### TC-JSON05: Shell sessions 仍存 localStorage
 - Steps: 新增 shell tab
 - Expected: `localStorage.chatsh_shell_sessions` 更新，panes.json 不包含 shell session 資料
+
+## TC-UX: Terminal UX 功能
+
+### TC-UX01: Cmd+Click 開啟 URL
+- Steps: terminal 輸出含 URL（如 `echo "https://example.com"`）→ Cmd+Click 該 URL
+- Expected: 系統預設瀏覽器開啟該 URL
+
+### TC-UX02: URL hover 顯示 underline
+- Steps: terminal 有 URL 文字 → 滑鼠 hover
+- Expected: URL 變成可點擊樣式（underline）
+
+### TC-UX03: 選取後自動複製
+- Steps: 在 terminal 拖曳選取任意文字
+- Expected: 選取完成後文字自動複製到系統剪貼簿（不需要額外 Cmd+C）
+
+### TC-UX04: SingleShell 也支援相同功能
+- Steps: Shell tab 重複 TC-UX01 和 TC-UX03
+- Expected: 行為一致

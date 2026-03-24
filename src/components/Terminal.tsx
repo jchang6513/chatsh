@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
+import { WebLinksAddon } from "@xterm/addon-web-links";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import type { Pane } from "../types";
@@ -118,7 +119,19 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     });
     const fitAddon = new FitAddon();
     xterm.loadAddon(fitAddon);
+
+    // Cmd+Click opens URL in default browser (uses Tauri's opener via WebLinksAddon)
+    xterm.loadAddon(new WebLinksAddon((_e, uri) => {
+      invoke("open_url", { url: uri }).catch(console.error)
+    }));
+
     xterm.open(container);
+
+    // Auto-copy on selection
+    xterm.onSelectionChange(() => {
+      const text = xterm.getSelection()
+      if (text) navigator.clipboard.writeText(text).catch(console.error)
+    });
     xtermRef.current = xterm;
     fitAddonRef.current = fitAddon;
 
