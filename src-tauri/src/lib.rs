@@ -371,6 +371,11 @@ fn write_file(path: String, content: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn open_url(url: String) -> Result<(), String> {
+    open::that(&url).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 fn schedule_deletion(agent_id: String) -> Result<(), String> {
     let home = std::env::var("HOME").unwrap_or_default();
     let pending_path = format!("{}/.chatsh/pending_deletion.json", home);
@@ -578,6 +583,7 @@ pub fn run() {
             get_battery,
             get_git_info,
             list_panes,
+            open_url,
         ])
         .run(tauri::generate_context!())
         .expect("Failed to launch Tauri app");
