@@ -3,15 +3,15 @@ import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { Agent } from "../types";
+import type { Pane } from "../types";
 import { useTheme } from "../ThemeContext";
 import { useSettings } from "../SettingsContext";
 import "@xterm/xterm/css/xterm.css";
 
 interface Props {
-  agent: Agent;
+  agent: Pane;
   isActive: boolean;
-  onStatusChange: (status: Agent["status"]) => void;
+  onStatusChange: (status: Pane["status"]) => void;
   restartKey?: number;
 }
 

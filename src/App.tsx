@@ -1,4 +1,13 @@
-import { REPL_TAB } from "./constants"
+import {
+  REPL_TAB,
+  PANES_FILE,
+  LEGACY_AGENTS_FILE,
+  LS_AGENTS_KEY,
+  LS_SHELL_SESSIONS_KEY,
+  LS_SHELL_NAMES_KEY,
+  LS_HIDDEN_BUILTINS_KEY,
+  PTY_IDLE_GRACE_MS,
+} from "./constants"
 import { MONO_FONT, onHoverGreen, onLeaveGreen } from "./ui"
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
@@ -15,47 +24,17 @@ import CommandPalette from "./components/CommandPalette";
 import SettingsPanel from "./components/SettingsPanel";
 import { useSettings } from "./SettingsContext";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
-import type { Agent } from "./types";
+import type { Pane } from "./types";
+import { loadPanesWithMigration, savePanes } from "./storage";
 
-const DEFAULT_AGENTS: Agent[] = [
-  {
-    id: "1000000000001",
-    name: "Engineering",
-    emoji: "🤖",
-    command: ["claude"],
-    workingDir: "~",
-    llmLabel: "Claude",
-    status: "offline",
-  },
-  {
-    id: "1000000000002",
-    name: "Shell",
-    emoji: "🐚",
-    command: ["/bin/zsh"],
-    workingDir: "~",
-    status: "offline",
-  },
-];
-
-const STORAGE_KEY = "chatsh_agents";
-
-function loadAgents(): Agent[] {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved).map((a: Agent) => ({ ...a, status: "offline" }));
-    }
-  } catch {}
-  return DEFAULT_AGENTS;
-}
 
 export default function App() {
   const { globalSettings, updateGlobalSettings } = useSettings();
-  const [agents, setAgents] = useState<Agent[]>([]);
+  const [agents, setAgents] = useState<Pane[]>([]);
   const [activeAgentId, setActiveAgentId] = useState<string>("");
   const [shellSessions, setShellSessions] = useState<Record<string, string[]>>(() => {
     try {
-      const saved = localStorage.getItem("chatsh_shell_sessions");
+      const saved = localStorage.getItem(LS_SHELL_SESSIONS_KEY);
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
@@ -74,7 +53,7 @@ export default function App() {
   const shellCounters = useRef<Record<string, number>>((() => {
     const counters: Record<string, number> = {};
     try {
-      const saved = localStorage.getItem("chatsh_shell_sessions");
+      const saved = localStorage.getItem(LS_SHELL_SESSIONS_KEY);
       if (saved) {
         const sessions: Record<string, string[]> = JSON.parse(saved);
         for (const [agentId, ids] of Object.entries(sessions)) {
@@ -117,13 +96,13 @@ export default function App() {
 
   // Persist shell sessions
   useEffect(() => {
-    localStorage.setItem("chatsh_shell_sessions", JSON.stringify(shellSessions));
+    localStorage.setItem(LS_SHELL_SESSIONS_KEY, JSON.stringify(shellSessions));
   }, [shellSessions]);
 
   // shell tab names (custom, persisted)
   const [shellNames, setShellNames] = useState<Record<string, string>>(() => {
     try {
-      const saved = localStorage.getItem("chatsh_shell_names");
+      const saved = localStorage.getItem(LS_SHELL_NAMES_KEY);
       return saved ? JSON.parse(saved) : {};
     } catch { return {}; }
   });
@@ -145,20 +124,20 @@ export default function App() {
 
   // Persist shell names
   useEffect(() => {
-    localStorage.setItem("chatsh_shell_names", JSON.stringify(shellNames));
+    localStorage.setItem(LS_SHELL_NAMES_KEY, JSON.stringify(shellNames));
   }, [shellNames]);
 
   const [showEditPane, setShowEditPane] = useState(false);
   const [showAddPane, setShowAddPane] = useState(false);
   const [templates, setTemplates] = useState(loadTemplates);
   const [hiddenBuiltins, setHiddenBuiltins] = useState<Set<string>>(() => {
-    try { return new Set(JSON.parse(localStorage.getItem("chatsh_hidden_builtins") ?? "[]") as string[]) } catch { return new Set<string>() }
+    try { return new Set(JSON.parse(localStorage.getItem(LS_HIDDEN_BUILTINS_KEY) ?? "[]") as string[]) } catch { return new Set<string>() }
   })
   // track which agents have been opened (lazy mount)
   const [mountedAgents, setMountedAgents] = useState<Set<string>>(new Set());
   const [unreadAgents, setUnreadAgents] = useState<Set<string>>(new Set());
 
-  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
+  const [editingAgent, setEditingAgent] = useState<Pane | null>(null);
   const [restartKeys, setRestartKeys] = useState<Record<string, number>>({});
   const bumpRestart = (id: string) => setRestartKeys(prev => ({ ...prev, [id]: (prev[id] ?? 0) + 1 }));
 
@@ -166,12 +145,14 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
-    // Don't overwrite localStorage while agents list is still being initialized
+    // Don't overwrite while agents list is still being initialized
     if (agents.length === 0) return;
     // Deduplicate by id before saving
     const seen = new Set<string>()
     const deduped = agents.filter(a => seen.has(a.id) ? false : (seen.add(a.id), true))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+    // 寫入 panes.json（debounced）；同時更新 localStorage 作為 fallback
+    savePanes(deduped);
+    localStorage.setItem(LS_AGENTS_KEY, JSON.stringify(deduped));
   }, [agents]);
 
   // Initialize agents: daemon panes first, fallback to localStorage
@@ -189,19 +170,18 @@ export default function App() {
           const shellPanes = panes.filter(p => p.pane_type === "shell");
 
           // Build agents purely from daemon data (replace localStorage)
-          const daemonAgents: Agent[] = agentPanes.map(pane => ({
+          const daemonAgents: Pane[] = agentPanes.map(pane => ({
             id: pane.id,
             name: pane.command[0] ?? "pane",
-            emoji: "🔗",
             command: pane.command,
             workingDir: pane.cwd,
-            status: (pane.status === "running" ? "online" : "offline") as Agent["status"],
+            status: (pane.status === "running" ? "online" : "offline") as Pane["status"],
             pid: (pane as any).pid ?? undefined,
           }));
 
-          // Enrich with localStorage metadata (name, emoji, llmLabel) if available
-          // and preserve localStorage order (user's last-seen order)
-          const saved = loadAgents();
+          // Enrich with saved metadata (name, llmLabel) if available
+          // and preserve saved order (user's last-seen order)
+          const saved = await loadPanesWithMigration();
           const savedMap = new Map(saved.map(a => [a.id, a]));
           const savedOrder = new Map(saved.map((a, i) => [a.id, i]));
 
@@ -209,7 +189,6 @@ export default function App() {
             const s = savedMap.get(agent.id);
             if (s) {
               agent.name = s.name;
-              agent.emoji = s.emoji;
               if (s.llmLabel) agent.llmLabel = s.llmLabel;
             }
           }
@@ -271,9 +250,9 @@ export default function App() {
         // daemon not ready yet — fallback below
       }
 
-      // Fallback: no daemon panes → use localStorage
+      // Fallback: no daemon panes → use panes.json / localStorage
       if (!usedDaemon) {
-        const saved = loadAgents();
+        const saved = await loadPanesWithMigration();
         setAgents(saved);
         if (saved.length > 0) {
           setActiveAgentId(saved[0].id);
@@ -320,7 +299,7 @@ export default function App() {
 
   // Track when we last switched AWAY from each agent (grace period for pty-idle)
   const switchedAwayAt = useRef<Map<string, number>>(new Map())
-  const GRACE_MS = 2000 // ignore pty-idle within 2s of switching away
+  const GRACE_MS = PTY_IDLE_GRACE_MS
 
   // Track streaming + unread state via Rust events
   // Only re-subscribe when mountedAgents changes (not activeAgentId — use ref instead)
@@ -357,7 +336,7 @@ export default function App() {
     return () => unlisteners.forEach(fn => fn())
   }, [mountedAgents]);
 
-  const updateAgentStatus = (id: string, status: Agent["status"]) => {
+  const updateAgentStatus = (id: string, status: Pane["status"]) => {
     setAgents((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status } : a))
     );
@@ -389,11 +368,11 @@ export default function App() {
     invoke("schedule_deletion", { agentId: id }).catch(() => {});
   }, []);
 
-  const handleEditAgent = useCallback((agent: Agent) => {
+  const handleEditAgent = useCallback((agent: Pane) => {
     setEditingAgent(agent);
   }, []);
 
-  const handleReorder = useCallback((newAgents: Agent[]) => {
+  const handleReorder = useCallback((newAgents: Pane[]) => {
     setAgents(newAgents);
   }, []);
 
@@ -674,7 +653,7 @@ export default function App() {
           agents={agents}
           onTemplatesChange={(t) => setTemplates(t)}
           hiddenBuiltins={hiddenBuiltins}
-          onHiddenBuiltinsChange={(h) => { setHiddenBuiltins(h); localStorage.setItem("chatsh_hidden_builtins", JSON.stringify([...h])) }}
+          onHiddenBuiltinsChange={(h) => { setHiddenBuiltins(h); localStorage.setItem(LS_HIDDEN_BUILTINS_KEY, JSON.stringify([...h])) }}
           onClose={() => setShowSettings(false)}
         />
       )}

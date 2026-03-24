@@ -5,7 +5,7 @@ import FolderButton from "./ui/FolderButton"
 import { MONO_FONT, INPUT_STYLE, BTN_BASE, LABEL_STYLE, onHoverGreen, onLeaveGreen, onFocusInput, onBlurInput, onHoverBorder, onLeaveBorder } from "../ui"
 import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { Agent } from "../types";
+import type { Pane } from "../types";
 import type { Template } from "../templates";
 import { addTemplate } from "../templates";
 
@@ -13,7 +13,7 @@ import { addTemplate } from "../templates";
 interface Props {
   hiddenBuiltins?: Set<string>;
   templates: Template[];
-  onAdd: (agent: Agent) => void;
+  onAdd: (agent: Pane) => void;
   onAddTemplate?: (t: Template) => void;
   onClose: () => void;
 }
@@ -75,10 +75,9 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
     if (submittingRef.current) return
     submittingRef.current = true
     const id = Date.now().toString()
-    const agent: Agent = {
+    const agent: Pane = {
       id,
       name: sessionName.trim() || selectedTemplate.name,
-      emoji: "🤖",
       command: [...selectedTemplate.command.trim().split(/\s+/).filter(Boolean), ...(selectedTemplate.args ?? [])],
       workingDir: templateWorkingDir.trim() || "~",
       status: "offline",
@@ -91,10 +90,9 @@ export default function AddPaneModal({ templates, hiddenBuiltins: hiddenBuiltins
     e.preventDefault()
     if (!name.trim() || !command.trim()) return
     const id = Date.now().toString()
-    const agent: Agent = {
+    const agent: Pane = {
       id,
       name: name.trim(),
-      emoji: "🤖",
       command: command.split(" ").filter(Boolean),
       workingDir: workingDir.trim() || "~",
       status: "offline",

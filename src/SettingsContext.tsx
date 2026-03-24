@@ -1,12 +1,15 @@
-import { createContext, useContext, useState, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, ReactNode } from "react"
 import {
   TerminalSettings,
+  DEFAULT_SETTINGS,
   AgentTerminalOverrides,
   loadGlobalSettings,
   saveGlobalSettings,
   loadAgentOverrides,
   saveAgentOverrides,
 } from "./settings"
+import { settingsStore } from "./storage/settingsStore"
+import { LS_SETTINGS_KEY, LS_THEME_KEY } from "./constants"
 
 interface SettingsContextValue {
   globalSettings: TerminalSettings
@@ -20,8 +23,26 @@ interface SettingsContextValue {
 const SettingsContext = createContext<SettingsContextValue>(null!)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const [globalSettings, setGlobalSettings] = useState<TerminalSettings>(loadGlobalSettings)
-  const [agentOverrides, setAgentOverrides] = useState<Record<string, AgentTerminalOverrides>>(loadAgentOverrides)
+  const [globalSettings, setGlobalSettings] = useState<TerminalSettings>(DEFAULT_SETTINGS)
+  const [agentOverrides, setAgentOverrides] = useState<Record<string, AgentTerminalOverrides>>({})
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      // load() syncs settingsStore.current; loadGlobalSettings() then reads it synchronously.
+      // ThemeProvider's lazy useState init also reads settingsStore.get(), so it must render
+      // after this resolves — enforced by the `ready` gate below (if !ready return null).
+      await settingsStore.load(LS_SETTINGS_KEY, LS_THEME_KEY)
+      const overrides = await loadAgentOverrides()
+      if (!cancelled) {
+        setGlobalSettings(loadGlobalSettings())
+        setAgentOverrides(overrides)
+        setReady(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
 
   const updateGlobalSettings = (patch: Partial<TerminalSettings> | ((prev: TerminalSettings) => Partial<TerminalSettings>)) => {
     setGlobalSettings(prev => {
@@ -53,6 +74,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const overrides = agentOverrides[agentId] ?? {}
     return { ...globalSettings, ...overrides }
   }
+
+  // Don't render children until settings are loaded to avoid flash of defaults.
+  // ThemeProvider relies on this gate: its lazy useState reads settingsStore.get().
+  if (!ready) return null
 
   return (
     <SettingsContext.Provider

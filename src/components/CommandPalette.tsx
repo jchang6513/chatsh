@@ -1,9 +1,9 @@
 import { MONO_FONT } from "../ui"
 import { useState, useEffect, useRef } from "react"
-import type { Agent } from "../types"
+import type { Pane } from "../types"
 
 interface Props {
-  agents: Agent[]
+  agents: Pane[]
   activeAgentId: string
   onSelect: (id: string) => void
   onClose: () => void

@@ -7,12 +7,12 @@ import { useSettings } from "../SettingsContext"
 import { useTheme } from "../ThemeContext"
 import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
 import { loadTemplates, saveTemplates, type Template } from "../templates"
-import type { Agent } from "../types"
+import type { Pane } from "../types"
 
 interface Props {
   hiddenBuiltins?: Set<string>
   onHiddenBuiltinsChange?: (h: Set<string>) => void
-  agents: Agent[]
+  agents: Pane[]
   onTemplatesChange?: (templates: Template[]) => void
   onClose: () => void
 }
@@ -435,7 +435,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
 
           {mainTab === "terminal" && !isGlobal && (
             <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 12, padding: "4px 8px", border: "1px dashed var(--border)" }}>
-              Agent settings override global. Click RESET to revert.
+              Pane settings override global. Click RESET to revert.
             </div>
           )}
 
@@ -637,7 +637,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--red)"; e.currentTarget.style.color = "var(--red)" }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)" }}
           >
-            [{isGlobal ? "Reset All" : "Clear Agent Settings"}]
+            [{isGlobal ? "Reset All" : "Clear Pane Settings"}]
           </button>
 
         </div>
