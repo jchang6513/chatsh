@@ -6,16 +6,14 @@
  * the last scheduled write always carries the full merged snapshot.
  */
 import { invoke } from "@tauri-apps/api/core"
-import { chatshDir, readJsonFile, writeJsonFileImmediate } from "./fs"
+import { chatshDir, readJsonFile, writeJsonFile, writeJsonFileImmediate } from "./fs"
 import {
   SETTINGS_FILE,
   LEGACY_CONFIG_FILE,
   LEGACY_THEME_FILE,
-  WRITE_DEBOUNCE_MS,
 } from "../constants"
 
 export interface AppSettings {
-  // Terminal / UI
   fontFamily?: string
   fontSize?: number
   lineHeight?: number
@@ -27,39 +25,36 @@ export interface AppSettings {
   uiScale?: number
   sidebarPosition?: "left" | "right"
   notificationsEnabled?: boolean
-  // Theme
   theme?: string
-  // Schema version — bump when shape changes
   _version?: number
 }
 
 class SettingsStore {
   private current: AppSettings = {}
-  private timer: ReturnType<typeof setTimeout> | null = null
 
   /**
    * Load from settings.json, migrating from legacy files or localStorage if needed.
-   * Call once before rendering (SettingsProvider useEffect).
+   * Must be called (and awaited) before any call to get().
+   * SettingsProvider ensures this via its async useEffect + ready gate.
    */
   async load(legacySettingsLsKey: string, legacyThemeLsKey: string): Promise<AppSettings> {
     // 1. Try settings.json
     try {
       const dir = await chatshDir()
       const content = await invoke<string>("read_file", { path: `${dir}/${SETTINGS_FILE}` })
-      const parsed = JSON.parse(content) as AppSettings
-      this.current = parsed
+      this.current = JSON.parse(content) as AppSettings
       localStorage.removeItem(legacySettingsLsKey)
       localStorage.removeItem(legacyThemeLsKey)
       return { ...this.current }
     } catch {}
 
     // 2. Migrate from old config.json + theme.json
-    let migrated: AppSettings = {}
+    const migrated: AppSettings = {}
     try {
       const dir = await chatshDir()
       try {
         const cfg = await invoke<string>("read_file", { path: `${dir}/${LEGACY_CONFIG_FILE}` })
-        migrated = { ...migrated, ...JSON.parse(cfg) }
+        Object.assign(migrated, JSON.parse(cfg))
       } catch {}
       try {
         const thm = await invoke<string>("read_file", { path: `${dir}/${LEGACY_THEME_FILE}` })
@@ -76,7 +71,7 @@ class SettingsStore {
     try {
       const ls = localStorage.getItem(legacySettingsLsKey)
       if (ls) {
-        this.current = { ...this.current, ...JSON.parse(ls) }
+        Object.assign(this.current, JSON.parse(ls))
         localStorage.removeItem(legacySettingsLsKey)
       }
     } catch {}
@@ -91,34 +86,19 @@ class SettingsStore {
     return { ...this.current }
   }
 
-  /** Merge partial update into current state and schedule a debounced write. */
+  /** Merge partial update and schedule a debounced write via fs.writeJsonFile. */
   patch(partial: Partial<AppSettings>): void {
     this.current = { ...this.current, ...partial }
-    this.scheduleSave()
+    // Reuse writeJsonFile's built-in debounce (keyed by filename)
+    writeJsonFile(SETTINGS_FILE, this.current)
   }
 
-  /** Synchronous snapshot of current settings. */
+  /** Synchronous snapshot — valid only after load() has resolved. */
   get(): AppSettings {
     return { ...this.current }
-  }
-
-  private scheduleSave(): void {
-    if (this.timer) clearTimeout(this.timer)
-    this.timer = setTimeout(async () => {
-      try {
-        const dir = await chatshDir()
-        await invoke("write_file", {
-          path: `${dir}/${SETTINGS_FILE}`,
-          content: JSON.stringify(this.current, null, 2),
-        })
-      } catch (e) {
-        console.error("[SettingsStore] 寫入 settings.json 失敗:", e)
-      }
-    }, WRITE_DEBOUNCE_MS)
   }
 }
 
 export const settingsStore = new SettingsStore()
 
-// Re-export readJsonFile for callers that only need file reads
 export { readJsonFile }

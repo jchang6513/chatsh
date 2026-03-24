@@ -23,20 +23,20 @@ interface SettingsContextValue {
 const SettingsContext = createContext<SettingsContextValue>(null!)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  // Start with defaults; async load kicks in below
   const [globalSettings, setGlobalSettings] = useState<TerminalSettings>(DEFAULT_SETTINGS)
   const [agentOverrides, setAgentOverrides] = useState<Record<string, AgentTerminalOverrides>>({})
   const [ready, setReady] = useState(false)
 
-  // Load settings.json (and migrate legacy) once on mount, before children render
   useEffect(() => {
     let cancelled = false
     ;(async () => {
+      // load() syncs settingsStore.current; loadGlobalSettings() then reads it synchronously.
+      // ThemeProvider's lazy useState init also reads settingsStore.get(), so it must render
+      // after this resolves — enforced by the `ready` gate below (if !ready return null).
       await settingsStore.load(LS_SETTINGS_KEY, LS_THEME_KEY)
-      const settings = await loadGlobalSettings()
       const overrides = await loadAgentOverrides()
       if (!cancelled) {
-        setGlobalSettings(settings)
+        setGlobalSettings(loadGlobalSettings())
         setAgentOverrides(overrides)
         setReady(true)
       }
@@ -75,7 +75,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return { ...globalSettings, ...overrides }
   }
 
-  // Don't render children until settings are loaded to avoid flash of defaults
+  // Don't render children until settings are loaded to avoid flash of defaults.
+  // ThemeProvider relies on this gate: its lazy useState reads settingsStore.get().
   if (!ready) return null
 
   return (

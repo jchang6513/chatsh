@@ -1,5 +1,7 @@
 import { MONO_FONT } from "./ui"
+import { LS_PANE_OVERRIDES_KEY, LEGACY_LS_AGENT_OVERRIDES_KEY } from "./constants"
 import { settingsStore } from "./storage"
+import type { AppSettings } from "./storage"
 
 export interface TerminalSettings {
   fontFamily: string
@@ -10,7 +12,7 @@ export interface TerminalSettings {
   scrollback: number
   backgroundOpacity: number
   padding: number
-  uiScale: number  // 0.7 - 1.5
+  uiScale: number
   sidebarPosition: "left" | "right"
   notificationsEnabled: boolean
 }
@@ -32,30 +34,26 @@ export const DEFAULT_SETTINGS: TerminalSettings = {
   notificationsEnabled: true,
 }
 
-/** Extract TerminalSettings fields from the shared AppSettings store. */
-export async function loadGlobalSettings(): Promise<TerminalSettings> {
-  const saved = settingsStore.get()
-  return { ...DEFAULT_SETTINGS, ...pickTerminalFields(saved as unknown as Record<string, unknown>) }
+// TerminalSettings keys that live in AppSettings
+const TERMINAL_KEYS: ReadonlyArray<keyof TerminalSettings> = [
+  "fontFamily", "fontSize", "lineHeight", "cursorStyle", "cursorBlink",
+  "scrollback", "backgroundOpacity", "padding", "uiScale",
+  "sidebarPosition", "notificationsEnabled",
+]
+
+/** Extract TerminalSettings fields from the shared AppSettings store (synchronous). */
+export function loadGlobalSettings(): TerminalSettings {
+  const saved: AppSettings = settingsStore.get()
+  const overrides: Partial<TerminalSettings> = {}
+  for (const k of TERMINAL_KEYS) {
+    if (k in saved) overrides[k] = saved[k] as never
+  }
+  return { ...DEFAULT_SETTINGS, ...overrides }
 }
 
 export function saveGlobalSettings(s: TerminalSettings): void {
   settingsStore.patch(s)
 }
-
-function pickTerminalFields(obj: Record<string, unknown>): Partial<TerminalSettings> {
-  const keys: Array<keyof TerminalSettings> = [
-    "fontFamily", "fontSize", "lineHeight", "cursorStyle", "cursorBlink",
-    "scrollback", "backgroundOpacity", "padding", "uiScale",
-    "sidebarPosition", "notificationsEnabled",
-  ]
-  const result: Partial<TerminalSettings> = {}
-  for (const k of keys) {
-    if (k in obj) (result as Record<string, unknown>)[k] = obj[k]
-  }
-  return result
-}
-
-import { LS_PANE_OVERRIDES_KEY, LEGACY_LS_AGENT_OVERRIDES_KEY } from "./constants"
 
 // Per-pane overrides — stored in localStorage (runtime state, not config)
 export async function loadAgentOverrides(): Promise<Record<string, AgentTerminalOverrides>> {
@@ -63,7 +61,7 @@ export async function loadAgentOverrides(): Promise<Record<string, AgentTerminal
   const legacy = localStorage.getItem(LEGACY_LS_AGENT_OVERRIDES_KEY)
   if (legacy) {
     try {
-      const parsed = JSON.parse(legacy)
+      const parsed = JSON.parse(legacy) as Record<string, AgentTerminalOverrides>
       localStorage.setItem(LS_PANE_OVERRIDES_KEY, legacy)
       localStorage.removeItem(LEGACY_LS_AGENT_OVERRIDES_KEY)
       return parsed
@@ -71,7 +69,7 @@ export async function loadAgentOverrides(): Promise<Record<string, AgentTerminal
   }
   try {
     const saved = localStorage.getItem(LS_PANE_OVERRIDES_KEY)
-    if (saved) return JSON.parse(saved)
+    if (saved) return JSON.parse(saved) as Record<string, AgentTerminalOverrides>
   } catch {}
   return {}
 }
