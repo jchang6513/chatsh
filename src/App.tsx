@@ -219,6 +219,11 @@ export default function App() {
             }
             setShellSessions(nextSessions);
 
+            // Reset activeTabMap so every pane starts on REPL tab after restart
+            // This keeps activeTabMap in sync with shellSessions and prevents
+            // false "unread" notifications from pty-idle when activeTabMap is stale
+            setActiveTabMap({});
+
             // Update shell counters to avoid ID collisions
             const counters: Record<string, number> = {};
             for (const sp of shellPanes) {
@@ -309,13 +314,13 @@ export default function App() {
       // pty-idle: output stopped → mark unread (works for both LLM and shell)
       // Ignore if active or within grace period after switching away
       listen<void>(`pty-idle-${agentId}`, () => {
-        // Only skip if pane is active AND terminal tab is visible
+        // Skip if pane is active (user is looking at this pane, regardless of which tab)
+        // or within grace period after switching away
         const isActivePane = agentId === activeAgentIdRef.current
-        const activeTab = activeTabMapRef.current[agentId] ?? REPL_TAB
-        const isTerminalVisible = activeTab === REPL_TAB
-        if (isActivePane && isTerminalVisible) return
         const switchedAt = switchedAwayAt.current.get(agentId)
-        if (switchedAt && Date.now() - switchedAt < GRACE_MS) return
+        const gracePassed = !switchedAt || Date.now() - switchedAt >= GRACE_MS
+        if (isActivePane) return
+        if (!gracePassed) return
         setUnreadAgents(prev => {
           if (prev.has(agentId)) return prev
           return new Set([...prev, agentId])
