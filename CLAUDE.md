@@ -10,6 +10,104 @@
 
 ### 發版前
 - 跑完整回歸：daemon 自動化 + 手動 regression checklist
+- 執行下方完整發版流程（不可跳步驟）
+
+---
+
+## 發版流程（完整，不可跳步驟）
+
+### Step 1：更新版本號（三個地方都要改）
+```bash
+VERSION="0.1.x"
+sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+sed -i '' "s/^version = .*/version = \"$VERSION\"/" src-tauri/Cargo.toml
+# tauri.conf.json 也要改！（DMG 版本名稱來自這裡）
+sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.conf.json
+```
+**⚠️ 漏掉 `tauri.conf.json` → DMG 名稱會是舊版本號**
+
+### Step 2：跑完整回歸測試
+```bash
+# TypeScript
+npx tsc --noEmit
+
+# Daemon 自動化
+cd src-tauri && cargo build --bin chatsh-daemon && cd ..
+bash scripts/test-daemon.sh
+
+# JSON storage regression（如有需要）
+bash /tmp/test-regression-json.sh
+```
+
+### Step 3：Commit 版本更新
+```bash
+git add -A
+git commit -m "bump version to $VERSION"
+git push origin main
+```
+
+### Step 4：Build Release DMG
+```bash
+npm run tauri build
+# DMG 產出位置：src-tauri/target/release/bundle/dmg/chat.sh_${VERSION}_aarch64.dmg
+# 確認 DMG 檔名包含正確版本號！
+```
+
+### Step 5：計算 SHA256
+```bash
+shasum -a 256 src-tauri/target/release/bundle/dmg/chat.sh_${VERSION}_aarch64.dmg
+```
+
+### Step 6：建 GitHub release + 上傳 DMG
+```bash
+TOKEN="<github_token>"
+# 建 tag
+git tag v$VERSION && git push origin v$VERSION
+
+# 建 release（用 GitHub API）
+RELEASE_ID=$(curl -s -X POST \
+  -H "Authorization: token $TOKEN" \
+  -H "Content-Type: application/json" \
+  https://api.github.com/repos/jchang6513/chatsh/releases \
+  -d "{\"tag_name\":\"v$VERSION\",\"name\":\"v$VERSION\",\"body\":\"<changelog>\",\"draft\":false,\"prerelease\":false}" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+
+# 上傳 DMG
+curl -s -X POST \
+  -H "Authorization: token $TOKEN" \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @"src-tauri/target/release/bundle/dmg/chat.sh_${VERSION}_aarch64.dmg" \
+  "https://uploads.github.com/repos/jchang6513/chatsh/releases/${RELEASE_ID}/assets?name=chat.sh_${VERSION}_aarch64.dmg"
+```
+
+### Step 7：更新 Homebrew Formula
+```bash
+SHA256="<sha256_from_step5>"
+cat > ~/Workspace/homebrew-chatsh/Casks/chatsh.rb << EOF
+cask "chatsh" do
+  version "$VERSION"
+  sha256 "$SHA256"
+  url "https://github.com/jchang6513/chatsh/releases/download/v#{version}/chat.sh_#{version}_aarch64.dmg"
+  name "chat.sh"
+  desc "Terminal-native AI Pane manager"
+  homepage "https://chatsh-terminal.vercel.app"
+  app "chat.sh.app"
+  postflight do
+    system_command "/usr/bin/xattr", args: ["-cr", "#{appdir}/chat.sh.app"], sudo: false
+  end
+end
+EOF
+cd ~/Workspace/homebrew-chatsh && git add -A && git commit -m "chatsh $VERSION: <changelog>" && git push
+```
+
+### 發版 Checklist
+- [ ] `package.json` 版本更新
+- [ ] `src-tauri/Cargo.toml` 版本更新
+- [ ] `src-tauri/tauri.conf.json` 版本更新 ← **常被漏掉**
+- [ ] 完整回歸測試通過
+- [ ] DMG 檔名包含正確版本號（確認！）
+- [ ] GitHub release 建立並有 DMG asset
+- [ ] Homebrew formula 更新並 push
 
 ---
 
