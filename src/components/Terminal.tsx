@@ -132,6 +132,32 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
       const text = xterm.getSelection()
       if (text) navigator.clipboard.writeText(text).catch(console.error)
     });
+
+    // ⌘V: if clipboard has image → send Ctrl+V (\x16) so claude code can receive it
+    //       if clipboard has text → paste text normally
+    xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if (e.type !== "keydown") return true;
+      if (!e.metaKey || e.key !== "v") return true;
+      // Check if clipboard has image items
+      navigator.clipboard.read().then((items) => {
+        const hasImage = items.some(item => item.types.some(t => t.startsWith("image/")));
+        if (hasImage) {
+          // Forward as Ctrl+V (\x16) for claude code to handle
+          invoke("write_to_agent", { agentId: agent.id, data: btoa("\x16") });
+        } else {
+          // Normal text paste
+          navigator.clipboard.readText().then((text) => {
+            if (text) invoke("write_to_agent", { agentId: agent.id, data: btoa(text) });
+          }).catch(() => {});
+        }
+      }).catch(() => {
+        // clipboard.read() may be denied — fall back to text paste
+        navigator.clipboard.readText().then((text) => {
+          if (text) invoke("write_to_agent", { agentId: agent.id, data: btoa(text) });
+        }).catch(() => {});
+      });
+      return false; // prevent xterm default handling
+    });
     xtermRef.current = xterm;
     fitAddonRef.current = fitAddon;
 

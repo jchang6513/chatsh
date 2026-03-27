@@ -70,6 +70,28 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
       const text = xterm.getSelection()
       if (text) navigator.clipboard.writeText(text).catch(console.error)
     });
+
+    // ⌘V: if clipboard has image → send Ctrl+V (\x16) so claude code can receive it
+    xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if (e.type !== "keydown") return true;
+      if (!e.metaKey || e.key !== "v") return true;
+      navigator.clipboard.read().then((items) => {
+        const hasImage = items.some(item => item.types.some(t => t.startsWith("image/")));
+        if (hasImage) {
+          invoke("write_to_agent", { agentId: sessionId, data: btoa("\x16") });
+        } else {
+          navigator.clipboard.readText().then((text) => {
+            if (text) invoke("write_to_agent", { agentId: sessionId, data: btoa(text) });
+          }).catch(() => {});
+        }
+      }).catch(() => {
+        navigator.clipboard.readText().then((text) => {
+          if (text) invoke("write_to_agent", { agentId: sessionId, data: btoa(text) });
+        }).catch(() => {});
+      });
+      return false;
+    });
+
     setTimeout(() => fitAddon.fit(), 50);
 
     // Wait for listener to register before spawning,

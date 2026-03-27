@@ -371,3 +371,18 @@ cd ~/Workspace/chatsh && npm run tauri dev
 ### TC-UX04: SingleShell 也支援相同功能
 - Steps: Shell tab 重複 TC-UX01 和 TC-UX03
 - Expected: 行為一致
+
+### TC-UX05: ⌘V 貼上圖片到 Claude Code
+- 前置: 剪貼簿有圖片（截圖或複製圖片）
+- Steps: 在 Terminal pane（claude 正在跑）按 ⌘V
+- Expected: terminal 顯示 `[Image #1]`，圖片正確附加到 claude 的輸入
+
+### TC-UX06: ⌘V 貼上文字行為不變
+- 前置: 剪貼簿有純文字
+- Steps: 在 Terminal pane 按 ⌘V
+- Expected: 文字貼入 terminal（原本行為不變）
+
+### TC-UX07: SingleShell ⌘V 貼上圖片
+- 前置: 剪貼簿有圖片
+- Steps: 在 Shell tab 按 ⌘V
+- Expected: 行為與 Terminal pane 一致（TC-UX05）
