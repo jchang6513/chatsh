@@ -36,11 +36,6 @@
 - 寫入加 debounce（150ms）避免高頻寫
 - 啟動時 async 讀取，需要處理好 loading state
 
-### Scrollback 持久化（Phase 4）
-**目標**：daemon 重啟後 scrollback 也能恢復
-
-**設計**：把 scrollback buffer 定期寫入 `~/.chatsh/scrollback/{pane_id}`
-
 ---
 
 ## 已知問題（下版本修）
