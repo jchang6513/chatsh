@@ -170,7 +170,7 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   return (
     <div
       ref={containerRef}
-      style={{ flex: 1, minHeight: 0, padding: settings.padding, display: "flex", flexDirection: "column" }}
+      style={{ flex: 1, minHeight: 0, padding: settings.padding, display: "flex", flexDirection: "column", overflow: "hidden" }}
       onClick={() => xtermRef.current?.focus()}
     />
   );
