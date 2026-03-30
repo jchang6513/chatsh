@@ -31,6 +31,9 @@ sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" src-tauri/tauri.con
 # TypeScript
 npx tsc --noEmit
 
+# 前端單元測試（Vitest）
+npm test
+
 # Daemon 自動化
 cd src-tauri && cargo build --bin chatsh-daemon && cd ..
 bash scripts/test-daemon.sh
@@ -120,6 +123,20 @@ bash scripts/test-daemon.sh
 ```
 **需要**：先 build daemon binary（`cargo build --bin chatsh-daemon`）
 
+### 前端單元測試（Vitest）
+```bash
+cd ~/Workspace/chatsh
+npm test                  # 執行所有單元測試
+npm run test:coverage     # 含 coverage 報告（v8）
+```
+
+**優先覆蓋模組：**
+- `src/storage/migrate.ts` — 三層遷移路徑（JSON → localStorage → fallback）
+- `src/storage/panesStore.ts` — panes.json / agents.json / localStorage 遷移
+- `src/theme.ts` — ColorScheme 資料結構驗證
+- `src/ui.ts` — UI 常數與 event handler
+- `src/templates.ts` — Template CRUD 邏輯
+
 ### TypeScript 類型檢查
 ```bash
 cd ~/Workspace/chatsh
@@ -144,6 +161,7 @@ cargo build
 - [ ] **TC-R04** Gemini/Claude pane 重啟後輸入框不出現 `1;2c`
 - [ ] **TC-R05** Sidebar pane 不重複（daemon 主導，不疊加 localStorage）
 - [ ] **TC-R06** Scrollback 不重複（只出現一次）
+- [ ] **Unit Tests** `npm test` 全部通過（62 tests）
 
 ### 重啟測試標準步驟
 ```bash

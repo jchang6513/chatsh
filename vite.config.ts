@@ -11,4 +11,14 @@ export default defineConfig({
       ignored: ["**/src-tauri/**"],
     },
   },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      include: ["src/**/*.ts", "src/**/*.tsx"],
+      exclude: ["src/main.tsx", "src/**/*.d.ts"],
+    },
+  },
 });
