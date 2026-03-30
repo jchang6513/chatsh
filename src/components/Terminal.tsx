@@ -216,7 +216,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
       <div
         ref={containerRef}
         className="flex-1 min-h-0"
-        style={{ padding: settings.padding }}
+        style={{ padding: settings.padding, overflow: "hidden" }}
         onClick={() => xtermRef.current?.focus()}
       />
     </div>
