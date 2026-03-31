@@ -267,6 +267,15 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - Steps: 有 output 的 pane → 重啟 app
 - Expected: scrollback 只出現一次
 
+### TC-R07: Font 設定重啟後持久化
+- Steps: Preferences → Font Family 改為非預設值（如 "Menlo"）、Font Size 改為 18 → 關閉 app → 重開 app
+- Expected: terminal 使用修改後的字體與大小，非預設值
+- 驗證: `cat ~/.chatsh/settings.json` 應包含 fontFamily 和 fontSize
+
+### TC-R08: localStorage 遷移後設定不遺失
+- Steps: 清除 `~/.chatsh/settings.json`，在 localStorage 設定 `chatsh_global_settings` → 重啟 app
+- Expected: 設定從 localStorage 遷移至 settings.json，重啟後保留
+
 ---
 
 ## Known Issues（v0.1.7 待修）
