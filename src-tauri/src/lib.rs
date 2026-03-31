@@ -7,6 +7,32 @@ use std::collections::HashMap;
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
+// ── 從 login shell 載入完整環境變數 ──
+
+fn load_shell_env() {
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+    let output = std::process::Command::new(&shell)
+        .args(["-l", "-c", "env -0"])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .output();
+
+    if let Ok(output) = output {
+        if output.status.success() {
+            let env_str = String::from_utf8_lossy(&output.stdout);
+            for entry in env_str.split('\0') {
+                if let Some((key, value)) = entry.split_once('=') {
+                    if matches!(key, "_" | "SHLVL" | "PWD" | "OLDPWD") {
+                        continue;
+                    }
+                    std::env::set_var(key, value);
+                }
+            }
+        }
+    }
+}
+
 // ── AppState ──
 
 struct AppState {
@@ -563,6 +589,9 @@ fn cleanup_deleted_agents() -> Result<u32, String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // macOS GUI app 環境變數不完整，從 login shell 載入
+    load_shell_env();
+
     if let Err(e) = ensure_daemon_running() {
         eprintln!("Warning: 無法啟動 chatsh-daemon: {e}");
     }
