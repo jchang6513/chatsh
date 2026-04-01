@@ -1,5 +1,29 @@
 # CLAUDE.md — chatsh 開發規範
 
+## Branch 與 PR 規範（強制）
+
+**所有新功能、bug fix 必須在獨立 branch 開發，透過 PR merge 回 main。禁止直接 push 到 main 或直接 git merge。**
+
+```bash
+# 1. 建 branch
+git checkout -b fix/T019-terminal-resize   # 或 feat/T022-xxx
+
+# 2. 開發、commit
+
+# 3. push branch
+git push origin fix/T019-terminal-resize
+
+# 4. 開 PR
+gh pr create --title "fix T019: ..." --body "..." --base main
+
+# 5. PR merge（squash）
+gh pr merge <PR號碼> --squash
+```
+
+Branch 命名：`fix/T{號碼}-{描述}` 或 `feat/T{號碼}-{描述}`
+
+---
+
 ## 開發流程（必須遵守）
 
 ### 每次新功能
