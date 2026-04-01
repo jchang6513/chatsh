@@ -23,6 +23,16 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   const { scheme } = useTheme();
   const { getResolvedSettings, globalSettings } = useSettings();
   const settings = getResolvedSettings(agentId);
+  // T017: 用 ref 持有最新 uiScale，避免 doFit closure stale 問題
+  const uiScaleRef = useRef(globalSettings.uiScale ?? 1);
+  const doFitRef = useRef<() => void>(() => {});
+
+  // 同步最新 uiScale 到 ref（globalSettings 變動時立即更新）
+  useEffect(() => {
+    uiScaleRef.current = globalSettings.uiScale ?? 1;
+    // uiScale 變動後立即重新 fit 以修正 cols
+    doFitRef.current();
+  }, [globalSettings.uiScale]);
 
   // T018: 圖片貼上縮圖 overlay
   const { imageUrl, clearImage } = usePasteImageOverlay(containerRef);
@@ -115,7 +125,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     const doFit = () => {
       fitAddon.fit();
       // 補正 CSS zoom 造成的 cols 誤差
-      const uiScale = globalSettings.uiScale ?? 1;
+      // T017 fix: 透過 uiScaleRef.current 取得最新 uiScale，避免 closure 閉包過期值
+      const uiScale = uiScaleRef.current;
       if (uiScale !== 1 && container) {
         const rect = container.getBoundingClientRect();
         const core = (xterm as any)._core;
@@ -129,6 +140,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
       }
       invoke("resize_pty", { agentId: sessionId, cols: xterm.cols, rows: xterm.rows }).catch(() => {});
     };
+    // 更新 ref 讓外部 effect（uiScale 變動）可呼叫最新 doFit
+    doFitRef.current = doFit;
     const obs = new ResizeObserver(doFit);
     obs.observe(container);
 
@@ -186,7 +199,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     xterm.options.cursorBlink = settings.cursorBlink;
     xterm.options.cursorStyle = settings.cursorStyle;
     xterm.options.scrollback = settings.scrollback;
-    if (fitRef.current) fitRef.current.fit();
+    // T017: 呼叫帶有 cols 補正的 doFit，而非裸 fitRef.current.fit()
+    doFitRef.current();
   }, [settings]);
 
   // focus when active
