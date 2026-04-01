@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTheme } from "../ThemeContext";
 import { useSettings } from "../SettingsContext";
+import { usePasteImageOverlay } from "../hooks/usePasteImageOverlay";
 import "@xterm/xterm/css/xterm.css";
 
 interface SingleShellProps {
@@ -22,6 +23,15 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   const { scheme } = useTheme();
   const { getResolvedSettings, globalSettings } = useSettings();
   const settings = getResolvedSettings(agentId);
+
+  // T018: 圖片貼上縮圖 overlay
+  const { imageUrl, clearImage } = usePasteImageOverlay(containerRef);
+
+  // 點擊 overlay 立即關閉
+  const handleOverlayClick = useCallback(() => {
+    clearImage();
+    xtermRef.current?.focus();
+  }, [clearImage]);
 
   // xterm lifecycle: create on mount, cleanup on unmount
   useEffect(() => {
@@ -168,10 +178,37 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   }, [isActive]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ flex: 1, minHeight: 0, padding: settings.padding, display: "flex", flexDirection: "column", overflow: "hidden" }}
-      onClick={() => xtermRef.current?.focus()}
-    />
+    <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <div
+        ref={containerRef}
+        style={{ flex: 1, minHeight: 0, padding: settings.padding, display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onClick={() => xtermRef.current?.focus()}
+      />
+      {/* T018: 貼上圖片縮圖 overlay */}
+      {imageUrl && (
+        <div
+          onClick={handleOverlayClick}
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            maxWidth: 320,
+            maxHeight: 240,
+            borderRadius: 8,
+            overflow: "hidden",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+            cursor: "pointer",
+            zIndex: 100,
+          }}
+          title="點擊關閉"
+        >
+          <img
+            src={imageUrl}
+            alt="貼上的圖片"
+            style={{ display: "block", maxWidth: 320, maxHeight: 240, objectFit: "contain" }}
+          />
+        </div>
+      )}
+    </div>
   );
 }

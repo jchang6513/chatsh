@@ -380,3 +380,12 @@ cd ~/Workspace/chatsh && npm run tauri dev
 ### TC-UX04: SingleShell 也支援相同功能
 - Steps: Shell tab 重複 TC-UX01 和 TC-UX03
 - Expected: 行為一致
+
+### TC-UX05: 貼上圖片顯示縮圖 (T018)
+- Steps: 複製任意圖片 → 在 terminal 按 Cmd+V
+- Expected: terminal 上方出現圖片縮圖 overlay，顯示 2 秒後淡出（或保留直到下一次輸入）
+- Note: 純文字 paste 不受影響，走原本 xterm 流程
+
+### TC-UX06: 貼上圖片不寫入 PTY
+- Steps: 複製圖片後貼上
+- Expected: PTY 不收到任何亂碼或 binary 輸入

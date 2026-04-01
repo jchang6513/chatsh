@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -7,6 +7,7 @@ import { listen } from "@tauri-apps/api/event";
 import type { Pane } from "../types";
 import { useTheme } from "../ThemeContext";
 import { useSettings } from "../SettingsContext";
+import { usePasteImageOverlay } from "../hooks/usePasteImageOverlay";
 import "@xterm/xterm/css/xterm.css";
 
 interface Props {
@@ -23,6 +24,15 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+
+  // T018: 圖片貼上縮圖 overlay
+  const { imageUrl, clearImage } = usePasteImageOverlay(containerRef);
+
+  // 點擊 overlay 立即關閉
+  const handleOverlayClick = useCallback(() => {
+    clearImage();
+    xtermRef.current?.focus();
+  }, [clearImage]);
 
   // apply settings changes in real-time
   useEffect(() => {
@@ -212,13 +222,39 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* xterm container */}
-      <div
-        ref={containerRef}
-        className="flex-1 min-h-0"
-        style={{ padding: settings.padding, overflow: "hidden" }}
-        onClick={() => xtermRef.current?.focus()}
-      />
+      {/* xterm container，relative 讓 overlay 能絕對定位 */}
+      <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+        <div
+          ref={containerRef}
+          style={{ padding: settings.padding, overflow: "hidden", height: "100%" }}
+          onClick={() => xtermRef.current?.focus()}
+        />
+        {/* T018: 貼上圖片縮圖 overlay */}
+        {imageUrl && (
+          <div
+            onClick={handleOverlayClick}
+            style={{
+              position: "absolute",
+              top: 8,
+              left: 8,
+              maxWidth: 320,
+              maxHeight: 240,
+              borderRadius: 8,
+              overflow: "hidden",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+              cursor: "pointer",
+              zIndex: 100,
+            }}
+            title="點擊關閉"
+          >
+            <img
+              src={imageUrl}
+              alt="貼上的圖片"
+              style={{ display: "block", maxWidth: 320, maxHeight: 240, objectFit: "contain" }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
