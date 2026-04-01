@@ -112,16 +112,29 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     });
 
     // resize
-    const obs = new ResizeObserver(() => {
+    const doFit = () => {
       fitAddon.fit();
       invoke("resize_pty", { agentId: sessionId, cols: xterm.cols, rows: xterm.rows }).catch(() => {});
-    });
+    };
+    const obs = new ResizeObserver(doFit);
     obs.observe(container);
+
+    // 監聽 devicePixelRatio 變化（zoom in/out）
+    let dprMQ: MediaQueryList | null = null;
+    const onDprChange = () => {
+      doFit();
+      dprMQ?.removeEventListener("change", onDprChange);
+      dprMQ = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      dprMQ.addEventListener("change", onDprChange);
+    };
+    dprMQ = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    dprMQ.addEventListener("change", onDprChange);
 
     return () => {
       disposed = true;
       disposable.dispose();
       obs.disconnect();
+      dprMQ?.removeEventListener("change", onDprChange);
       unlisten?.();
       xterm.dispose();
       // Don't kill — daemon keeps the shell alive for reconnect.

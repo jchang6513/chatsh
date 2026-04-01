@@ -150,7 +150,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
       if (isActive) xterm.focus();
     }, 100);
 
-    const resizeObs = new ResizeObserver(() => {
+    const doFit = () => {
       if (fitAddonRef.current) {
         fitAddonRef.current.fit();
         invoke("resize_pty", {
@@ -159,8 +159,22 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
           rows: xterm.rows,
         }).catch(() => {});
       }
-    });
+    };
+
+    const resizeObs = new ResizeObserver(doFit);
     resizeObs.observe(container);
+
+    // 監聽 devicePixelRatio 變化（zoom in/out）
+    let dprMediaQuery: MediaQueryList | null = null;
+    const onDprChange = () => {
+      doFit();
+      // 重新監聽下一個 dpr 變化
+      dprMediaQuery?.removeEventListener("change", onDprChange);
+      dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      dprMediaQuery.addEventListener("change", onDprChange);
+    };
+    dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    dprMediaQuery.addEventListener("change", onDprChange);
 
     xterm.onData((data) => {
       // Filter DA (Device Attributes) responses xterm.js auto-generates —
@@ -212,6 +226,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     return () => {
       disposed = true;
       resizeObs.disconnect();
+      dprMediaQuery?.removeEventListener("change", onDprChange);
       if (unlisten) unlisten();
       if (unlistenExit) unlistenExit();
       xterm.dispose();
