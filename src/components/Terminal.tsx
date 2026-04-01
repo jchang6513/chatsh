@@ -151,14 +151,28 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     }, 100);
 
     const doFit = () => {
-      if (fitAddonRef.current) {
-        fitAddonRef.current.fit();
-        invoke("resize_pty", {
-          agentId: agent.id,
-          cols: xterm.cols,
-          rows: xterm.rows,
-        }).catch(() => {});
+      if (!fitAddonRef.current || !xtermRef.current) return;
+      fitAddonRef.current.fit();
+      // 補正 CSS zoom 造成的 cols 誤差
+      // App.tsx 用 CSS zoom 縮放整體 UI，但 FitAddon 用 clientWidth 計算（不受 zoom 影響）
+      // 用 getBoundingClientRect().width 取得真實顯示寬度，修正 cols
+      const uiScale = globalSettings.uiScale ?? 1;
+      if (uiScale !== 1 && container) {
+        const rect = container.getBoundingClientRect();
+        const core = (xtermRef.current as any)._core;
+        const cellW = core?._renderService?.dimensions?.css?.cell?.width;
+        if (cellW && cellW > 0) {
+          const correctCols = Math.max(2, Math.floor(rect.width / cellW));
+          if (correctCols !== xtermRef.current.cols) {
+            xtermRef.current.resize(correctCols, xtermRef.current.rows);
+          }
+        }
       }
+      invoke("resize_pty", {
+        agentId: agent.id,
+        cols: xterm.cols,
+        rows: xterm.rows,
+      }).catch(() => {});
     };
 
     const resizeObs = new ResizeObserver(doFit);

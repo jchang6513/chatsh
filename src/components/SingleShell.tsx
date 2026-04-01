@@ -114,6 +114,19 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     // resize
     const doFit = () => {
       fitAddon.fit();
+      // 補正 CSS zoom 造成的 cols 誤差
+      const uiScale = globalSettings.uiScale ?? 1;
+      if (uiScale !== 1 && container) {
+        const rect = container.getBoundingClientRect();
+        const core = (xterm as any)._core;
+        const cellW = core?._renderService?.dimensions?.css?.cell?.width;
+        if (cellW && cellW > 0) {
+          const correctCols = Math.max(2, Math.floor(rect.width / cellW));
+          if (correctCols !== xterm.cols) {
+            xterm.resize(correctCols, xterm.rows);
+          }
+        }
+      }
       invoke("resize_pty", { agentId: sessionId, cols: xterm.cols, rows: xterm.rows }).catch(() => {});
     };
     const obs = new ResizeObserver(doFit);
