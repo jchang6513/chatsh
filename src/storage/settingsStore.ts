@@ -94,6 +94,12 @@ class SettingsStore {
     return { ...this.current }
   }
 
+  /** Merge partial update and immediately write to disk (no debounce). */
+  async patchImmediate(partial: Partial<AppSettings>): Promise<void> {
+    this.current = { ...this.current, ...partial }
+    await writeJsonFileImmediate(SETTINGS_FILE, this.current)
+  }
+
   /** Merge partial update and schedule a debounced write via fs.writeJsonFile. */
   patch(partial: Partial<AppSettings>): void {
     this.current = { ...this.current, ...partial }

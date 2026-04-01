@@ -56,7 +56,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     setGlobalSettings(prev => {
       const resolved = typeof patch === 'function' ? patch(prev) : patch
       const next = { ...prev, ...resolved }
-      saveGlobalSettings(next)
+      // 使用即時寫入（不用 debounce），避免 Cmd+Q 時遺失設定
+      settingsStore.patchImmediate(next).catch(console.error)
       return next
     })
   }
