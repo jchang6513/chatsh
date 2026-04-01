@@ -190,6 +190,34 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     dprMediaQuery.addEventListener("change", onDprChange);
 
+    // 攔截 Cmd+V：偵測剪貼簿是否有圖片，有則轉 base64 送進 PTY 讓 Claude Code 接收
+    xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if (e.metaKey && e.key === "v" && e.type === "keydown") {
+        navigator.clipboard.read().then(items => {
+          for (const item of items) {
+            const imageType = item.types.find((t: string) => t.startsWith("image/"))
+            if (imageType) {
+              item.getType(imageType).then((blob: Blob) => {
+                const reader = new FileReader()
+                reader.onload = () => {
+                  const dataUrl = reader.result as string
+                  // btoa 編碼後送進 PTY（daemon 會 decode 再寫入）
+                  invoke("write_to_agent", {
+                    agentId: agent.id,
+                    data: btoa(dataUrl),
+                  }).catch(console.error)
+                }
+                reader.readAsDataURL(blob)
+              }).catch(() => {})
+              return
+            }
+          }
+        }).catch(() => {})
+        // 不 return false，讓 xterm 繼續處理一般 paste（純文字不受影響）
+      }
+      return true
+    });
+
     xterm.onData((data) => {
       // Filter DA (Device Attributes) responses xterm.js auto-generates —
       // must not be forwarded to PTY (causes "1;2c" appearing as spurious input)
