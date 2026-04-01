@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -6,7 +6,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTheme } from "../ThemeContext";
 import { useSettings } from "../SettingsContext";
-import { usePasteImageOverlay } from "../hooks/usePasteImageOverlay";
 import "@xterm/xterm/css/xterm.css";
 
 interface SingleShellProps {
@@ -34,14 +33,21 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     doFitRef.current();
   }, [globalSettings.uiScale]);
 
-  // T018: 圖片貼上縮圖 overlay
-  const { imageUrl, clearImage } = usePasteImageOverlay(containerRef);
+  // T018: 圖片貼上縮圖 overlay（透過 Cmd+V 攔截）
+  const [pasteImageUrl, setPasteImageUrl] = useState<string | null>(null);
+  const pasteImageUrlRef = useRef<string | null>(null);
+  const pasteImageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 點擊 overlay 立即關閉
   const handleOverlayClick = useCallback(() => {
-    clearImage();
+    if (pasteImageTimerRef.current) clearTimeout(pasteImageTimerRef.current);
+    if (pasteImageUrlRef.current) {
+      URL.revokeObjectURL(pasteImageUrlRef.current);
+      pasteImageUrlRef.current = null;
+    }
+    setPasteImageUrl(null);
     xtermRef.current?.focus();
-  }, [clearImage]);
+  }, []);
 
   // xterm lifecycle: create on mount, cleanup on unmount
   useEffect(() => {
@@ -112,6 +118,39 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
         parentPaneId: agentId,
         paneType: "shell",
       }).catch(e => xterm.writeln(`\r\n[Error] ${e}`));
+    });
+
+    // T018: 攔截 Cmd+V，偵測圖片並顯示 overlay
+    // 注意：異步讀取剪貼簿，xterm 仍會繼續 Cmd+V 流程（readText）
+    // 但 macOS 上純圖片剪貼簿 readText 會返回空，不影響 PTY
+    xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if (e.metaKey && e.key === "v" && e.type === "keydown") {
+        navigator.clipboard.read().then(items => {
+          for (const item of items) {
+            const imageType = item.types.find((t: string) => t.startsWith("image/"))
+            if (imageType) {
+              item.getType(imageType).then((blob: Blob) => {
+                if (pasteImageUrlRef.current) {
+                  URL.revokeObjectURL(pasteImageUrlRef.current);
+                }
+                const url = URL.createObjectURL(blob);
+                pasteImageUrlRef.current = url;
+                setPasteImageUrl(url);
+
+                if (pasteImageTimerRef.current) clearTimeout(pasteImageTimerRef.current);
+                pasteImageTimerRef.current = setTimeout(() => {
+                  URL.revokeObjectURL(url);
+                  pasteImageUrlRef.current = null;
+                  setPasteImageUrl(null);
+                }, 3000);
+              }).catch(() => {})
+              // 有圖片：不繼續讓 xterm 執行預設 paste（圖片不應寫入 shell PTY）
+              return
+            }
+          }
+        }).catch(() => {})
+      }
+      return true
     });
 
     // keyboard input
@@ -224,8 +263,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
         style={{ flex: 1, minHeight: 0, padding: settings.padding, display: "flex", flexDirection: "column", overflow: "hidden" }}
         onClick={() => xtermRef.current?.focus()}
       />
-      {/* T018: 貼上圖片縮圖 overlay */}
-      {imageUrl && (
+      {/* T018: 貼上圖片縮圖 overlay（Cmd+V 攔截） */}
+      {pasteImageUrl && (
         <div
           onClick={handleOverlayClick}
           style={{
@@ -243,7 +282,7 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
           title="點擊關閉"
         >
           <img
-            src={imageUrl}
+            src={pasteImageUrl}
             alt="貼上的圖片"
             style={{ display: "block", maxWidth: 320, maxHeight: 240, objectFit: "contain" }}
           />

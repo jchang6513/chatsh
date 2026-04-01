@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -7,7 +7,6 @@ import { listen } from "@tauri-apps/api/event";
 import type { Pane } from "../types";
 import { useTheme } from "../ThemeContext";
 import { useSettings } from "../SettingsContext";
-import { usePasteImageOverlay } from "../hooks/usePasteImageOverlay";
 import "@xterm/xterm/css/xterm.css";
 
 interface Props {
@@ -35,14 +34,21 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     doFitRef.current();
   }, [globalSettings.uiScale]);
 
-  // T018: 圖片貼上縮圖 overlay
-  const { imageUrl, clearImage } = usePasteImageOverlay(containerRef);
+  // T018: 圖片貼上縮圖 overlay（透過 Cmd+V 攔截，不依賴 DOM paste 事件）
+  const [pasteImageUrl, setPasteImageUrl] = useState<string | null>(null);
+  const pasteImageUrlRef = useRef<string | null>(null);
+  const pasteImageTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 點擊 overlay 立即關閉
   const handleOverlayClick = useCallback(() => {
-    clearImage();
+    if (pasteImageTimerRef.current) clearTimeout(pasteImageTimerRef.current);
+    if (pasteImageUrlRef.current) {
+      URL.revokeObjectURL(pasteImageUrlRef.current);
+      pasteImageUrlRef.current = null;
+    }
+    setPasteImageUrl(null);
     xtermRef.current?.focus();
-  }, [clearImage]);
+  }, []);
 
   // apply settings changes in real-time
   useEffect(() => {
@@ -204,7 +210,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     dprMediaQuery.addEventListener("change", onDprChange);
 
-    // 攔截 Cmd+V：偵測剪貼簿是否有圖片，有則轉 base64 送進 PTY 讓 Claude Code 接收
+    // 攔截 Cmd+V：偵測剪貼簿是否有圖片，有則顯示 overlay 並阻止傳入 PTY
     xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
       if (e.metaKey && e.key === "v" && e.type === "keydown") {
         navigator.clipboard.read().then(items => {
@@ -212,22 +218,27 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
             const imageType = item.types.find((t: string) => t.startsWith("image/"))
             if (imageType) {
               item.getType(imageType).then((blob: Blob) => {
-                const reader = new FileReader()
-                reader.onload = () => {
-                  const dataUrl = reader.result as string
-                  // btoa 編碼後送進 PTY（daemon 會 decode 再寫入）
-                  invoke("write_to_agent", {
-                    agentId: agent.id,
-                    data: btoa(dataUrl),
-                  }).catch(console.error)
+                // 清掉舊的 blob URL
+                if (pasteImageUrlRef.current) {
+                  URL.revokeObjectURL(pasteImageUrlRef.current);
                 }
-                reader.readAsDataURL(blob)
+                const url = URL.createObjectURL(blob);
+                pasteImageUrlRef.current = url;
+                setPasteImageUrl(url);
+
+                // 3 秒後自動消失
+                if (pasteImageTimerRef.current) clearTimeout(pasteImageTimerRef.current);
+                pasteImageTimerRef.current = setTimeout(() => {
+                  URL.revokeObjectURL(url);
+                  pasteImageUrlRef.current = null;
+                  setPasteImageUrl(null);
+                }, 3000);
               }).catch(() => {})
+              // 有圖片：顯示 overlay，return 阻止繼續查詢其他 items
               return
             }
           }
         }).catch(() => {})
-        // 不 return false，讓 xterm 繼續處理一般 paste（純文字不受影響）
       }
       return true
     });
@@ -300,8 +311,8 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
           style={{ padding: settings.padding, overflow: "hidden", height: "100%" }}
           onClick={() => xtermRef.current?.focus()}
         />
-        {/* T018: 貼上圖片縮圖 overlay */}
-        {imageUrl && (
+        {/* T018: 貼上圖片縮圖 overlay（Cmd+V 攔截，圖片顯示 3 秒後淡出） */}
+        {pasteImageUrl && (
           <div
             onClick={handleOverlayClick}
             style={{
@@ -319,7 +330,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
             title="點擊關閉"
           >
             <img
-              src={imageUrl}
+              src={pasteImageUrl}
               alt="貼上的圖片"
               style={{ display: "block", maxWidth: 320, maxHeight: 240, objectFit: "contain" }}
             />

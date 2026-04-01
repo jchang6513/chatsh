@@ -383,8 +383,9 @@ cd ~/Workspace/chatsh && npm run tauri dev
 
 ### TC-UX05: 貼上圖片顯示縮圖 (T018)
 - Steps: 複製任意圖片 → 在 terminal 按 Cmd+V
-- Expected: terminal 上方出現圖片縮圖 overlay，顯示 2 秒後淡出（或保留直到下一次輸入）
+- Expected: terminal 左上角出現圖片縮圖 overlay，顯示 3 秒後自動消失；點擊立即關閉
 - Note: 純文字 paste 不受影響，走原本 xterm 流程
+- Impl: 使用 `attachCustomKeyEventHandler` 攔截 Cmd+V，非 DOM paste 事件（xterm.js 在 macOS 不觸發 paste 事件）
 
 ### TC-UX06: 貼上圖片不寫入 PTY
 - Steps: 複製圖片後貼上
