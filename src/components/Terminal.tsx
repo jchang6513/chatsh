@@ -24,6 +24,15 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  // T019: 用 ref 持有最新 uiScale，避免 doFit closure stale 問題
+  const uiScaleRef = useRef(globalSettings.uiScale ?? 1);
+  const doFitRef = useRef<() => void>(() => {});
+
+  // 同步最新 uiScale 到 ref（globalSettings 變動時立即更新並重新 fit）
+  useEffect(() => {
+    uiScaleRef.current = globalSettings.uiScale ?? 1;
+    doFitRef.current();
+  }, [globalSettings.uiScale]);
 
   // T018: 圖片貼上縮圖 overlay
   const { imageUrl, clearImage } = usePasteImageOverlay(containerRef);
@@ -44,7 +53,8 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     xterm.options.cursorBlink = settings.cursorBlink;
     xterm.options.cursorStyle = settings.cursorStyle;
     xterm.options.scrollback = settings.scrollback;
-    if (fitAddonRef.current) fitAddonRef.current.fit();
+    // T019: 呼叫帶有 cols 補正的 doFit，而非裸 fitAddonRef.current.fit()
+    doFitRef.current();
   }, [settings]);
 
   // dynamically update xterm theme when scheme changes
@@ -156,7 +166,8 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
       // 補正 CSS zoom 造成的 cols 誤差
       // App.tsx 用 CSS zoom 縮放整體 UI，但 FitAddon 用 clientWidth 計算（不受 zoom 影響）
       // 用 getBoundingClientRect().width 取得真實顯示寬度，修正 cols
-      const uiScale = globalSettings.uiScale ?? 1;
+      // T019 fix: 透過 uiScaleRef.current 取得最新 uiScale，避免 closure 閉包過期值
+      const uiScale = uiScaleRef.current;
       if (uiScale !== 1 && container) {
         const rect = container.getBoundingClientRect();
         const core = (xtermRef.current as any)._core;
@@ -174,6 +185,8 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
         rows: xterm.rows,
       }).catch(() => {});
     };
+    // 更新 ref 讓外部 effect（uiScale 變動）可呼叫最新 doFit
+    doFitRef.current = doFit;
 
     const resizeObs = new ResizeObserver(doFit);
     resizeObs.observe(container);
