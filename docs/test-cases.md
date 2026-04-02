@@ -383,9 +383,22 @@ cd ~/Workspace/chatsh && npm run tauri dev
 
 ### TC-UX05: 貼上圖片顯示縮圖 (T018)
 - Steps: 複製任意圖片 → 在 terminal 按 Cmd+V
-- Expected: terminal 上方出現圖片縮圖 overlay，顯示 2 秒後淡出（或保留直到下一次輸入）
-- Note: 純文字 paste 不受影響，走原本 xterm 流程
+- Expected: terminal 左上角出現圖片縮圖 overlay，顯示 3 秒後自動消失；點擊立即關閉
+- Note: 純文字 paste 不受影響，走原本 write_to_agent 流程
+- Impl: 使用 `attachCustomKeyEventHandler` 攔截 Cmd+V（xterm.js macOS 不觸發 DOM paste 事件）
 
-### TC-UX06: 貼上圖片不寫入 PTY
+### TC-UX06: 貼上圖片不寫入 PTY（T018）
 - Steps: 複製圖片後貼上
-- Expected: PTY 不收到任何亂碼或 binary 輸入
+- Expected: PTY 不收到任何亂碼或 binary 輸入（return false 阻止 xterm 預設 paste）
+
+### TC-UX07: Cmd+V 貼上圖片到 Claude Code（T020）
+- 前置: Claude Code 在 Terminal pane 正在執行，剪貼板有圖片（截圖）
+- Steps: 在 Terminal pane 按 Cmd+V
+- Expected: Claude Code 顯示 `[Image #1]`，圖片附加到 prompt
+- Impl: 偵測到圖片後送 Ctrl+V (\x16)，Claude Code 收到後自行呼叫系統 clipboard API
+- Note: 舊版 bug（btoa(dataUrl) 雙重 encode）已修正
+
+### TC-UX08: Cmd+V 純文字貼上不受影響（T020）
+- 前置: 剪貼板有純文字
+- Steps: 在 Terminal pane 按 Cmd+V
+- Expected: 文字正常貼入 PTY（透過 write_to_agent，行為同 Cmd+V 原本行為）

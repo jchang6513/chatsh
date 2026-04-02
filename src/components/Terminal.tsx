@@ -203,32 +203,51 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
     dprMediaQuery.addEventListener("change", onDprChange);
 
-    // 攔截 Cmd+V：偵測剪貼簿是否有圖片，有則轉 base64 送進 PTY 讓 Claude Code 接收
+    // T020: 攔截 Cmd+V，偵測剪貼簿是否有圖片
+    // - 有圖片：return false 阻止 xterm，送 Ctrl+V (\x16) 讓 Claude Code 以系統 API 讀取
+    // - 純文字：return false 阻止 xterm，手動送文字（維持一致的 paste 路徑）
+    //
+    // 根本原因修正：舊版用 btoa(dataUrl) 送進 write_to_agent，但 Rust 端會再做一次
+    // base64 encode，導致 daemon 寫入 PTY 的是 btoa 後的字串（雙重 encode），
+    // Claude Code 無法識別。Claude Code 在 macOS 接受 Ctrl+V 後自己用系統 API 讀取。
     xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
-      if (e.metaKey && e.key === "v" && e.type === "keydown") {
-        navigator.clipboard.read().then(items => {
-          for (const item of items) {
-            const imageType = item.types.find((t: string) => t.startsWith("image/"))
-            if (imageType) {
-              item.getType(imageType).then((blob: Blob) => {
-                const reader = new FileReader()
-                reader.onload = () => {
-                  const dataUrl = reader.result as string
-                  // btoa 編碼後送進 PTY（daemon 會 decode 再寫入）
-                  invoke("write_to_agent", {
-                    agentId: agent.id,
-                    data: btoa(dataUrl),
-                  }).catch(console.error)
-                }
-                reader.readAsDataURL(blob)
-              }).catch(() => {})
-              return
+      if (e.type !== "keydown" || !e.metaKey || e.key !== "v") return true;
+
+      // 接管所有 Cmd+V：非同步判斷剪貼簿內容
+      navigator.clipboard.read().then(items => {
+        const hasImage = items.some(item =>
+          item.types.some((t: string) => t.startsWith("image/"))
+        )
+        if (hasImage) {
+          // 有圖片：送 Ctrl+V (\x16)，Claude Code 收到後自行呼叫系統 clipboard API 取得圖片
+          invoke("write_to_agent", {
+            agentId: agent.id,
+            data: "\x16",
+          }).catch(console.error)
+        } else {
+          // 純文字：讀取並手動送出（避免 xterm 處理造成 double paste）
+          navigator.clipboard.readText().then(text => {
+            if (text) {
+              invoke("write_to_agent", {
+                agentId: agent.id,
+                data: text,
+              }).catch(console.error)
             }
+          }).catch(() => {})
+        }
+      }).catch(() => {
+        // clipboard.read() 權限被拒（沙箱環境）：fallback 讀文字
+        navigator.clipboard.readText().then(text => {
+          if (text) {
+            invoke("write_to_agent", {
+              agentId: agent.id,
+              data: text,
+            }).catch(console.error)
           }
         }).catch(() => {})
-        // 不 return false，讓 xterm 繼續處理一般 paste（純文字不受影響）
-      }
-      return true
+      })
+
+      return false // 阻止 xterm 預設 paste，由我們接管
     });
 
     xterm.onData((data) => {
