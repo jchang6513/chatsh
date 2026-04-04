@@ -3,3 +3,7 @@ dist/
 src-tauri/target/
 src-tauri/gen/
 *.swp
+# E2E screenshots (keep dir, ignore files)
+e2e/screenshots/*.png
+e2e/screenshots/*.jpg
+!e2e/screenshots/.gitkeep

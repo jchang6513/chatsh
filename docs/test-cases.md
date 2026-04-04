@@ -142,9 +142,49 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - Steps: ⌘V 貼上多行文字
 - Expected: 內容正確貼到 PTY
 
-### TC-T04: Resize
-- Steps: 拖拉 app 視窗改變大小
-- Expected: terminal 自動 reflow，不出現亂碼
+### TC-T04: Resize（拖拉視窗）
+- Steps:
+  1. 在 terminal 輸入 `printf '%0.s-' {1..120}` 產生 120 字元長行
+  2. 拖拉 app 視窗右邊框明顯改變大小（縮窄再放寬）
+  3. 等待 1 秒讓 resize 完成
+- Expected:
+  - terminal 自動 reflow，不出現亂碼
+  - 無橫向 scrollbar
+  - 長行文字不被截斷（120 字元長行在視窗夠寬時完整顯示）
+  - `tput cols` 的值與視窗大小對應，resize 前後數值不同
+- Note: 此測試涵蓋 T023 Bug B2（scrollbar）的驗證
+
+### TC-T07: macOS 原生 zoom 後 terminal 正常 reflow（T023 Bug B1）
+- Steps:
+  1. 在 terminal 輸入 `printf '%0.s-' {1..120}` 產生 120 字元長行
+  2. 記錄當前 cols（輸入 `tput cols`）
+  3. 點擊 macOS 視窗左上角綠色 zoom 按鈕（放大視窗，非 fullscreen）
+  4. 等待 1 秒讓 resize 完成
+  5. 在 terminal 輸入 `tput cols`，比較前後差異
+  6. 觀察 terminal 顯示
+- Expected:
+  - zoom 後 `tput cols` 的值比 zoom 前大（視窗變寬應增加 cols）
+  - 長行文字完整顯示，不被截斷
+  - 不出現橫向 scrollbar
+  - 文字 reflow 正確
+- FAIL 條件：
+  - zoom 前後 `tput cols` 相同（cols 未更新）→ FAIL
+  - 長行文字右側被截斷，出現 scrollbar → FAIL
+- Note: 此為 T023 Bug B1 的直接驗證；根本原因：`uiScale === 1` 時補正邏輯不執行，fitAddon.fit() 可能未感知 macOS native zoom 的大小變化
+
+### TC-T08: 視窗 resize 後 cols 數值正確更新（T023 Bug B1 精確驗證）
+- Steps:
+  1. 在 terminal 輸入 `tput cols`，記錄當前值（例：120）
+  2. 拖拉視窗右邊框明顯加寬（至少 200px）
+  3. 等待 1 秒
+  4. 再次輸入 `tput cols`
+- Expected:
+  - 加寬後 `tput cols` 的值比加寬前大（每加寬 ~7px 應增加 1 col）
+  - 加寬 200px 應增加約 28 cols（容許 ±5 誤差）
+  - 不出現橫向 scrollbar
+- FAIL 條件：
+  - `tput cols` 前後相同 → FAIL（resize_pty 未被呼叫或 doFit 無效）
+- Note: 此測試驗證 doFit → resize_pty 的完整呼叫鏈，與 TC-T04 互補（TC-T04 測視覺，TC-T08 測數值）
 
 ### TC-T05: Focus 行為
 - Steps: 切換 pane 後直接打字（不點擊）
@@ -383,7 +423,9 @@ cd ~/Workspace/chatsh && npm run tauri dev
 
 ### TC-UX05: 貼上圖片顯示縮圖 (T018)
 - Steps: 複製任意圖片 → 在 terminal 按 Cmd+V
-- Expected: terminal 左上角出現圖片縮圖 overlay，顯示 3 秒後自動消失；點擊立即關閉
+- Expected:
+  - terminal 左上角出現圖片縮圖 overlay，顯示 3 秒後自動消失；點擊立即關閉
+  - **不應出現** macOS 原生 Paste 選單或 tooltip（直接觸發，無需使用者額外確認）
 - Note: 純文字 paste 不受影響，走原本 write_to_agent 流程
 - Impl: 使用 `attachCustomKeyEventHandler` 攔截 Cmd+V（xterm.js macOS 不觸發 DOM paste 事件）
 
@@ -393,8 +435,12 @@ cd ~/Workspace/chatsh && npm run tauri dev
 
 ### TC-UX07: Cmd+V 貼上圖片到 Claude Code（T020）
 - 前置: Claude Code 在 Terminal pane 正在執行，剪貼板有圖片（截圖）
-- Steps: 在 Terminal pane 按 Cmd+V
-- Expected: Claude Code 顯示 `[Image #1]`，圖片附加到 prompt
+- Steps:
+  1. 在 Terminal pane 按 Cmd+V
+  2. 重複操作 3 次（每次重新截圖確保剪貼簿有圖片）
+- Expected:
+  - Claude Code 顯示 `[Image #1]`，圖片附加到 prompt
+  - 3 次操作均成功（成功率 100%）；若任一次失敗 → FAIL（驗證 Bug A3 不穩定問題）
 - Impl: 偵測到圖片後送 Ctrl+V (\x16)，Claude Code 收到後自行呼叫系統 clipboard API
 - Note: 舊版 bug（btoa(dataUrl) 雙重 encode）已修正
 
@@ -402,3 +448,29 @@ cd ~/Workspace/chatsh && npm run tauri dev
 - 前置: 剪貼板有純文字
 - Steps: 在 Terminal pane 按 Cmd+V
 - Expected: 文字正常貼入 PTY（透過 write_to_agent，行為同 Cmd+V 原本行為）
+
+### TC-UX09: Cmd+V 不應出現 Paste tooltip（T022 Bug A1）
+- 前置: 剪貼簿有圖片（Cmd+Shift+4 截圖後 Cmd+C，或 Cmd+Ctrl+Shift+4 截圖到剪貼簿）
+- Steps:
+  1. 點擊 terminal pane 確保 focus
+  2. 按 Cmd+V
+  3. 立即觀察畫面（1 秒內）
+- Expected:
+  - **不**出現 macOS 原生 Paste 選單或右鍵 tooltip
+  - 直接觸發圖片縮圖 overlay 顯示（無需額外點擊確認）
+  - 若出現 Paste 選單且需要手動點擊才能貼上 → FAIL
+- Note: 此為 T022 Bug A1 的直接驗證；根本原因是 Tauri macOS WebView 在 xterm 攔截前觸發原生 paste context menu
+
+### TC-UX10: 剪貼簿有圖片但未貼上時不自動 preview（T022 Bug A2）
+- 前置: 剪貼簿有圖片
+- Steps:
+  1. 複製任意圖片到剪貼簿（Cmd+Ctrl+Shift+4 截圖到剪貼簿）
+  2. 切換到 chatsh terminal pane（點擊或 ⌘1 等切換）
+  3. 不要按 Cmd+V 或任何貼上操作
+  4. 正常輸入文字（如 `ls`）、切換 pane 等操作 30 秒
+  5. 觀察 terminal 左上角
+- Expected:
+  - 30 秒內不出現圖片縮圖 overlay
+  - Preview 只在主動按 Cmd+V 後才觸發
+  - 若未按 Cmd+V 卻出現 overlay → FAIL
+- Note: 此為 T022 Bug A2 的直接驗證；根本原因可能是 DOM paste 事件在 focus 切換時被意外觸發
