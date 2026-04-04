@@ -135,6 +135,44 @@ cd ~/Workspace/homebrew-chatsh && git add -A && git commit -m "chatsh $VERSION: 
 
 ---
 
+## E2E 自動化測試（T024）
+
+### 框架
+tauri-driver + WebdriverIO，測試真實 release build
+
+### 前置條件
+```bash
+# 安裝 tauri-driver（一次性）
+cargo install tauri-driver
+
+# Build app
+npm run tauri build
+```
+
+### 執行 E2E 測試
+```bash
+# 完整流程（build + test）
+npm run test:e2e:build
+
+# 僅跑測試（已有 build）
+tauri-driver &   # 另開 terminal 或背景執行
+npm run test:e2e
+```
+
+### E2E Spec 清單
+- `e2e/specs/t023-resize.spec.ts` — T023: 視窗 resize 後長行不截斷
+- `e2e/specs/t022-paste.spec.ts` — T022: 貼上圖片不出現 native paste tooltip
+
+### 截圖
+測試截圖自動儲存至 `e2e/screenshots/`（失敗時自動截圖，各 spec 也有手動截圖）
+
+### 新增 E2E 測試
+1. 在 `docs/test-cases.md` 加入測試案例
+2. 建立 `e2e/specs/t{號碼}-{描述}.spec.ts`
+3. 執行 `npm run test:e2e` 驗證
+
+---
+
 ## 自動化測試
 
 ### Daemon 整合測試（TC-D01~D07）
