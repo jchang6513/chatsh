@@ -1,7 +1,7 @@
 /**
  * src/storage/index.ts — single entry point for all storage helpers.
  */
-export { readJsonFile, writeJsonFile, writeJsonFileImmediate, chatshDir } from "./fs"
+export { readJsonFile, writeJsonFile, writeJsonFileImmediate, flushPendingWrites, chatshDir } from "./fs"
 export { settingsStore } from "./settingsStore"
 export type { AppSettings } from "./settingsStore"
 export { migrateFromLocalStorage } from "./migrate"

@@ -9,6 +9,7 @@ import {
   saveAgentOverrides,
 } from "./settings"
 import { settingsStore } from "./storage/settingsStore"
+import { flushPendingWrites } from "./storage/fs"
 import { LS_SETTINGS_KEY, LS_THEME_KEY } from "./constants"
 
 interface SettingsContextValue {
@@ -44,11 +45,19 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return () => { cancelled = true }
   }, [])
 
+  // 確保 app 關閉前把 debounced 設定寫入磁碟
+  useEffect(() => {
+    const handler = () => flushPendingWrites()
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [])
+
   const updateGlobalSettings = (patch: Partial<TerminalSettings> | ((prev: TerminalSettings) => Partial<TerminalSettings>)) => {
     setGlobalSettings(prev => {
       const resolved = typeof patch === 'function' ? patch(prev) : patch
       const next = { ...prev, ...resolved }
-      saveGlobalSettings(next)
+      // 使用即時寫入（不用 debounce），避免 Cmd+Q 時遺失設定
+      settingsStore.patchImmediate(next).catch(console.error)
       return next
     })
   }

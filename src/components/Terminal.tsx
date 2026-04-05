@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -7,6 +7,7 @@ import { listen } from "@tauri-apps/api/event";
 import type { Pane } from "../types";
 import { useTheme } from "../ThemeContext";
 import { useSettings } from "../SettingsContext";
+import { usePasteImageOverlay } from "../hooks/usePasteImageOverlay";
 import "@xterm/xterm/css/xterm.css";
 
 interface Props {
@@ -23,6 +24,24 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  // T019: 用 ref 持有最新 uiScale，避免 doFit closure stale 問題
+  const uiScaleRef = useRef(globalSettings.uiScale ?? 1);
+  const doFitRef = useRef<() => void>(() => {});
+
+  // 同步最新 uiScale 到 ref（globalSettings 變動時立即更新並重新 fit）
+  useEffect(() => {
+    uiScaleRef.current = globalSettings.uiScale ?? 1;
+    doFitRef.current();
+  }, [globalSettings.uiScale]);
+
+  // T018: 圖片貼上縮圖 overlay
+  const { imageUrl, clearImage } = usePasteImageOverlay(containerRef);
+
+  // 點擊 overlay 立即關閉
+  const handleOverlayClick = useCallback(() => {
+    clearImage();
+    xtermRef.current?.focus();
+  }, [clearImage]);
 
   // apply settings changes in real-time
   useEffect(() => {
@@ -34,7 +53,8 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     xterm.options.cursorBlink = settings.cursorBlink;
     xterm.options.cursorStyle = settings.cursorStyle;
     xterm.options.scrollback = settings.scrollback;
-    if (fitAddonRef.current) fitAddonRef.current.fit();
+    // T019: 呼叫帶有 cols 補正的 doFit，而非裸 fitAddonRef.current.fit()
+    doFitRef.current();
   }, [settings]);
 
   // dynamically update xterm theme when scheme changes
@@ -140,17 +160,95 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
       if (isActive) xterm.focus();
     }, 100);
 
-    const resizeObs = new ResizeObserver(() => {
-      if (fitAddonRef.current) {
-        fitAddonRef.current.fit();
-        invoke("resize_pty", {
-          agentId: agent.id,
-          cols: xterm.cols,
-          rows: xterm.rows,
-        }).catch(() => {});
+    const doFit = () => {
+      if (!fitAddonRef.current || !xtermRef.current) return;
+      fitAddonRef.current.fit();
+      // 補正 CSS zoom 造成的 cols 誤差
+      // App.tsx 用 CSS zoom 縮放整體 UI，但 FitAddon 用 clientWidth 計算（不受 zoom 影響）
+      // 用 getBoundingClientRect().width 取得真實顯示寬度，修正 cols
+      // T019 fix: 透過 uiScaleRef.current 取得最新 uiScale，避免 closure 閉包過期值
+      const uiScale = uiScaleRef.current;
+      if (uiScale !== 1 && container) {
+        const rect = container.getBoundingClientRect();
+        const core = (xtermRef.current as any)._core;
+        const cellW = core?._renderService?.dimensions?.css?.cell?.width;
+        if (cellW && cellW > 0) {
+          const correctCols = Math.max(2, Math.floor(rect.width / cellW));
+          if (correctCols !== xtermRef.current.cols) {
+            xtermRef.current.resize(correctCols, xtermRef.current.rows);
+          }
+        }
       }
-    });
+      invoke("resize_pty", {
+        agentId: agent.id,
+        cols: xterm.cols,
+        rows: xterm.rows,
+      }).catch(() => {});
+    };
+    // 更新 ref 讓外部 effect（uiScale 變動）可呼叫最新 doFit
+    doFitRef.current = doFit;
+
+    const resizeObs = new ResizeObserver(doFit);
     resizeObs.observe(container);
+
+    // 監聽 devicePixelRatio 變化（zoom in/out）
+    let dprMediaQuery: MediaQueryList | null = null;
+    const onDprChange = () => {
+      doFit();
+      // 重新監聽下一個 dpr 變化
+      dprMediaQuery?.removeEventListener("change", onDprChange);
+      dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      dprMediaQuery.addEventListener("change", onDprChange);
+    };
+    dprMediaQuery = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    dprMediaQuery.addEventListener("change", onDprChange);
+
+    // T020: 攔截 Cmd+V，偵測剪貼簿是否有圖片
+    // - 有圖片：return false 阻止 xterm，送 Ctrl+V (\x16) 讓 Claude Code 以系統 API 讀取
+    // - 純文字：return false 阻止 xterm，手動送文字（維持一致的 paste 路徑）
+    //
+    // 根本原因修正：舊版用 btoa(dataUrl) 送進 write_to_agent，但 Rust 端會再做一次
+    // base64 encode，導致 daemon 寫入 PTY 的是 btoa 後的字串（雙重 encode），
+    // Claude Code 無法識別。Claude Code 在 macOS 接受 Ctrl+V 後自己用系統 API 讀取。
+    xterm.attachCustomKeyEventHandler((e: KeyboardEvent) => {
+      if (e.type !== "keydown" || !e.metaKey || e.key !== "v") return true;
+
+      // 接管所有 Cmd+V：非同步判斷剪貼簿內容
+      navigator.clipboard.read().then(items => {
+        const hasImage = items.some(item =>
+          item.types.some((t: string) => t.startsWith("image/"))
+        )
+        if (hasImage) {
+          // 有圖片：送 Ctrl+V (\x16)，Claude Code 收到後自行呼叫系統 clipboard API 取得圖片
+          invoke("write_to_agent", {
+            agentId: agent.id,
+            data: "\x16",
+          }).catch(console.error)
+        } else {
+          // 純文字：讀取並手動送出（避免 xterm 處理造成 double paste）
+          navigator.clipboard.readText().then(text => {
+            if (text) {
+              invoke("write_to_agent", {
+                agentId: agent.id,
+                data: text,
+              }).catch(console.error)
+            }
+          }).catch(() => {})
+        }
+      }).catch(() => {
+        // clipboard.read() 權限被拒（沙箱環境）：fallback 讀文字
+        navigator.clipboard.readText().then(text => {
+          if (text) {
+            invoke("write_to_agent", {
+              agentId: agent.id,
+              data: text,
+            }).catch(console.error)
+          }
+        }).catch(() => {})
+      })
+
+      return false // 阻止 xterm 預設 paste，由我們接管
+    });
 
     xterm.onData((data) => {
       // Filter DA (Device Attributes) responses xterm.js auto-generates —
@@ -202,6 +300,7 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
     return () => {
       disposed = true;
       resizeObs.disconnect();
+      dprMediaQuery?.removeEventListener("change", onDprChange);
       if (unlisten) unlisten();
       if (unlistenExit) unlistenExit();
       xterm.dispose();
@@ -212,13 +311,39 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      {/* xterm container */}
-      <div
-        ref={containerRef}
-        className="flex-1 min-h-0"
-        style={{ padding: settings.padding, overflow: "hidden" }}
-        onClick={() => xtermRef.current?.focus()}
-      />
+      {/* xterm container，relative 讓 overlay 能絕對定位 */}
+      <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+        <div
+          ref={containerRef}
+          style={{ padding: settings.padding, overflow: "hidden", height: "100%" }}
+          onClick={() => xtermRef.current?.focus()}
+        />
+        {/* T018: 貼上圖片縮圖 overlay */}
+        {imageUrl && (
+          <div
+            onClick={handleOverlayClick}
+            style={{
+              position: "absolute",
+              top: 8,
+              left: 8,
+              maxWidth: 320,
+              maxHeight: 240,
+              borderRadius: 8,
+              overflow: "hidden",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+              cursor: "pointer",
+              zIndex: 100,
+            }}
+            title="點擊關閉"
+          >
+            <img
+              src={imageUrl}
+              alt="貼上的圖片"
+              style={{ display: "block", maxWidth: 320, maxHeight: 240, objectFit: "contain" }}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

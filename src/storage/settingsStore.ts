@@ -68,11 +68,13 @@ class SettingsStore {
     } catch {}
 
     // 3. Migrate from localStorage
+    let migratedFromLs = false
     try {
       const ls = localStorage.getItem(legacySettingsLsKey)
       if (ls) {
         Object.assign(this.current, JSON.parse(ls))
         localStorage.removeItem(legacySettingsLsKey)
+        migratedFromLs = true
       }
     } catch {}
     try {
@@ -80,10 +82,22 @@ class SettingsStore {
       if (lt) {
         this.current.theme = lt
         localStorage.removeItem(legacyThemeLsKey)
+        migratedFromLs = true
       }
     } catch {}
 
+    // 寫入 settings.json，避免下次啟動時 localStorage 已刪但檔案不存在
+    if (migratedFromLs) {
+      await writeJsonFileImmediate(SETTINGS_FILE, this.current)
+    }
+
     return { ...this.current }
+  }
+
+  /** Merge partial update and immediately write to disk (no debounce). */
+  async patchImmediate(partial: Partial<AppSettings>): Promise<void> {
+    this.current = { ...this.current, ...partial }
+    await writeJsonFileImmediate(SETTINGS_FILE, this.current)
   }
 
   /** Merge partial update and schedule a debounced write via fs.writeJsonFile. */
@@ -91,6 +105,11 @@ class SettingsStore {
     this.current = { ...this.current, ...partial }
     // Reuse writeJsonFile's built-in debounce (keyed by filename)
     writeJsonFile(SETTINGS_FILE, this.current)
+  }
+
+  /** Immediately flush current state to disk (call before app close). */
+  async flush(): Promise<void> {
+    await writeJsonFileImmediate(SETTINGS_FILE, this.current)
   }
 
   /** Synchronous snapshot — valid only after load() has resolved. */

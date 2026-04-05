@@ -41,14 +41,25 @@ const TERMINAL_KEYS: ReadonlyArray<keyof TerminalSettings> = [
   "sidebarPosition", "notificationsEnabled",
 ]
 
-/** Extract TerminalSettings fields from the shared AppSettings store (synchronous). */
+/** Extract TerminalSettings fields from the shared AppSettings store (synchronous).
+ *  If any terminal key is missing from the persisted store, backfill it so
+ *  settings.json always contains the full set after the first launch. */
 export function loadGlobalSettings(): TerminalSettings {
   const saved: AppSettings = settingsStore.get()
   const overrides: Partial<TerminalSettings> = {}
+  let hasMissing = false
   for (const k of TERMINAL_KEYS) {
-    if (k in saved) overrides[k] = saved[k] as never
+    if (k in saved) {
+      overrides[k] = saved[k] as never
+    } else {
+      hasMissing = true
+    }
   }
-  return { ...DEFAULT_SETTINGS, ...overrides }
+  const merged = { ...DEFAULT_SETTINGS, ...overrides }
+  if (hasMissing) {
+    settingsStore.patch(merged)
+  }
+  return merged
 }
 
 export function saveGlobalSettings(s: TerminalSettings): void {

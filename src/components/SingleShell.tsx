@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTheme } from "../ThemeContext";
 import { useSettings } from "../SettingsContext";
+import { usePasteImageOverlay } from "../hooks/usePasteImageOverlay";
 import "@xterm/xterm/css/xterm.css";
 
 interface SingleShellProps {
@@ -22,6 +23,24 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   const { scheme } = useTheme();
   const { getResolvedSettings, globalSettings } = useSettings();
   const settings = getResolvedSettings(agentId);
+  // T019: 用 ref 持有最新 uiScale，避免 doFit closure stale 問題
+  const uiScaleRef = useRef(globalSettings.uiScale ?? 1);
+  const doFitRef = useRef<() => void>(() => {});
+
+  // 同步最新 uiScale 到 ref（globalSettings 變動時立即更新並重新 fit）
+  useEffect(() => {
+    uiScaleRef.current = globalSettings.uiScale ?? 1;
+    doFitRef.current();
+  }, [globalSettings.uiScale]);
+
+  // T018: 圖片貼上縮圖 overlay
+  const { imageUrl, clearImage } = usePasteImageOverlay(containerRef);
+
+  // 點擊 overlay 立即關閉
+  const handleOverlayClick = useCallback(() => {
+    clearImage();
+    xtermRef.current?.focus();
+  }, [clearImage]);
 
   // xterm lifecycle: create on mount, cleanup on unmount
   useEffect(() => {
@@ -102,16 +121,45 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     });
 
     // resize
-    const obs = new ResizeObserver(() => {
+    const doFit = () => {
       fitAddon.fit();
+      // 補正 CSS zoom 造成的 cols 誤差
+      // T019 fix: 透過 uiScaleRef.current 取得最新 uiScale，避免 closure 閉包過期值
+      const uiScale = uiScaleRef.current;
+      if (uiScale !== 1 && container) {
+        const rect = container.getBoundingClientRect();
+        const core = (xterm as any)._core;
+        const cellW = core?._renderService?.dimensions?.css?.cell?.width;
+        if (cellW && cellW > 0) {
+          const correctCols = Math.max(2, Math.floor(rect.width / cellW));
+          if (correctCols !== xterm.cols) {
+            xterm.resize(correctCols, xterm.rows);
+          }
+        }
+      }
       invoke("resize_pty", { agentId: sessionId, cols: xterm.cols, rows: xterm.rows }).catch(() => {});
-    });
+    };
+    // 更新 ref 讓外部 effect（uiScale 變動）可呼叫最新 doFit
+    doFitRef.current = doFit;
+    const obs = new ResizeObserver(doFit);
     obs.observe(container);
+
+    // 監聽 devicePixelRatio 變化（zoom in/out）
+    let dprMQ: MediaQueryList | null = null;
+    const onDprChange = () => {
+      doFit();
+      dprMQ?.removeEventListener("change", onDprChange);
+      dprMQ = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+      dprMQ.addEventListener("change", onDprChange);
+    };
+    dprMQ = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    dprMQ.addEventListener("change", onDprChange);
 
     return () => {
       disposed = true;
       disposable.dispose();
       obs.disconnect();
+      dprMQ?.removeEventListener("change", onDprChange);
       unlisten?.();
       xterm.dispose();
       // Don't kill — daemon keeps the shell alive for reconnect.
@@ -150,7 +198,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     xterm.options.cursorBlink = settings.cursorBlink;
     xterm.options.cursorStyle = settings.cursorStyle;
     xterm.options.scrollback = settings.scrollback;
-    if (fitRef.current) fitRef.current.fit();
+    // T019: 呼叫帶有 cols 補正的 doFit，而非裸 fitRef.current.fit()
+    doFitRef.current();
   }, [settings]);
 
   // focus when active
@@ -168,10 +217,37 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   }, [isActive]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ flex: 1, minHeight: 0, padding: settings.padding, display: "flex", flexDirection: "column", overflow: "hidden" }}
-      onClick={() => xtermRef.current?.focus()}
-    />
+    <div style={{ position: "relative", flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+      <div
+        ref={containerRef}
+        style={{ flex: 1, minHeight: 0, padding: settings.padding, display: "flex", flexDirection: "column", overflow: "hidden" }}
+        onClick={() => xtermRef.current?.focus()}
+      />
+      {/* T018: 貼上圖片縮圖 overlay */}
+      {imageUrl && (
+        <div
+          onClick={handleOverlayClick}
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 8,
+            maxWidth: 320,
+            maxHeight: 240,
+            borderRadius: 8,
+            overflow: "hidden",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+            cursor: "pointer",
+            zIndex: 100,
+          }}
+          title="點擊關閉"
+        >
+          <img
+            src={imageUrl}
+            alt="貼上的圖片"
+            style={{ display: "block", maxWidth: 320, maxHeight: 240, objectFit: "contain" }}
+          />
+        </div>
+      )}
+    </div>
   );
 }

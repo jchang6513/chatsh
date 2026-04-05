@@ -16,6 +16,36 @@ const IDLE_MS: u64 = 500;
 const IDLE_POLL_MS: u64 = 100;
 const PROCESS_MONITOR_INTERVAL_MS: u64 = 500;
 
+// ── 從 login shell 載入完整環境變數 ──
+// macOS GUI app 啟動時環境變數很少，daemon 繼承的也很少。
+// 這會導致 claude 等 CLI 工具找不到 auth token（它們依賴 shell profile 設定的環境）。
+// 在 daemon 啟動時執行一次 login shell 來取得完整環境。
+
+fn load_shell_env() {
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".to_string());
+    let output = std::process::Command::new(&shell)
+        .args(["-l", "-c", "env -0"])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .output();
+
+    if let Ok(output) = output {
+        if output.status.success() {
+            let env_str = String::from_utf8_lossy(&output.stdout);
+            for entry in env_str.split('\0') {
+                if let Some((key, value)) = entry.split_once('=') {
+                    // 跳過不該覆蓋的變數
+                    if matches!(key, "_" | "SHLVL" | "PWD" | "OLDPWD") {
+                        continue;
+                    }
+                    std::env::set_var(key, value);
+                }
+            }
+        }
+    }
+}
+
 // ── Paths ──
 
 fn chatsh_dir() -> String {
@@ -808,6 +838,9 @@ async fn main() {
     unsafe {
         libc::signal(libc::SIGPIPE, libc::SIG_IGN);
     }
+
+    // 從 login shell 載入完整環境變數（修復 claude 等 CLI 需重新登入的問題）
+    load_shell_env();
 
     let dir = chatsh_dir();
     std::fs::create_dir_all(&dir).ok();
