@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test:e2e": "wdio run e2e/wdio.conf.ts",
+    "test:e2e:build": "npm run tauri build && npm run test:e2e"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
@@ -23,6 +25,11 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.1",
+    "@wdio/cli": "^9",
+    "@wdio/local-runner": "^9",
+    "@wdio/mocha-framework": "^9",
+    "@wdio/spec-reporter": "^9",
+    "@wdio/globals": "^9",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^4",
