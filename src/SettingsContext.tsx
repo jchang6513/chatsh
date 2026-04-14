@@ -1,12 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react"
 import {
   TerminalSettings,
   DEFAULT_SETTINGS,
-  AgentTerminalOverrides,
   loadGlobalSettings,
-  saveGlobalSettings,
-  loadAgentOverrides,
-  saveAgentOverrides,
 } from "./settings"
 import { settingsStore } from "./storage/settingsStore"
 import { flushPendingWrites } from "./storage/fs"
@@ -15,30 +11,20 @@ import { LS_SETTINGS_KEY, LS_THEME_KEY } from "./constants"
 interface SettingsContextValue {
   globalSettings: TerminalSettings
   updateGlobalSettings: (patch: Partial<TerminalSettings> | ((prev: TerminalSettings) => Partial<TerminalSettings>)) => void
-  agentOverrides: Record<string, AgentTerminalOverrides>
-  updateAgentOverrides: (agentId: string, overrides: AgentTerminalOverrides) => void
-  clearAgentOverrides: (agentId: string) => void
-  getResolvedSettings: (agentId: string) => TerminalSettings
 }
 
 const SettingsContext = createContext<SettingsContextValue>(null!)
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [globalSettings, setGlobalSettings] = useState<TerminalSettings>(DEFAULT_SETTINGS)
-  const [agentOverrides, setAgentOverrides] = useState<Record<string, AgentTerminalOverrides>>({})
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      // load() syncs settingsStore.current; loadGlobalSettings() then reads it synchronously.
-      // ThemeProvider's lazy useState init also reads settingsStore.get(), so it must render
-      // after this resolves — enforced by the `ready` gate below (if !ready return null).
       await settingsStore.load(LS_SETTINGS_KEY, LS_THEME_KEY)
-      const overrides = await loadAgentOverrides()
       if (!cancelled) {
         setGlobalSettings(loadGlobalSettings())
-        setAgentOverrides(overrides)
         setReady(true)
       }
     })()
@@ -52,53 +38,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("beforeunload", handler)
   }, [])
 
+  // ref 持有最新 globalSettings，避免 updateGlobalSettings 閉包過期
+  const globalSettingsRef = useRef(globalSettings)
+  globalSettingsRef.current = globalSettings
+
   const updateGlobalSettings = (patch: Partial<TerminalSettings> | ((prev: TerminalSettings) => Partial<TerminalSettings>)) => {
-    setGlobalSettings(prev => {
-      const resolved = typeof patch === 'function' ? patch(prev) : patch
-      const next = { ...prev, ...resolved }
-      // 使用即時寫入（不用 debounce），避免 Cmd+Q 時遺失設定
-      settingsStore.patchImmediate(next).catch(console.error)
-      return next
-    })
+    const prev = globalSettingsRef.current
+    const resolved = typeof patch === 'function' ? patch(prev) : patch
+    const next = { ...prev, ...resolved }
+    setGlobalSettings(next)
+    // side effect 在 setState 外面，避免 React 18 concurrent mode 下的重複執行問題
+    settingsStore.patchImmediate(next).catch(console.error)
   }
 
-  const updateAgentOverrides = (agentId: string, overrides: AgentTerminalOverrides) => {
-    setAgentOverrides(prev => {
-      const next = { ...prev, [agentId]: overrides }
-      saveAgentOverrides(next)
-      return next
-    })
-  }
-
-  const clearAgentOverrides = (agentId: string) => {
-    setAgentOverrides(prev => {
-      const next = { ...prev }
-      delete next[agentId]
-      saveAgentOverrides(next)
-      return next
-    })
-  }
-
-  const getResolvedSettings = (agentId: string): TerminalSettings => {
-    const overrides = agentOverrides[agentId] ?? {}
-    return { ...globalSettings, ...overrides }
-  }
-
-  // Don't render children until settings are loaded to avoid flash of defaults.
-  // ThemeProvider relies on this gate: its lazy useState reads settingsStore.get().
   if (!ready) return null
 
   return (
-    <SettingsContext.Provider
-      value={{
-        globalSettings,
-        updateGlobalSettings,
-        agentOverrides,
-        updateAgentOverrides,
-        clearAgentOverrides,
-        getResolvedSettings,
-      }}
-    >
+    <SettingsContext.Provider value={{ globalSettings, updateGlobalSettings }}>
       {children}
     </SettingsContext.Provider>
   )

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react"
 import { invoke } from "@tauri-apps/api/core"
 import { useSettings } from "../SettingsContext"
 import { useTheme } from "../ThemeContext"
-import { DEFAULT_SETTINGS, type TerminalSettings, type AgentTerminalOverrides } from "../settings"
+import { DEFAULT_SETTINGS, type TerminalSettings } from "../settings"
 import { loadTemplates, saveTemplates, type Template } from "../templates"
 import type { Pane } from "../types"
 
@@ -20,22 +20,13 @@ interface Props {
 const monoFont = MONO_FONT
 
 type MainTab = "terminal" | "appearance" | "keybindings" | "templates"
-type TerminalTab = "global" | string // "global" or agentId
 
 const SYSTEM_PROMPT_FILES: Record<string, string> = {
   claude: "CLAUDE.md", gemini: "GEMINI.md", codex: "AGENTS.md",
 }
 
 export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltins: hiddenBuiltinsProp, onHiddenBuiltinsChange, onClose }: Props) {
-  const {
-    globalSettings,
-    updateGlobalSettings,
-    agentOverrides,
-    updateAgentOverrides,
-    clearAgentOverrides,
-    getResolvedSettings,
-  } = useSettings()
-
+  const { globalSettings, updateGlobalSettings } = useSettings()
   const { schemeKey, setScheme, availableSchemes } = useTheme()
   const [hoveredScheme, setHoveredScheme] = useState<string | null>(null)
   const hiddenBuiltins = hiddenBuiltinsProp ?? new Set<string>()
@@ -45,14 +36,12 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
   }
 
   const [mainTab, setMainTab] = useState<MainTab>("terminal")
-  const [activeTab, setActiveTab] = useState<TerminalTab>("global")
   const [editingTpl, setEditingTpl] = useState<Template | null>(null)
   const [systemFonts, setSystemFonts] = useState<string[]>([])
   const [fontSearch, setFontSearch] = useState("")
 
   useEffect(() => {
     invoke<string[]>("list_fonts").then(fonts => {
-      // Prepend common monospace fonts
       const mono = ["SF Mono", "Menlo", "Monaco", "Courier New", "JetBrains Mono", "Fira Code", "Source Code Pro"]
       const filtered = fonts.filter(f => !mono.includes(f))
       setSystemFonts([...mono, ...filtered])
@@ -65,42 +54,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
   const [showNewTemplate, setShowNewTemplate] = useState(false)
   const [newTpl, setNewTpl] = useState({ name: "", command: "", workingDir: "~", description: "" })
 
-  const isGlobal = activeTab === "global"
-  const currentAgent = agents.find(a => a.id === activeTab)
-  const currentOverrides = !isGlobal ? (agentOverrides[activeTab] ?? {}) : {}
-  const resolved = isGlobal ? globalSettings : getResolvedSettings(activeTab)
-
   const updateField = <K extends keyof TerminalSettings>(key: K, value: TerminalSettings[K]) => {
-    if (isGlobal) {
-      updateGlobalSettings({ [key]: value })
-    } else {
-      updateAgentOverrides(activeTab, { [key]: value })
-    }
-  }
-
-  const isOverridden = (key: keyof TerminalSettings) => {
-    if (isGlobal) return false
-    return key in currentOverrides && currentOverrides[key] !== undefined
-  }
-
-  const clearField = (key: keyof AgentTerminalOverrides) => {
-    if (isGlobal) return
-    const next = { ...currentOverrides }
-    delete next[key]
-    updateAgentOverrides(activeTab, next)
-    // full replacement
-    clearAgentOverrides(activeTab)
-    if (Object.keys(next).length > 0) {
-      updateAgentOverrides(activeTab, next)
-    }
-  }
-
-  const resetAll = () => {
-    if (isGlobal) {
-      updateGlobalSettings(DEFAULT_SETTINGS)
-    } else {
-      clearAgentOverrides(activeTab)
-    }
+    updateGlobalSettings({ [key]: value })
   }
 
   const sectionStyle: React.CSSProperties = {
@@ -111,37 +66,11 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
 
   const renderFieldRow = (
     label: string,
-    key: keyof TerminalSettings,
     input: React.ReactNode,
   ) => (
-    <div key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
       <span style={{ ...LABEL_STYLE, width: 120, flexShrink: 0 }}>{label}</span>
       <div style={{ flex: 1 }}>{input}</div>
-      {!isGlobal && isOverridden(key) && (
-        <button
-          onClick={() => clearField(key)}
-          style={{
-            background: "transparent",
-            border: "1px solid var(--border)",
-            color: "var(--muted)",
-            fontFamily: monoFont,
-            fontSize: 9,
-            padding: "1px 4px",
-            cursor: "pointer",
-            flexShrink: 0,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = "var(--red)"; e.currentTarget.style.borderColor = "var(--red)" }}
-          onMouseLeave={e => { e.currentTarget.style.color = "var(--muted)"; e.currentTarget.style.borderColor = "var(--border)" }}
-          title="Reset to global"
-        >
-          RESET
-        </button>
-      )}
-      {!isGlobal && !isOverridden(key) && (
-        <span style={{ fontSize: 9, color: "var(--muted)", opacity: 0.5, flexShrink: 0, width: 40, textAlign: "center" }}>
-          Global
-        </span>
-      )}
     </div>
   )
 
@@ -149,7 +78,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
     <Modal title="Preferences" onClose={onClose} width={560}>
       <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
 
-        {/* Main tabs: TERMINAL / TEMPLATES */}
+        {/* Main tabs */}
         <div style={{ display: "flex", borderBottom: "1px solid var(--border)", fontSize: 10, letterSpacing: "0.06em", flexShrink: 0 }}>
           {([["terminal", "Terminal"], ["appearance", "Appearance"], ["keybindings", "Keys"], ["templates", "Templates"]] as [MainTab, string][]).map(([t, label]) => (
             <div key={t} onClick={() => setMainTab(t)} style={{
@@ -160,57 +89,12 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
           ))}
         </div>
 
-        {/* Terminal sub-tabs */}
-        {mainTab === "terminal" && <div style={{
-          display: "flex",
-          borderBottom: "1px solid var(--border)",
-          fontSize: 10,
-          letterSpacing: "0.06em",
-          overflowX: "auto",
-          flexShrink: 0,
-        }}>
-          <div
-            onClick={() => setActiveTab("global")}
-            style={{
-              padding: "6px 14px",
-              cursor: "pointer",
-              borderBottom: isGlobal ? "2px solid var(--green)" : "2px solid transparent",
-              color: isGlobal ? "var(--green)" : "var(--muted)",
-            }}
-          >
-            GLOBAL
-          </div>
-          {agents.map(agent => {
-            const isActive = activeTab === agent.id
-            const hasOverride = Object.keys(agentOverrides[agent.id] ?? {}).length > 0
-            return (
-              <div
-                key={agent.id}
-                onClick={() => setActiveTab(agent.id)}
-                style={{
-                  padding: "6px 14px",
-                  cursor: "pointer",
-                  borderBottom: isActive ? "2px solid var(--green)" : "2px solid transparent",
-                  color: isActive ? "var(--green)" : "var(--muted)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 4,
-                }}
-              >
-                {agent.name}
-                {hasOverride && <span style={{ color: "var(--yellow)", fontSize: 8 }}>*</span>}
-              </div>
-            )
-          })}
-        </div>}
-
         {/* Settings content */}
         <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
 
           {/* APPEARANCE tab */}
           {mainTab === "appearance" && (
             <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              {/* Color Scheme */}
               <div>
                 <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 12 }}>COLOR SCHEME</div>
                 <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 8 }}>
@@ -233,7 +117,6 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                   ))}
                 </div>
               </div>
-              {/* Sidebar Position */}
               <div>
                 <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>SIDEBAR POSITION</div>
                 <div style={{ display: "flex", gap: 8 }}>
@@ -250,8 +133,6 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                   ))}
                 </div>
               </div>
-
-              {/* UI Scale */}
               <div>
                 <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>UI SCALE</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -303,7 +184,7 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
             const saveNewTemplate = () => {
               if (!newTpl.name.trim() || !newTpl.command.trim()) return
               const t: Template = {
-                id: Date.now().toString(),
+                id: crypto.randomUUID(),
                 name: newTpl.name.trim(),
                 command: newTpl.command.trim(),
                 workingDir: newTpl.workingDir.trim() || "~",
@@ -336,18 +217,15 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
 
             return (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                {/* All Templates */}
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>Templates</div>
                     <button onClick={() => setShowNewTemplate(v => !v)}
                       style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 9, padding: "2px 6px", cursor: "pointer" }}
-                      onMouseEnter={onHoverGreen}
-                      onMouseLeave={onLeaveGreen}
+                      onMouseEnter={onHoverGreen} onMouseLeave={onLeaveGreen}
                     >[+ New]</button>
                   </div>
 
-                  {/* New template form */}
                   {showNewTemplate && (
                     <div style={{ border: "1px solid var(--green)", padding: 10, marginBottom: 8, display: "flex", flexDirection: "column", gap: 8 }}>
                       <div style={{ fontSize: 10, color: "var(--green)" }}>NEW TEMPLATE</div>
@@ -369,8 +247,8 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                         >[Cancel]</button>
                         <button onClick={saveNewTemplate}
                           style={{ background: "none", border: "1px solid var(--green)", color: "var(--green)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}
-                          onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
-                          onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--green)"; }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)" }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--green)" }}
                         >[Save]</button>
                       </div>
                     </div>
@@ -391,9 +269,10 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                             ))}
                             <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                               <button onClick={() => setEditingTpl(null)} style={{ background: "none", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}>[Cancel]</button>
-                              <button onClick={saveEditTemplate} style={{ background: "none", border: "1px solid var(--green)", color: "var(--green)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}
-                                onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)"; }}
-                                onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--green)"; }}
+                              <button onClick={saveEditTemplate}
+                                style={{ background: "none", border: "1px solid var(--green)", color: "var(--green)", fontFamily: mono, fontSize: 10, padding: "3px 8px", cursor: "pointer" }}
+                                onMouseEnter={e => { e.currentTarget.style.background = "var(--green)"; e.currentTarget.style.color = "var(--bg)" }}
+                                onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = "var(--green)" }}
                               >[Save]</button>
                             </div>
                           </div>
@@ -424,222 +303,155 @@ export default function SettingsPanel({ agents, onTemplatesChange, hiddenBuiltin
                   </div>
 
                   {templates.length === 0 && (
-                    <div style={{ fontSize: 11, color: "var(--muted)", padding: "12px 0", textAlign: "center" }}>
-                      No templates
-                    </div>
+                    <div style={{ fontSize: 11, color: "var(--muted)", padding: "12px 0", textAlign: "center" }}>No templates</div>
                   )}
                 </div>
               </div>
             )
           })()}
 
-          {mainTab === "terminal" && !isGlobal && (
-            <div style={{ fontSize: 10, color: "var(--muted)", marginBottom: 12, padding: "4px 8px", border: "1px dashed var(--border)" }}>
-              Pane settings override global. Click RESET to revert.
+          {/* TERMINAL tab — global only */}
+          {mainTab === "terminal" && (
+            <div>
+              <div style={sectionStyle}>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>TEXT</div>
+                {renderFieldRow("Font Family",
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
+                    <input
+                      list="system-fonts-list"
+                      value={globalSettings.fontFamily}
+                      onChange={e => updateField("fontFamily", e.target.value)}
+                      style={INPUT_STYLE}
+                      onFocus={onFocusInput}
+                      onBlur={onBlurInput}
+                      placeholder="e.g. SF Mono"
+                    />
+                    <datalist id="system-fonts-list">
+                      {systemFonts.map(f => <option key={f} value={f} />)}
+                    </datalist>
+                  </div>
+                )}
+                {renderFieldRow("Font Size",
+                  <input
+                    type="number" min={8} max={32}
+                    value={globalSettings.fontSize}
+                    onChange={e => updateField("fontSize", Number(e.target.value))}
+                    style={{ ...INPUT_STYLE, width: 80 }}
+                    onFocus={onFocusInput} onBlur={onBlurInput}
+                  />
+                )}
+                {renderFieldRow("Line Height",
+                  <input
+                    type="number" min={1.0} max={3.0} step={0.1}
+                    value={globalSettings.lineHeight}
+                    onChange={e => updateField("lineHeight", Number(e.target.value))}
+                    style={{ ...INPUT_STYLE, width: 80 }}
+                    onFocus={onFocusInput} onBlur={onBlurInput}
+                  />
+                )}
+              </div>
+
+              <div style={sectionStyle}>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>CURSOR</div>
+                {renderFieldRow("Style",
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {(["block", "bar", "underline"] as const).map(style => (
+                      <button key={style} onClick={() => updateField("cursorStyle", style)}
+                        style={{
+                          ...INPUT_STYLE, width: "auto", padding: "3px 10px", cursor: "pointer",
+                          border: globalSettings.cursorStyle === style ? "1px solid var(--green)" : "1px solid var(--border)",
+                          color: globalSettings.cursorStyle === style ? "var(--green)" : "var(--muted)",
+                        }}
+                      >{style}</button>
+                    ))}
+                  </div>
+                )}
+                {renderFieldRow("Blink",
+                  <button onClick={() => updateField("cursorBlink", !globalSettings.cursorBlink)}
+                    style={{
+                      ...INPUT_STYLE, width: "auto", padding: "3px 10px", cursor: "pointer",
+                      color: globalSettings.cursorBlink ? "var(--green)" : "var(--muted)",
+                      border: globalSettings.cursorBlink ? "1px solid var(--green)" : "1px solid var(--border)",
+                    }}
+                  >{globalSettings.cursorBlink ? "ON" : "OFF"}</button>
+                )}
+              </div>
+
+              <div style={sectionStyle}>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>SCROLLBACK</div>
+                {renderFieldRow("Lines",
+                  <input
+                    type="number" min={500} max={100000} step={500}
+                    value={globalSettings.scrollback}
+                    onChange={e => updateField("scrollback", Number(e.target.value))}
+                    style={{ ...INPUT_STYLE, width: 100 }}
+                    onFocus={onFocusInput} onBlur={onBlurInput}
+                  />
+                )}
+              </div>
+
+              <div style={sectionStyle}>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>APPEARANCE</div>
+                {renderFieldRow("BG Opacity",
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <input type="range" min={0} max={1} step={0.05}
+                      value={globalSettings.backgroundOpacity}
+                      onChange={e => updateField("backgroundOpacity", Number(e.target.value))}
+                      style={{ flex: 1, accentColor: "var(--green)" }}
+                    />
+                    <span style={{ fontSize: 10, color: "var(--fg)", width: 32, textAlign: "right" }}>
+                      {Math.round(globalSettings.backgroundOpacity * 100)}%
+                    </span>
+                  </div>
+                )}
+                {renderFieldRow("Padding",
+                  <input
+                    type="number" min={0} max={32}
+                    value={globalSettings.padding}
+                    onChange={e => updateField("padding", Number(e.target.value))}
+                    style={{ ...INPUT_STYLE, width: 80 }}
+                    onFocus={onFocusInput} onBlur={onBlurInput}
+                  />
+                )}
+              </div>
+
+              <div style={sectionStyle}>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>NOTIFICATIONS</div>
+                <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--muted)", cursor: "pointer" }}>
+                  <input
+                    type="checkbox"
+                    checked={globalSettings.notificationsEnabled ?? true}
+                    onChange={e => updateGlobalSettings({ notificationsEnabled: e.target.checked })}
+                    style={{ accentColor: "var(--green)", width: 14, height: 14, cursor: "pointer" }}
+                  />
+                  System notifications + sound when Pane finishes
+                </label>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>UI SCALE</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <input type="range" min={0.5} max={2.0} step={0.05}
+                    value={globalSettings.uiScale}
+                    onChange={e => updateGlobalSettings({ uiScale: Number(e.target.value) })}
+                    style={{ flex: 1, accentColor: "var(--green)" }}
+                  />
+                  <span style={{ fontSize: 11, color: "var(--muted)", width: 36 }}>{Math.round(globalSettings.uiScale * 100)}%</span>
+                </div>
+                <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>⌘= zoom in · ⌘- zoom out</div>
+              </div>
             </div>
           )}
-
-          {mainTab === "terminal" && <div id="terminal-settings">
-          <div style={sectionStyle}>
-            <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>TEXT</div>
-            {renderFieldRow("Font Family", "fontFamily",
-              <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1 }}>
-                <input
-                  list="system-fonts-list"
-                  value={isGlobal ? resolved.fontFamily : (isOverridden("fontFamily") ? (currentOverrides.fontFamily ?? "") : resolved.fontFamily)}
-                  onChange={e => updateField("fontFamily", e.target.value)}
-                  style={INPUT_STYLE}
-                  onFocus={onFocusInput}
-                  onBlur={onBlurInput}
-                  placeholder="e.g. SF Mono"
-                />
-                <datalist id="system-fonts-list">
-                  {systemFonts.map(f => <option key={f} value={f} />)}
-                </datalist>
-              </div>
-            )}
-            {renderFieldRow("Font Size", "fontSize",
-              <input
-                type="number"
-                min={8}
-                max={32}
-                value={resolved.fontSize}
-                onChange={e => updateField("fontSize", Number(e.target.value))}
-                style={{ ...INPUT_STYLE, width: 80 }}
-                onFocus={onFocusInput}
-                onBlur={onBlurInput}
-              />
-            )}
-            {renderFieldRow("Line Height", "lineHeight",
-              <input
-                type="number"
-                min={1.0}
-                max={3.0}
-                step={0.1}
-                value={resolved.lineHeight}
-                onChange={e => updateField("lineHeight", Number(e.target.value))}
-                style={{ ...INPUT_STYLE, width: 80 }}
-                onFocus={onFocusInput}
-                onBlur={onBlurInput}
-              />
-            )}
-          </div>
-
-          {/* Cursor */}
-          <div style={sectionStyle}>
-            <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>CURSOR</div>
-            {renderFieldRow("Style", "cursorStyle",
-              <div style={{ display: "flex", gap: 4 }}>
-                {(["block", "bar", "underline"] as const).map(style => (
-                  <button
-                    key={style}
-                    onClick={() => updateField("cursorStyle", style)}
-                    style={{
-                      ...INPUT_STYLE,
-                      width: "auto",
-                      padding: "3px 10px",
-                      cursor: "pointer",
-                      border: resolved.cursorStyle === style
-                        ? "1px solid var(--green)"
-                        : "1px solid var(--border)",
-                      color: resolved.cursorStyle === style ? "var(--green)" : "var(--muted)",
-                    }}
-                  >
-                    {style}
-                  </button>
-                ))}
-              </div>
-            )}
-            {renderFieldRow("Blink", "cursorBlink",
-              <button
-                onClick={() => updateField("cursorBlink", !resolved.cursorBlink)}
-                style={{
-                  ...INPUT_STYLE,
-                  width: "auto",
-                  padding: "3px 10px",
-                  cursor: "pointer",
-                  color: resolved.cursorBlink ? "var(--green)" : "var(--muted)",
-                  border: resolved.cursorBlink ? "1px solid var(--green)" : "1px solid var(--border)",
-                }}
-              >
-                {resolved.cursorBlink ? "ON" : "OFF"}
-              </button>
-            )}
-          </div>
-
-          {/* Notifications — global only */}
-          {isGlobal && <div style={sectionStyle}>
-            <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>NOTIFICATIONS</div>
-            <label style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 11, color: "var(--muted)", cursor: "pointer" }}>
-              <input
-                type="checkbox"
-                checked={globalSettings.notificationsEnabled ?? true}
-                onChange={e => updateGlobalSettings({ notificationsEnabled: e.target.checked })}
-                style={{ accentColor: "var(--green)", width: 14, height: 14, cursor: "pointer" }}
-              />
-              System notifications + sound when Pane finishes
-            </label>
-            <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 6 }}>
-              Uses macOS notification banner with system sound
-            </div>
-          </div>}
-
-          {/* Scrollback */}
-          <div style={sectionStyle}>
-            <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>SCROLLBACK</div>
-            {renderFieldRow("Lines", "scrollback",
-              <input
-                type="number"
-                min={500}
-                max={100000}
-                step={500}
-                value={resolved.scrollback}
-                onChange={e => updateField("scrollback", Number(e.target.value))}
-                style={{ ...INPUT_STYLE, width: 100 }}
-                onFocus={onFocusInput}
-                onBlur={onBlurInput}
-              />
-            )}
-          </div>
-
-          {/* Appearance */}
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>APPEARANCE</div>
-            {renderFieldRow("BG Opacity", "backgroundOpacity",
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={resolved.backgroundOpacity}
-                  onChange={e => updateField("backgroundOpacity", Number(e.target.value))}
-                  style={{ flex: 1, accentColor: "var(--green)" }}
-                />
-                <span style={{ fontSize: 10, color: "var(--fg)", width: 32, textAlign: "right" }}>
-                  {Math.round(resolved.backgroundOpacity * 100)}%
-                </span>
-              </div>
-            )}
-            {renderFieldRow("Padding", "padding",
-              <input
-                type="number"
-                min={0}
-                max={32}
-                value={resolved.padding}
-                onChange={e => updateField("padding", Number(e.target.value))}
-                style={{ ...INPUT_STYLE, width: 80 }}
-                onFocus={onFocusInput}
-                onBlur={onBlurInput}
-              />
-            )}
-          </div>
-
-          {/* UI Scale — global only */}
-          {isGlobal && <div style={sectionStyle}>
-            <div style={{ fontSize: 11, color: "var(--fg)", fontWeight: 600, marginBottom: 8 }}>UI SCALE</div>
-            {renderFieldRow(`${Math.round(globalSettings.uiScale * 100)}%`, "uiScale",
-              <input
-                type="range"
-                min={0.5}
-                max={2.0}
-                step={0.05}
-                value={globalSettings.uiScale}
-                onChange={e => updateGlobalSettings({ uiScale: Number(e.target.value) })}
-                style={{ flex: 1, accentColor: "var(--green)" }}
-              />
-            )}
-            <div style={{ fontSize: 10, color: "var(--muted)", marginTop: 4 }}>⌘= to zoom in · ⌘- to zoom out</div>
-          </div>}
-          </div>}
         </div>
 
         {/* Footer */}
-        <div style={{
-          padding: "8px 16px",
-          borderTop: "1px solid var(--border)",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}>
+        <div style={{ padding: "8px 16px", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <button
-            onClick={resetAll}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--border)",
-              color: "var(--muted)",
-              fontFamily: monoFont,
-              fontSize: 10,
-              padding: "4px 10px",
-              cursor: "pointer",
-              letterSpacing: "0.05em",
-            }}
+            onClick={() => updateGlobalSettings(DEFAULT_SETTINGS)}
+            style={{ background: "transparent", border: "1px solid var(--border)", color: "var(--muted)", fontFamily: monoFont, fontSize: 10, padding: "4px 10px", cursor: "pointer", letterSpacing: "0.05em" }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--red)"; e.currentTarget.style.color = "var(--red)" }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)" }}
-          >
-            [{isGlobal ? "Reset All" : "Clear Pane Settings"}]
-          </button>
-
+          >[Reset All]</button>
         </div>
       </div>
     </Modal>
