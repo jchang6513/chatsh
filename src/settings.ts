@@ -1,5 +1,4 @@
 import { MONO_FONT } from "./ui"
-import { LS_PANE_OVERRIDES_KEY, LEGACY_LS_AGENT_OVERRIDES_KEY } from "./constants"
 import { settingsStore } from "./storage"
 import type { AppSettings } from "./storage"
 
@@ -16,9 +15,6 @@ export interface TerminalSettings {
   sidebarPosition: "left" | "right"
   notificationsEnabled: boolean
 }
-
-export type AgentTerminalOverrides = Partial<TerminalSettings>
-export type PaneTerminalOverrides = Partial<TerminalSettings>
 
 export const DEFAULT_SETTINGS: TerminalSettings = {
   fontFamily: MONO_FONT,
@@ -64,27 +60,4 @@ export function loadGlobalSettings(): TerminalSettings {
 
 export function saveGlobalSettings(s: TerminalSettings): void {
   settingsStore.patch(s)
-}
-
-// Per-pane overrides — stored in localStorage (runtime state, not config)
-export async function loadAgentOverrides(): Promise<Record<string, AgentTerminalOverrides>> {
-  // Migrate legacy key
-  const legacy = localStorage.getItem(LEGACY_LS_AGENT_OVERRIDES_KEY)
-  if (legacy) {
-    try {
-      const parsed = JSON.parse(legacy) as Record<string, AgentTerminalOverrides>
-      localStorage.setItem(LS_PANE_OVERRIDES_KEY, legacy)
-      localStorage.removeItem(LEGACY_LS_AGENT_OVERRIDES_KEY)
-      return parsed
-    } catch {}
-  }
-  try {
-    const saved = localStorage.getItem(LS_PANE_OVERRIDES_KEY)
-    if (saved) return JSON.parse(saved) as Record<string, AgentTerminalOverrides>
-  } catch {}
-  return {}
-}
-
-export function saveAgentOverrides(overrides: Record<string, AgentTerminalOverrides>): void {
-  localStorage.setItem(LS_PANE_OVERRIDES_KEY, JSON.stringify(overrides))
 }

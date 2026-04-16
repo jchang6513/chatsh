@@ -21,8 +21,8 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
   const xtermRef = useRef<XTerm | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const { scheme } = useTheme();
-  const { getResolvedSettings, globalSettings } = useSettings();
-  const settings = getResolvedSettings(agentId);
+  const { globalSettings } = useSettings();
+  const settings = globalSettings;
   // T019: 用 ref 持有最新 uiScale，避免 doFit closure stale 問題
   const uiScaleRef = useRef(globalSettings.uiScale ?? 1);
   const doFitRef = useRef<() => void>(() => {});
@@ -91,6 +91,13 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     });
     setTimeout(() => fitAddon.fit(), 50);
 
+    // T024: 字型載入後重新 fit，避免初始用 fallback 字型量錯 cell width
+    if (typeof document !== "undefined" && (document as any).fonts?.ready) {
+      (document as any).fonts.ready.then(() => {
+        if (!disposed) doFitRef.current();
+      }).catch(() => {});
+    }
+
     // Wait for listener to register before spawning,
     // so scrollback from daemon is not missed.
     let unlisten: (() => void) | null = null;
@@ -123,17 +130,22 @@ export default function SingleShell({ sessionId, isActive, agentId, workingDir =
     // resize
     const doFit = () => {
       fitAddon.fit();
-      // 補正 CSS zoom 造成的 cols 誤差
-      // T019 fix: 透過 uiScaleRef.current 取得最新 uiScale，避免 closure 閉包過期值
-      const uiScale = uiScaleRef.current;
-      if (uiScale !== 1 && container) {
+      // T024: 無條件用 getBoundingClientRect 補正 cols/rows
+      void uiScaleRef.current;
+      if (container) {
         const rect = container.getBoundingClientRect();
         const core = (xterm as any)._core;
-        const cellW = core?._renderService?.dimensions?.css?.cell?.width;
-        if (cellW && cellW > 0) {
-          const correctCols = Math.max(2, Math.floor(rect.width / cellW));
-          if (correctCols !== xterm.cols) {
-            xterm.resize(correctCols, xterm.rows);
+        const cellDims = core?._renderService?.dimensions?.css?.cell;
+        const cellW = cellDims?.width;
+        const cellH = cellDims?.height;
+        if (cellW && cellW > 0 && cellH && cellH > 0) {
+          const padX = (parseFloat(getComputedStyle(container).paddingLeft) || 0) * 2;
+          const padY = (parseFloat(getComputedStyle(container).paddingTop) || 0) * 2;
+          const correctCols = Math.max(2, Math.floor((rect.width - padX) / cellW));
+          const correctRows = Math.max(2, Math.floor((rect.height - padY) / cellH));
+          if (correctCols !== xterm.cols || correctRows !== xterm.rows) {
+            xterm.resize(correctCols, correctRows);
+            fitAddon.fit();
           }
         }
       }

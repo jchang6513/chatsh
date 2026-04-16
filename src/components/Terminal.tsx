@@ -19,8 +19,8 @@ interface Props {
 
 export default function Terminal({ agent, isActive, onStatusChange, restartKey = 0 }: Props) {
   const { scheme } = useTheme();
-  const { getResolvedSettings, globalSettings } = useSettings();
-  const settings = getResolvedSettings(agent.id);
+  const { globalSettings } = useSettings();
+  const settings = globalSettings;
   const containerRef = useRef<HTMLDivElement>(null);
   const xtermRef = useRef<XTerm | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
@@ -160,22 +160,36 @@ export default function Terminal({ agent, isActive, onStatusChange, restartKey =
       if (isActive) xterm.focus();
     }, 100);
 
+    // T024: 字型載入後重新 fit，避免初始用 fallback 字型量錯 cell width
+    if (typeof document !== "undefined" && (document as any).fonts?.ready) {
+      (document as any).fonts.ready.then(() => {
+        if (!disposed) doFitRef.current();
+      }).catch(() => {});
+    }
+
     const doFit = () => {
       if (!fitAddonRef.current || !xtermRef.current) return;
       fitAddonRef.current.fit();
-      // 補正 CSS zoom 造成的 cols 誤差
-      // App.tsx 用 CSS zoom 縮放整體 UI，但 FitAddon 用 clientWidth 計算（不受 zoom 影響）
-      // 用 getBoundingClientRect().width 取得真實顯示寬度，修正 cols
-      // T019 fix: 透過 uiScaleRef.current 取得最新 uiScale，避免 closure 閉包過期值
-      const uiScale = uiScaleRef.current;
-      if (uiScale !== 1 && container) {
+      // T024: 無條件用 getBoundingClientRect().width 補正 cols
+      // 即使 uiScale === 1，FitAddon 的 clientWidth 計算仍可能受字型載入時機、
+      // sub-pixel rounding、padding 等因素而與真實可視寬度有 1~2 cols 誤差，
+      // 造成 TUI 文字被右邊 overflow:hidden 切掉或左側殘影。
+      void uiScaleRef.current; // 保留 ref 觸發機制
+      if (container) {
         const rect = container.getBoundingClientRect();
         const core = (xtermRef.current as any)._core;
-        const cellW = core?._renderService?.dimensions?.css?.cell?.width;
-        if (cellW && cellW > 0) {
-          const correctCols = Math.max(2, Math.floor(rect.width / cellW));
-          if (correctCols !== xtermRef.current.cols) {
-            xtermRef.current.resize(correctCols, xtermRef.current.rows);
+        const cellDims = core?._renderService?.dimensions?.css?.cell;
+        const cellW = cellDims?.width;
+        const cellH = cellDims?.height;
+        if (cellW && cellW > 0 && cellH && cellH > 0) {
+          const padX = (parseFloat(getComputedStyle(container).paddingLeft) || 0) * 2;
+          const padY = (parseFloat(getComputedStyle(container).paddingTop) || 0) * 2;
+          const correctCols = Math.max(2, Math.floor((rect.width - padX) / cellW));
+          const correctRows = Math.max(2, Math.floor((rect.height - padY) / cellH));
+          if (correctCols !== xtermRef.current.cols || correctRows !== xtermRef.current.rows) {
+            xtermRef.current.resize(correctCols, correctRows);
+            // 重新 fit 對齊渲染層
+            fitAddonRef.current.fit();
           }
         }
       }
